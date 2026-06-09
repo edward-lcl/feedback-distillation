@@ -79,11 +79,12 @@ class AdaptiveWeightedKDPolicyEMA:
         self,
         num_losses: int,
         initial_losses: list | None = None,
-        device: str = "cuda",
+        device: str | None = None,
         config: ThresholdConfig | None = None,
     ):
+        import torch
         self.config = config or ThresholdConfig()
-        self.device = device
+        self.device = device or ("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
         self.num_losses = num_losses
         self.baseline_losses = initial_losses[:] if initial_losses else None
         self.ema_losses = initial_losses[:] if initial_losses else None

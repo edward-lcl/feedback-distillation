@@ -2,6 +2,7 @@ import re
 import torch
 import torch.nn as nn
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from .device import best_device, best_dtype
 
 
 def _first_paragraph(text: str) -> str:
@@ -29,14 +30,14 @@ class AmateurFeedbackModel:
     )
 
     def __init__(self, tokenizer, model, model_name: str, use_bf16: bool = True):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = best_device()
         self.tokenizer = tokenizer
         self.model = model
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         hidden_dim = self.model.config.hidden_size
-        self.model_dtype = torch.bfloat16 if use_bf16 else torch.float32
+        self.model_dtype = best_dtype() if use_bf16 else torch.float32
         self.score_head = nn.Linear(hidden_dim, 1, dtype=self.model_dtype).to(self.device)
         self.student_frozen = False
         print(f"AmateurFeedbackModel: {model_name} on {self.device} ({self.model_dtype})")

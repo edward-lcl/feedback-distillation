@@ -94,8 +94,8 @@ def run_alpaca(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--teacher", default="meta-llama/Llama-3.1-8B-Instruct")
-    parser.add_argument("--student", default="meta-llama/Llama-3.2-1B-Instruct")
+    parser.add_argument("--teacher", default="Qwen/Qwen2.5-7B-Instruct")
+    parser.add_argument("--student", default="Qwen/Qwen2.5-1.5B-Instruct")
     parser.add_argument("--kd_dataset", default="data/300_sample.jsonl")
     parser.add_argument("--results_dir", default="results/alpaca")
     parser.add_argument("--max_samples", type=int, default=200)

@@ -1,6 +1,7 @@
 import re
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from .device import best_device
 
 
 def _first_paragraph(text: str) -> str:
@@ -30,7 +31,7 @@ class ExpertFeedbackModel:
     )
 
     def __init__(self, tokenizer, model, model_name: str):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = best_device()
         self.model = model
         self.tokenizer = tokenizer
         self.network = None  # set externally after AmateurExpertFeedbackNetWork is built

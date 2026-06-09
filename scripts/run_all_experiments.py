@@ -96,8 +96,8 @@ def main(args):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--teacher", default="meta-llama/Llama-3.1-8B-Instruct")
-    p.add_argument("--student", default="meta-llama/Llama-3.2-1B-Instruct")
+    p.add_argument("--teacher", default="Qwen/Qwen2.5-7B-Instruct")
+    p.add_argument("--student", default="Qwen/Qwen2.5-1.5B-Instruct")
     p.add_argument("--kd_dataset", default="data/300_sample.jsonl")
     p.add_argument("--results_dir", default="results/")
     p.add_argument("--max_samples", type=int, default=200)

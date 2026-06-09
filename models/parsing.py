@@ -1,5 +1,6 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from .device import best_device
 
 
 def _first_paragraph(text: str) -> str:
@@ -13,7 +14,7 @@ class ParsingModel:
     """Uses the teacher model to extract a clean final answer from generated text."""
 
     def __init__(self, tokenizer, model, model_name: str):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = best_device()
         self.tokenizer = tokenizer
         self.model = model
         if self.tokenizer.pad_token_id is None:

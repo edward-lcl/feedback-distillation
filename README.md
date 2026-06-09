@@ -53,10 +53,14 @@ ExpertFeedbackModel.generate_answer()        ← Teacher (LLaMA-3.1-8B-Instruct)
 
 ## Models
 
-| Role | Model |
-|---|---|
-| Expert / Base | `meta-llama/Llama-3.1-8B-Instruct` |
-| Amateur / Student | `meta-llama/Llama-3.2-1B-Instruct` |
+| Role | Default | Alternative |
+|---|---|---|
+| Expert / Base | `Qwen/Qwen2.5-7B-Instruct` | `meta-llama/Llama-3.1-8B-Instruct`* |
+| Amateur / Student | `Qwen/Qwen2.5-1.5B-Instruct` | `meta-llama/Llama-3.2-1B-Instruct`* |
+
+*LLaMA models require accepting Meta's license on Hugging Face.
+
+The defaults are model-agnostic and run on Apple Silicon (MPS), CUDA, or CPU with no access gates.
 
 ---
 
@@ -65,8 +69,14 @@ ExpertFeedbackModel.generate_answer()        ← Teacher (LLaMA-3.1-8B-Instruct)
 ```bash
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
-huggingface-cli login   # need access to gated Meta models
+# No HuggingFace login needed for Qwen2.5 defaults
+# Models download automatically on first run (~6 GB total)
 ```
+
+### Hardware requirements
+- **Apple Silicon (M1/M2/M3/M4/M5)**: runs natively via MPS. 16 GB+ recommended.
+- **CUDA GPU**: 16 GB+ VRAM (A100/A10G/3090 etc.)
+- **CPU-only**: works but will be slow (~hours per 200 samples)
 
 ---
 

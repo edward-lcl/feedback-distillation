@@ -20,7 +20,7 @@ import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from models import ExpertFeedbackModel, AmateurFeedbackModel, ParsingModel
+from models import ExpertFeedbackModel, AmateurFeedbackModel, ParsingModel, load_model_auto
 from training import AmateurExpertFeedbackNetWork
 from evaluation import compute_similarity, extract_gsm8k_answer, is_correct_gsm8k, evaluate_toxicity
 
@@ -37,10 +37,10 @@ MATH_FEW_SHOT = [
 
 def load_models(teacher_name: str, student_name: str):
     teacher_tok = AutoTokenizer.from_pretrained(teacher_name, trust_remote_code=True)
-    teacher_model = AutoModelForCausalLM.from_pretrained(teacher_name, device_map="auto", torch_dtype=torch.bfloat16, trust_remote_code=True)
+    teacher_model = load_model_auto(teacher_name)
 
     student_tok = AutoTokenizer.from_pretrained(student_name, trust_remote_code=True)
-    student_model = AutoModelForCausalLM.from_pretrained(student_name, device_map="auto", torch_dtype=torch.bfloat16, trust_remote_code=True)
+    student_model = load_model_auto(student_name)
 
     expert = ExpertFeedbackModel(teacher_tok, teacher_model, teacher_name)
     amateur = AmateurFeedbackModel(student_tok, student_model, student_name)
@@ -133,8 +133,8 @@ def run_gsm8k(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--teacher", default="meta-llama/Llama-3.1-8B-Instruct")
-    parser.add_argument("--student", default="meta-llama/Llama-3.2-1B-Instruct")
+    parser.add_argument("--teacher", default="Qwen/Qwen2.5-7B-Instruct")
+    parser.add_argument("--student", default="Qwen/Qwen2.5-1.5B-Instruct")
     parser.add_argument("--kd_dataset", default="data/300_sample.jsonl")
     parser.add_argument("--results_dir", default="results/gsm8k")
     parser.add_argument("--max_samples", type=int, default=200)
