@@ -41,8 +41,8 @@ def recalibrate_baselines(baseline_losses, current_losses, minimum_relative_gain
 class ThresholdConfig:
     strategy: str = "relative"
     ema_alpha: float = 0.1
-    minimum_relative_gain: float = 10.0
-    relative_gain_stop_threshold: float = 90.0
+    minimum_relative_gain: float = 5.0
+    relative_gain_stop_threshold: float = 35.0
 
 
 class AdaptiveLossWeighting:

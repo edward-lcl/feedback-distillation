@@ -1,66 +1,118 @@
-# Online Feedback Distillation
+# Step-Level Feedback Distillation (SLFD)
 
-**Online Feedback Distillation: Teaching Lightweight Models to Mimic Expert Feedback in Reasoning Tasks**
-
-*Building on [CLEAR](https://arxiv.org/abs/...) (Rufail et al., 2025)*
+**Distilling step-level process-feedback generation from a privileged teacher into a small, ground-truth-free student.**
 
 ---
 
 ## Overview
 
-We introduce a feedback distillation framework that replaces the fixed amateur model in expert-amateur feedback loops (CLEAR) with an **adaptive student** trained online via knowledge distillation from the expert. The same large model acts as both the base model (generates initial answers) and the expert feedback provider — eliminating a separate inference pass.
+Process reward models (PRMs) score the *intermediate steps* of a reasoning
+trace, not just the final answer. They have become the dominant signal for
+test-time search, re-ranking, and verifier-guided decoding. But in the
+existing literature PRMs are used almost exclusively as **filters and
+rankers** — a frozen scorer sitting on top of a generator. They are rarely
+treated as a *distillation target*: a behavior that a smaller model can be
+trained to reproduce.
 
-### Key contributions
+**Step-Level Feedback Distillation (SLFD)** closes that gap. We take a large
+teacher that, *with access to the ground-truth answer*, can produce reliable
+per-step labels — a correctness score **and** a natural-language critique
+explaining what is wrong — and we distill that step-level feedback behavior
+into a small student that runs **without any ground-truth access at test
+time**.
 
-1. First application of knowledge distillation to feedback-driven reasoning (CLEAR-style) loops.
-2. The teacher is not just a contrasting agent but also the base model, enabling self-critique.
-3. Adaptive EMA-weighted KD gating — distillation only fires when the student lags behind.
-4. Multi-metric Pareto frontier analysis for setting KD stopping thresholds.
+The student learns two coupled abilities:
+
+1. **Step scoring** — predict a per-step correctness score (a lightweight
+   scoring head on the step-boundary token).
+2. **Step critique** — generate the natural-language feedback that explains
+   *why* a step is wrong.
+
+### The gap we target
+
+| | PRM literature | SLFD (this work) |
+|---|---|---|
+| PRM role | filter / ranker / verifier | **distillation target** |
+| Teacher signal | scalar step score | score **+** NL critique |
+| GT at inference | n/a (frozen scorer) | **student is GT-free** |
+| Output | a number | number **and** a written critique |
+
+### Contribution
+
+We distill **step-level feedback generation behavior** — the joint
+(score + natural-language critique) signal — from a privileged teacher
+(ground-truth access during labeling) into a GT-free small student, and
+evaluate it on step-error detection (ProcessBench-style F1 and first-error
+accuracy). This is a distillation framing of process feedback, not a new
+filtering/ranking scheme.
+
+> **Note:** SLFD does *not* claim to be the first application of knowledge
+> distillation to feedback loops. The novelty is the *target*: distilling the
+> step-level score **and** critique behavior of a privileged PRM-style teacher
+> into a small GT-free student.
 
 ---
 
 ## Architecture
 
 ```
-Input prompt
-    │
-    ▼
-ExpertFeedbackModel.generate_answer()        ← Teacher (LLaMA-3.1-8B-Instruct)
-    │
-    ├──► ExpertFeedbackModel.generate_feedback()    → expert_feedback, expert_score
-    └──► AmateurFeedbackModel.generate_feedback()   → amateur_feedback, student_score
-              │
-              ▼
-    AmateurExpertFeedbackNetWork                    ← KD triggers if threshold not met
-              │
-    AdaptiveWeightedKDPolicyEMA                     ← EMA + Pareto gate
-    (L_LM + L_hidden + L_score + L_logit)
-              │
-              ▼
-    ExpertFeedbackModel.generate_unified_feedback() ← Merges feedbacks (expert-prioritized)
-              │
-              ▼
-    ExpertFeedbackModel.apply_feedback()            ← Revised answer
-              │
-              ▼
-    ExpertFeedbackModel.generate_self_critique()    ← Self-critique
-              │
-              ▼
-    ExpertFeedbackModel.apply_self_critique()       → Final answer
+                    OFFLINE LABELING (teacher, privileged)
+  ┌──────────────────────────────────────────────────────────────┐
+  │  (problem, solution, gt_answer)                                │
+  │            │                                                   │
+  │            ▼                                                   │
+  │   segment_steps()              ← data/step_segmentation.py     │
+  │            │                                                   │
+  │            ▼                                                   │
+  │   TeacherModel.label_solution()   ← Qwen2.5-7B, FROZEN         │
+  │     per step → {score, feedback, is_error}                     │
+  │     (uses gt_answer — the privileged signal)                  │
+  │            │                                                   │
+  │            ▼                                                   │
+  │   labeled JSONL                ← data/label_pipeline.py        │
+  └──────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                    DISTILLATION (student, GT-free)
+  ┌──────────────────────────────────────────────────────────────┐
+  │   StudentModel.evaluate_step()    ← Qwen2.5-1.5B + LoRA        │
+  │     │            │                  + score head              │
+  │     │            └──► score_logit (grad) ─► L_score (MSE)      │
+  │     └──► feedback tokens          ─► L_feedback_LM (CE)        │
+  │                hidden states      ─► L_hidden (cosine)         │
+  │            │                                                   │
+  │            ▼                                                   │
+  │   SLFDTrainer                  ← training/slfd_trainer.py      │
+  │   AdaptiveWeightedKDPolicyEMA  ← training/threshold_policy.py  │
+  └──────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                    EVALUATION (GT-free at test time)
+  ┌──────────────────────────────────────────────────────────────┐
+  │   evaluate_processbench()      ← evaluation/processbench.py    │
+  │     step-error F1 / precision / recall                        │
+  │     first-error-step accuracy                                 │
+  └──────────────────────────────────────────────────────────────┘
 ```
+
+The teacher sees the ground-truth answer **only during offline labeling**.
+The student never does — at test time it judges steps from the problem and the
+preceding steps alone.
 
 ---
 
 ## Models
 
-| Role | Default | Alternative |
-|---|---|---|
-| Expert / Base | `Qwen/Qwen2.5-7B-Instruct` | `meta-llama/Llama-3.1-8B-Instruct`* |
-| Amateur / Student | `Qwen/Qwen2.5-1.5B-Instruct` | `meta-llama/Llama-3.2-1B-Instruct`* |
+| Role | Model | Params | Trained? | GT access |
+|------|-------|--------|----------|-----------|
+| **Teacher** | `Qwen/Qwen2.5-7B-Instruct` | 7B | **Frozen** | Yes (labeling only) |
+| **Student** | `Qwen/Qwen2.5-1.5B-Instruct` + LoRA + score head | 1.5B | **Trainable** | **No** |
 
-*LLaMA models require accepting Meta's license on Hugging Face.
+The teacher is loaded once for offline labeling and never updated. The student
+is the only trained component: its base weights (via LoRA), a linear scoring
+head, and a hidden-state alignment projection.
 
-The defaults are model-agnostic and run on Apple Silicon (MPS), CUDA, or CPU with no access gates.
+Defaults run on Apple Silicon (MPS), CUDA, or CPU with no access gates.
 
 ---
 
@@ -70,48 +122,56 @@ The defaults are model-agnostic and run on Apple Silicon (MPS), CUDA, or CPU wit
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 # No HuggingFace login needed for Qwen2.5 defaults
-# Models download automatically on first run (~6 GB total)
+# Models download automatically on first run (~6 GB total: 7B teacher + 1.5B student)
 ```
 
-### Hardware requirements
-- **Apple Silicon (M1/M2/M3/M4/M5)**: runs natively via MPS. 16 GB+ recommended.
-- **CUDA GPU**: 16 GB+ VRAM (A100/A10G/3090 etc.)
-- **CPU-only**: works but will be slow (~hours per 200 samples)
+### Hardware
+
+- **Apple Silicon (M1–M5)**: runs natively via MPS. 16 GB+ recommended (the
+  7B teacher dominates memory during labeling).
+- **CUDA GPU**: 16 GB+ VRAM.
+- **CPU-only**: works but slow.
 
 ---
 
-## Running experiments
+## Pipeline
 
-### Quick single benchmark
-
-```bash
-python -m experiments.run_gsm8k \
-    --kd_dataset data/300_sample.jsonl \
-    --results_dir results/gsm8k \
-    --max_samples 200 \
-    --epochs 2 \
-    --iterations 10
-```
-
-### Full suite (GSM8K + Alpaca + all baselines)
+### 1. Label steps with the teacher (offline)
 
 ```bash
-python scripts/run_all_experiments.py \
-    --kd_dataset data/300_sample.jsonl \
-    --results_dir results/ \
-    --max_samples 200
+python -m data.label_pipeline \
+    --input data/raw/math_shepherd_sample.jsonl \
+    --output data/labeled/math_shepherd_labeled.jsonl \
+    --max_samples 500
 ```
 
-Results are saved to `results/consolidated_results.json`.
+Produces labeled JSONL (see [`data/README.md`](data/README.md) for the format).
 
----
+### 2. Train the student (distillation)
 
-## KD training dataset
+```python
+from models.student import StudentModel
+from models.teacher import TeacherModel
+from training.slfd_trainer import SLFDTrainer
 
-The `data/` directory expects `300_sample.jsonl` — a 300-sample dataset of
-`{prompt, original_answer, feedback, score}` entries generated by the expert
-model on GSM8K training data. The construction script is in
-`notebooks/KD_Experimental_Setup.ipynb` (cell: `generate_training_dataset`).
+student = StudentModel()
+teacher = TeacherModel()
+trainer = SLFDTrainer(student, teacher, dataset)   # dataset = list of per-step dicts
+trainer.train(epochs=2, batch_size=4)
+```
+
+### 3. Evaluate on ProcessBench-style step-error detection
+
+```bash
+python -m experiments.run_processbench \
+    --student_model Qwen/Qwen2.5-1.5B-Instruct \
+    --checkpoint checkpoints/slfd_student.pt \
+    --dataset data/processbench_test.jsonl \
+    --max_samples 500
+```
+
+Reports step-error **F1 / precision / recall** and **first-error-step
+accuracy**.
 
 ---
 
@@ -120,37 +180,69 @@ model on GSM8K training data. The construction script is in
 ```
 feedback-distillation/
 ├── models/
-│   ├── expert_feedback.py      # ExpertFeedbackModel (base + expert roles)
-│   ├── amateur_feedback.py     # AmateurFeedbackModel (student)
-│   └── parsing.py              # ParsingModel (answer extraction)
+│   ├── teacher.py              # TeacherModel — frozen 7B, privileged labeler
+│   ├── student.py              # StudentModel — 1.5B + LoRA + score head, GT-free
+│   ├── expert_feedback.py      # (legacy) ExpertFeedbackModel
+│   ├── amateur_feedback.py     # (legacy) AmateurFeedbackModel
+│   └── parsing.py              # answer extraction
+├── data/
+│   ├── step_segmentation.py    # solution → steps
+│   ├── label_pipeline.py       # offline teacher labeling → JSONL
+│   └── README.md               # JSONL format + usage
 ├── training/
-│   ├── kd_network.py           # AmateurExpertFeedbackNetWork
-│   ├── threshold_policy.py     # AdaptiveWeightedKDPolicyEMA
+│   ├── slfd_trainer.py         # SLFD distillation loop
+│   ├── kd_network.py           # (legacy) KD orchestration
+│   ├── threshold_policy.py     # AdaptiveWeightedKDPolicyEMA gating
 │   ├── losses.py               # L_LM, L_hidden, L_score, L_logit
-│   └── loss_config.py          # Loss enable/scale configuration
+│   └── loss_config.py          # loss enable/scale config
 ├── evaluation/
-│   └── metrics.py              # BERTScore, ROUGE, BLEU, toxicity, cosine sim
+│   ├── processbench.py         # step-error F1 + first-error accuracy
+│   └── metrics.py              # BERTScore, ROUGE, BLEU, etc.
 ├── experiments/
-│   ├── run_gsm8k.py
-│   └── run_alpaca.py
-├── baselines/
-│   ├── clear_baseline.py
-│   ├── cot_baseline.py
-│   └── cod_baseline.py
+│   ├── run_processbench.py     # main SLFD evaluation
+│   ├── run_gsm8k.py            # (legacy) output-level experiment
+│   └── run_alpaca.py           # (legacy) reference
+├── baselines/                  # CLEAR / CoT / CoD baselines
 ├── scripts/
 │   └── run_all_experiments.py
-├── notebooks/                  # Original Colab notebooks (reference)
-└── results/                    # Experiment outputs (gitignored)
+└── results/                    # outputs (gitignored)
 ```
+
+---
+
+## Related work
+
+SLFD sits at the intersection of process reward modeling and distillation:
+
+- **CLEAR** — contrastive expert/amateur feedback loops for reasoning.
+  ([arXiv:2504.07116](https://arxiv.org/abs/2504.07116))
+- **LightReasoner** — small models extracting learning signal from larger ones.
+  ([arXiv:2510.07962](https://arxiv.org/abs/2510.07962))
+- **Math-Shepherd** — automatic step-level (process) supervision for math
+  reasoning without human step annotations.
+  ([arXiv:2312.08935](https://arxiv.org/abs/2312.08935))
+- **Lightman et al., "Let's Verify Step by Step"** — process supervision beats
+  outcome supervision for PRMs.
+  ([arXiv:2305.20050](https://arxiv.org/abs/2305.20050))
+- **GenPRM / ThinkPRM** — generative process reward models that *reason about*
+  step correctness rather than emitting a bare scalar.
+- **Huang et al., "Large Language Models Cannot Self-Correct Reasoning Yet"** —
+  motivates a privileged (GT-aware) teacher signal rather than relying on the
+  model's own self-correction.
+  ([arXiv:2310.01798](https://arxiv.org/abs/2310.01798))
+
+Where prior PRM work uses step scores to *filter or rank* candidate traces,
+SLFD treats the teacher's step-level score-plus-critique behavior as a
+**distillation target** for a small, GT-free student.
 
 ---
 
 ## Citation
 
 ```bibtex
-@article{maah2025feedbackdistillation,
-  title={Online Feedback Distillation: Teaching Lightweight Models to Mimic Expert Feedback in Reasoning Tasks},
+@misc{slfd2026,
+  title={Step-Level Feedback Distillation: Distilling Process-Feedback Generation into Small Ground-Truth-Free Students},
   author={...},
-  year={2025}
+  year={2026}
 }
 ```

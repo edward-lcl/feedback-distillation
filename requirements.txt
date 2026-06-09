@@ -16,3 +16,5 @@ matplotlib>=3.8.0
 seaborn>=0.13.0
 bitsandbytes>=0.42.0
 huggingface_hub>=0.21.0
+peft>=0.10.0
+evaluate>=0.4.0

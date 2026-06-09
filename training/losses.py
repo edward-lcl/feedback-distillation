@@ -26,10 +26,11 @@ def compute_lm_loss(
     model_dtype,
     is_math: bool = False,
     examples: list | None = None,
+    teacher_score: float = 0.9,
 ) -> torch.Tensor:
     """Cross-entropy over the feedback token span (student predicted vs teacher label)."""
     input_ids, labels, attention_mask = student.prepare_inputs_and_labels(
-        prompt, answer, teacher_feedback, is_math, examples
+        prompt, answer, teacher_feedback, teacher_score, is_math, examples
     )
     input_ids = input_ids.to(device)
     labels = labels.to(device)
@@ -149,7 +150,7 @@ def compute_all_losses_vectorized(
     losses = {}
 
     if enabled.get("lm_loss"):
-        losses["lm_loss"] = compute_lm_loss(teacher_feedback, student, prompt, answer, device, model_dtype, is_math, examples)
+        losses["lm_loss"] = compute_lm_loss(teacher_feedback, student, prompt, answer, device, model_dtype, is_math, examples, teacher_score)
     if enabled.get("hidden_loss"):
         losses["hidden_loss"] = compute_hidden_loss(teacher_feedback, student_tokenizer, teacher_tokenizer, student, teacher, align_layer, device, model_dtype)
     if enabled.get("scoring_loss"):

@@ -1,3 +1,5 @@
+from .teacher import TeacherModel
+from .student import StudentModel
 from .expert_feedback import ExpertFeedbackModel
 from .amateur_feedback import AmateurFeedbackModel
 from .parsing import ParsingModel

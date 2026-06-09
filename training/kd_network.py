@@ -135,7 +135,7 @@ class AmateurExpertFeedbackNetWork:
                         live_teacher_feedback, _ = self.teacher.generate_feedback(prompt, answer, is_math, examples)
 
                     if "lm_loss" in loss_names:
-                        batch_losses["lm_loss"].append(compute_lm_loss(live_teacher_feedback, self.student, prompt, answer, self.device, self.model_dtype, is_math, examples))
+                        batch_losses["lm_loss"].append(compute_lm_loss(live_teacher_feedback, self.student, prompt, answer, self.device, self.model_dtype, is_math, examples, teacher_score))
                     if "hidden_loss" in loss_names:
                         batch_losses["hidden_loss"].append(compute_hidden_loss(live_teacher_feedback, self.student_tokenizer, self.teacher_tokenizer, self.student, self.teacher, self.align_hidden, self.device, self.model_dtype))
                     if "scoring_loss" in loss_names:

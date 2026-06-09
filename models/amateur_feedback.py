@@ -13,6 +13,14 @@ def _first_paragraph(text: str) -> str:
     return text.strip()
 
 
+def _parse_score(response: str) -> float:
+    m = re.search(r'Score:\s*([-\d.]+)', response)
+    try:
+        return float(m.group(1)) if m else -1.0
+    except (ValueError, AttributeError):
+        return -1.0
+
+
 class AmateurFeedbackModel:
     """
     Lightweight student model. Generates feedback via NLP (same prompt format as
@@ -88,21 +96,18 @@ class AmateurFeedbackModel:
 
         response = self.generate_text(prompt, max_new_tokens=200).strip()
 
-        score_parts = response.split("Score:")
-        try:
-            score_val = float(score_parts[3].strip().split()[0]) if len(score_parts) >= 4 else -1000.0
-        except (IndexError, ValueError):
-            score_val = -1000.0
+        score_val = _parse_score(response)
 
         feedback_parts = [f for f in response.split("Feedback:") if "<" not in f and ">" not in f]
         feedback = _first_paragraph(feedback_parts[1].strip()) if len(feedback_parts) >= 2 else "Failed to generate meaningful feedback"
 
-        # Score logit via scoring head on last hidden state
+        # Score logit via scoring head on last hidden state.
+        # Only generation is no_grad; the score head forward must keep gradients
+        # so L_score can backpropagate into the head.
         inputs = self.tokenizer(response, return_tensors="pt").to(self.device)
-        with torch.no_grad():
-            out = self.model(**inputs, output_hidden_states=True, return_dict=True)
-            last_hidden = out.hidden_states[-1][:, -1, :].to(self.model_dtype)
-            score_logit = self.score_head(last_hidden).squeeze(-1)
+        out = self.model(**inputs, output_hidden_states=True, return_dict=True)
+        last_hidden = out.hidden_states[-1][:, -1, :].to(self.model_dtype)
+        score_logit = self.score_head(last_hidden).squeeze(-1)
 
         return feedback, score_val, score_logit
 
@@ -113,6 +118,7 @@ class AmateurFeedbackModel:
         prompt: str,
         answer: str,
         teacher_feedback: str,
+        teacher_score: float,
         is_math: bool = False,
         examples: list | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -125,14 +131,14 @@ class AmateurFeedbackModel:
 
         full_text = (
             f"{prefix}Question: {prompt}\nAnswer: {answer}\n"
-            f"Score: 0.9\nFeedback: {teacher_feedback}"
+            f"Score: {teacher_score:.2f}\nFeedback: {teacher_feedback}"
         )
         enc = self.tokenizer(full_text, return_tensors="pt", padding=True, truncation=True, max_length=512)
         input_ids = enc["input_ids"]
         attention_mask = enc["attention_mask"]
 
         # Only supervise on the feedback token span
-        feedback_prefix = f"{prefix}Question: {prompt}\nAnswer: {answer}\nScore: 0.9\nFeedback: "
+        feedback_prefix = f"{prefix}Question: {prompt}\nAnswer: {answer}\nScore: {teacher_score:.2f}\nFeedback: "
         prefix_ids = self.tokenizer(feedback_prefix, return_tensors="pt")["input_ids"]
         prefix_len = prefix_ids.shape[1]
 

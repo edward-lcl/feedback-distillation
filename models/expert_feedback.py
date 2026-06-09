@@ -12,6 +12,14 @@ def _first_paragraph(text: str) -> str:
     return text.strip()
 
 
+def _parse_score(response: str) -> float:
+    m = re.search(r'Score:\s*([-\d.]+)', response)
+    try:
+        return float(m.group(1)) if m else -1.0
+    except (ValueError, AttributeError):
+        return -1.0
+
+
 class ExpertFeedbackModel:
     """
     Serves as both the base model (generates initial answers) and the expert
@@ -137,11 +145,7 @@ class ExpertFeedbackModel:
 
         response = self.generate_text(prompt, max_new_tokens=200).strip()
 
-        score_parts = response.split("Score:")
-        try:
-            score = float(score_parts[3].strip().split()[0]) if len(score_parts) >= 4 else -1000.0
-        except (IndexError, ValueError):
-            score = -1000.0
+        score = _parse_score(response)
 
         feedback_parts = [f for f in response.split("Feedback:") if "<" not in f and ">" not in f]
         feedback = _first_paragraph(feedback_parts[1].strip()) if len(feedback_parts) >= 2 else ""
