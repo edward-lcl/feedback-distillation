@@ -12,8 +12,10 @@ DEV_MODELS = {
     "teacher": "Qwen/Qwen2.5-1.5B-Instruct",   # fits in 16GB with student
     "student": "Qwen/Qwen2.5-0.5B-Instruct",
 }
+# Teacher is Qwen2.5-Math-72B-Instruct for paper reproducibility—standard HF model,
+# math-specialized, same oracle family used by Math-Shepherd / VersaPRM.
 PROD_MODELS = {
-    "teacher": "Qwen/Qwen2.5-7B-Instruct",
+    "teacher": "Qwen/Qwen2.5-Math-72B-Instruct",
     "student": "Qwen/Qwen2.5-1.5B-Instruct",
 }
 
