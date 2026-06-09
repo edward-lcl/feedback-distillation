@@ -59,14 +59,26 @@ class TeacherModel:
 
     def _generate(self, prompt: str, max_new_tokens: int = 150) -> str:
         max_length = MPS_SAFE_MAX_LENGTH if is_mps() else 1024
-        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_length).to(self.model.device)
+        # Use chat template if available — improves format adherence on smaller models
+        if hasattr(self.tokenizer, "apply_chat_template") and self.tokenizer.chat_template:
+            messages = [{"role": "user", "content": prompt}]
+            formatted = self.tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+        else:
+            formatted = prompt
+        inputs = self.tokenizer(
+            formatted, return_tensors="pt", truncation=True, max_length=max_length
+        ).to(self.model.device)
+        input_len = inputs["input_ids"].shape[1]
         with torch.no_grad():
             out = self.model.generate(
                 **inputs, max_new_tokens=max_new_tokens,
                 do_sample=False, repetition_penalty=1.1,
                 pad_token_id=self.tokenizer.eos_token_id,
             )
-        return self.tokenizer.decode(out[0], skip_special_tokens=True)
+        # Decode only newly generated tokens — never echo the prompt
+        return self.tokenizer.decode(out[0][input_len:], skip_special_tokens=True)
 
     def label_step(
         self,
@@ -89,12 +101,16 @@ class TeacherModel:
         score = _parse_score(response)
 
         # Extract feedback text after "Score: X.XX\n"
+        # Extract feedback — only from generated text (prompt echo already stripped)
         parts = response.split("Feedback:", 1)
-        feedback = parts[1].strip().split("\n")[0].strip() if len(parts) > 1 else ""
-        if not feedback:
-            # Try to extract anything after the score line
-            lines = response.strip().split("\n")
-            feedback = next((l.strip() for l in lines if l.strip() and "Score:" not in l and len(l) > 10), "")
+        if len(parts) > 1:
+            feedback = parts[1].strip().split("\n")[0].strip()
+        else:
+            # Fallback: first substantive line after the score line
+            lines = [l.strip() for l in response.strip().split("\n")]
+            score_idx = next((i for i, l in enumerate(lines) if l.startswith("Score:")), -1)
+            candidates = lines[score_idx + 1:] if score_idx >= 0 else lines
+            feedback = next((l for l in candidates if l and len(l) > 10), "")
 
         return {
             "score": score,
