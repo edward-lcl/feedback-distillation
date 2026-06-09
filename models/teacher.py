@@ -5,7 +5,15 @@ Has GT access during labeling (privileged signal). Never updated.
 import re
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from .device import best_device
+from .device import (
+    best_device,
+    is_mps,
+    is_dev_mode,
+    load_model_for_device,
+    DEV_MODELS,
+    PROD_MODELS,
+    MPS_SAFE_MAX_LENGTH,
+)
 
 
 def _parse_score(response: str) -> float:
@@ -35,19 +43,23 @@ class TeacherModel:
         "Score: "
     )
 
-    def __init__(self, model_name: str = "Qwen/Qwen2.5-7B-Instruct"):
+    def __init__(self, model_name: str = None, dev_mode: bool = False):
         self.device = best_device()
+        self.dev_mode = is_dev_mode(dev_mode)
+        if model_name is None:
+            model_name = (DEV_MODELS if self.dev_mode else PROD_MODELS)["teacher"]
+        if self.dev_mode:
+            print("# DEV MODE — reduced models for local Apple Silicon development")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_name, torch_dtype=torch.float16, device_map="auto", trust_remote_code=True
-        )
+        self.model = load_model_for_device(model_name, dev_mode=self.dev_mode)
         self.model.eval()
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-        print(f"TeacherModel loaded: {model_name} (frozen)")
+        print(f"TeacherModel loaded: {model_name} on {self.device} (frozen)")
 
     def _generate(self, prompt: str, max_new_tokens: int = 150) -> str:
-        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=1024).to(self.model.device)
+        max_length = MPS_SAFE_MAX_LENGTH if is_mps() else 1024
+        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_length).to(self.model.device)
         with torch.no_grad():
             out = self.model.generate(
                 **inputs, max_new_tokens=max_new_tokens,

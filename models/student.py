@@ -7,7 +7,16 @@ import re
 import torch
 import torch.nn as nn
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from .device import best_device, best_dtype
+from .device import (
+    best_device,
+    best_dtype,
+    is_mps,
+    is_dev_mode,
+    load_model_for_device,
+    DEV_MODELS,
+    PROD_MODELS,
+    MPS_SAFE_MAX_LENGTH,
+)
 
 
 def _parse_score(response: str) -> float:
@@ -35,13 +44,16 @@ class StudentModel:
         "Score: "
     )
 
-    def __init__(self, model_name: str = "Qwen/Qwen2.5-1.5B-Instruct", use_bf16: bool = True):
+    def __init__(self, model_name: str = None, use_bf16: bool = True, dev_mode: bool = False):
         self.device = best_device()
+        self.dev_mode = is_dev_mode(dev_mode)
+        if model_name is None:
+            model_name = (DEV_MODELS if self.dev_mode else PROD_MODELS)["student"]
+        if self.dev_mode:
+            print("# DEV MODE — reduced models for local Apple Silicon development")
         self.model_dtype = best_dtype() if use_bf16 else torch.float32
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_name, torch_dtype=self.model_dtype, device_map="auto", trust_remote_code=True
-        )
+        self.model = load_model_for_device(model_name, dev_mode=self.dev_mode)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
@@ -51,7 +63,8 @@ class StudentModel:
         print(f"StudentModel loaded: {model_name} on {self.device}")
 
     def _generate(self, prompt: str, max_new_tokens: int = 150) -> str:
-        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to(self.device)
+        max_length = MPS_SAFE_MAX_LENGTH if is_mps() else 512
+        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_length).to(self.device)
         model = self.model.module if hasattr(self.model, "module") else self.model
         with torch.no_grad():
             out = model.generate(
@@ -82,8 +95,10 @@ class StudentModel:
         parts = response.split("Feedback:", 1)
         feedback = parts[1].strip().split("\n")[0].strip() if len(parts) > 1 else ""
 
-        # Score head forward — OUTSIDE no_grad so gradients flow
-        inputs = self.tokenizer(response, return_tensors="pt", truncation=True, max_length=256).to(self.device)
+        # Score head forward — OUTSIDE no_grad so gradients flow.
+        # Cast hidden states (float16 on MPS) to float32 before the float32 score head.
+        sh_max_length = MPS_SAFE_MAX_LENGTH if is_mps() else 256
+        inputs = self.tokenizer(response, return_tensors="pt", truncation=True, max_length=sh_max_length).to(self.device)
         out = self.model(**inputs, output_hidden_states=True, return_dict=True)
         last_hidden = out.hidden_states[-1][:, -1, :].to(torch.float32)
         score_logit = self.score_head(last_hidden).squeeze(-1)  # grad flows here
@@ -105,7 +120,8 @@ class StudentModel:
             f"Current step: {step_text}\n\n"
             f"Score: {teacher_score:.2f}\nFeedback: {teacher_feedback}"
         )
-        enc = self.tokenizer(full_text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+        ml = MPS_SAFE_MAX_LENGTH if is_mps() else 512
+        enc = self.tokenizer(full_text, return_tensors="pt", padding=True, truncation=True, max_length=ml)
         input_ids = enc["input_ids"]
         attention_mask = enc["attention_mask"]
 

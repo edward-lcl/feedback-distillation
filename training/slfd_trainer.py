@@ -15,11 +15,15 @@ class SLFDTrainer:
     Teacher is frozen throughout. Student's score_head has gradients.
     """
 
-    def __init__(self, student, teacher, dataset: list[dict], loss_flags=None, device=None):
+    def __init__(self, student, teacher, dataset: list[dict], loss_flags=None, device=None, dev_mode=False):
         import torch.nn as nn
+        from models.device import is_dev_mode
         self.student = student
         self.teacher = teacher
         self.dataset = dataset
+        self.dev_mode = is_dev_mode(dev_mode)
+        if self.dev_mode:
+            print("DEV MODE: reduced batch/steps for local Apple Silicon")
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.loss_flags = loss_flags or [True, True, True, False]  # LM, hidden, score, logit
         self.loss_config = LossConfig(self.loss_flags)
@@ -47,6 +51,11 @@ class SLFDTrainer:
         ], betas=(0.9, 0.999), eps=1e-8)
 
     def train(self, epochs: int = 2, batch_size: int = 4, max_steps: int = None) -> dict:
+        if self.dev_mode:
+            batch_size = 1
+            if max_steps is None:
+                max_steps = 50
+            print(f"DEV MODE: batch_size={batch_size}, max_steps={max_steps}")
         random.shuffle(self.dataset)
         loss_history = {"lm_loss": [], "hidden_loss": [], "scoring_loss": []}
         step = 0

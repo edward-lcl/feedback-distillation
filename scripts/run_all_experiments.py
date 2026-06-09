@@ -29,10 +29,11 @@ from datasets import load_dataset
 
 
 def load_pipeline(model_name: str):
+    from models.device import best_dtype  # float16 on MPS, bfloat16 on CUDA/CPU
     return pipeline(
         "text-generation",
         model=model_name,
-        torch_dtype=torch.bfloat16,
+        torch_dtype=best_dtype(),
         device_map="auto",
     )
 

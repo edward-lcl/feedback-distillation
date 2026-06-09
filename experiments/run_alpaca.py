@@ -105,12 +105,14 @@ if __name__ == "__main__":
 
     from transformers import AutoTokenizer, AutoModelForCausalLM
     import torch, json as _json
+    from models.device import best_dtype  # float16 on MPS, bfloat16 on CUDA/CPU
+    _dt = best_dtype()
 
     def _load_models(t, s):
         tt = AutoTokenizer.from_pretrained(t, trust_remote_code=True)
-        tm = AutoModelForCausalLM.from_pretrained(t, device_map="auto", torch_dtype=torch.bfloat16, trust_remote_code=True)
+        tm = AutoModelForCausalLM.from_pretrained(t, device_map="auto", torch_dtype=_dt, trust_remote_code=True)
         st = AutoTokenizer.from_pretrained(s, trust_remote_code=True)
-        sm = AutoModelForCausalLM.from_pretrained(s, device_map="auto", torch_dtype=torch.bfloat16, trust_remote_code=True)
+        sm = AutoModelForCausalLM.from_pretrained(s, device_map="auto", torch_dtype=_dt, trust_remote_code=True)
         return ExpertFeedbackModel(tt, tm, t), AmateurFeedbackModel(st, sm, s)
 
     def _load_kd(path):

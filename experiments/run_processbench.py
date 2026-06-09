@@ -16,16 +16,18 @@ from evaluation.processbench import evaluate_processbench
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--student_model", default="Qwen/Qwen2.5-1.5B-Instruct")
+    parser.add_argument("--student_model", default=None)
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--max_samples", type=int, default=None)
     parser.add_argument("--results_dir", default="results/processbench")
+    parser.add_argument("--dev_mode", action="store_true",
+                        help="Use smaller models for local Apple Silicon development.")
     args = parser.parse_args()
 
     import os; os.makedirs(args.results_dir, exist_ok=True)
 
-    student = StudentModel(args.student_model)
+    student = StudentModel(args.student_model, dev_mode=args.dev_mode)
     if args.checkpoint:
         import torch
         student.model.load_state_dict(torch.load(args.checkpoint, map_location="cpu"), strict=False)
