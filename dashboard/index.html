@@ -1,507 +1,679 @@
-<!doctype html><html lang=en><head><meta charset=utf-8>
-<meta name=viewport content="width=device-width, initial-scale=1">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SLFD — project dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+/* ── tokens ── */
 :root {
-  --bg: #0d1117;
-  --surface: #161b22;
-  --surface2: #1c2230;
-  --border: #2a3040;
-  --border2: #333d52;
-  --ink: #e6edf3;
-  --ink2: #c9d1d9;
-  --muted: #8b949e;
-  --accent: #58a6ff;
-  --accent-dim: #1c2e4a;
-  --green: #3fb950;
-  --green-dim: #0f2d18;
-  --red: #f85149;
-  --red-dim: #2d1117;
-  --yellow: #d29922;
-  --yellow-dim: #2d2212;
-  --purple: #a371f7;
-  --radius: 10px;
+  --bg:         #0a0c10;
+  --bg2:        #0d1117;
+  --surface:    #111620;
+  --surface2:   #161c28;
+  --surface3:   #1c2436;
+  --border:     #1f2a3e;
+  --border2:    #2a374f;
+  --ink:        #f0f4ff;
+  --ink2:       #b8c5d6;
+  --ink3:       #7a8fa8;
+  --accent:     #4f8ef7;
+  --accent-dim: rgba(79,142,247,.12);
+  --accent-glow:rgba(79,142,247,.06);
+  --green:      #34c97a;
+  --green-dim:  rgba(52,201,122,.12);
+  --red:        #f56565;
+  --red-dim:    rgba(245,101,101,.12);
+  --yellow:     #f0b429;
+  --yellow-dim: rgba(240,180,41,.12);
+  --purple:     #a78bfa;
+  --purple-dim: rgba(167,139,250,.12);
+  --r:          10px;
+  --font:       'Inter', -apple-system, sans-serif;
+  --mono:       'JetBrains Mono', 'SF Mono', monospace;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
 body {
-  font: 14px/1.65 -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.65;
   color: var(--ink2);
   background: var(--bg);
-  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* NAV */
+/* ── scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── nav ── */
 nav {
-  position: sticky; top: 0; z-index: 99;
-  background: rgba(13,17,23,.92);
-  backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 100;
+  height: 52px;
+  display: flex; align-items: center; gap: 4px;
+  padding: 0 28px;
+  background: rgba(10,12,16,.85);
+  backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 0; flex-wrap: wrap;
-  padding: 0 24px;
-  height: 48px;
 }
-.nav-brand { color: var(--ink); font-weight: 700; font-size: 15px; margin-right: 24px; white-space: nowrap; }
+.nav-brand {
+  font-weight: 700; font-size: 15px; color: var(--ink);
+  letter-spacing: -.3px; margin-right: 20px; white-space: nowrap;
+  display: flex; align-items: center; gap: 8px;
+}
+.nav-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; } 50% { opacity: .4; }
+}
 .nav-links { display: flex; gap: 2px; }
 .nav-links a {
-  color: var(--muted); text-decoration: none; font-size: 13px;
-  padding: 6px 10px; border-radius: 6px; transition: all .15s;
+  color: var(--ink3); font-size: 13px; text-decoration: none;
+  padding: 5px 10px; border-radius: 6px;
+  transition: color .15s, background .15s;
 }
 .nav-links a:hover { color: var(--ink); background: var(--surface2); }
-.nav-ext { margin-left: auto; }
-.nav-ext a {
-  color: var(--muted); text-decoration: none; font-size: 13px;
-  border: 1px solid var(--border2); padding: 5px 12px; border-radius: 6px;
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.nav-meta { font-size: 12px; color: var(--ink3); }
+.nav-gh {
+  font-size: 12.5px; color: var(--ink3); text-decoration: none;
+  border: 1px solid var(--border2); padding: 4px 12px; border-radius: 6px;
+  transition: all .15s; font-weight: 500;
 }
-.nav-ext a:hover { color: var(--ink); border-color: var(--accent); }
+.nav-gh:hover { color: var(--ink); border-color: var(--accent); }
 
-/* LAYOUT */
-.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 80px; }
-
-/* HERO */
+/* ── hero ── */
 .hero {
-  background: linear-gradient(160deg, #0f1c3a 0%, #0d1117 60%);
+  position: relative; overflow: hidden;
+  padding: 52px 36px 44px;
   border-bottom: 1px solid var(--border);
-  padding: 40px 24px 36px;
-  margin-bottom: 32px;
+  background: linear-gradient(160deg, #0d1729 0%, var(--bg) 65%);
 }
-.hero h1 { font-size: 26px; color: var(--ink); font-weight: 700; margin-bottom: 8px; }
-.hero .sub { color: var(--ink2); font-size: 15px; max-width: 680px; line-height: 1.6; }
-.hero .meta { margin-top: 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 600;
+.hero::before {
+  content: '';
+  position: absolute; top: -120px; right: -80px;
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(79,142,247,.08) 0%, transparent 70%);
+  pointer-events: none;
 }
-.chip.green { background: var(--green-dim); color: var(--green); border: 1px solid #1a4526; }
-.chip.blue { background: var(--accent-dim); color: var(--accent); border: 1px solid #1c3a6a; }
-.chip.yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid #3a2e10; }
-.chip.red { background: var(--red-dim); color: var(--red); border: 1px solid #3a1a18; }
-.chip.gray { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-.meta-text { color: var(--muted); font-size: 13px; }
+.hero-inner { max-width: 1120px; margin: 0 auto; }
+.hero-eyebrow {
+  font-size: 11.5px; font-weight: 600; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+}
+.hero h1 {
+  font-size: 30px; font-weight: 700; color: var(--ink);
+  letter-spacing: -.5px; line-height: 1.25; margin-bottom: 12px;
+}
+.hero-sub {
+  font-size: 15px; color: var(--ink2); max-width: 640px;
+  line-height: 1.7; margin-bottom: 24px;
+}
+.hero-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 
-/* SECTION */
-.section-title {
-  font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
-  color: var(--muted); margin: 36px 0 14px;
-  display: flex; align-items: center; gap: 10px;
+/* ── chips ── */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; letter-spacing: .2px;
+  border: 1px solid transparent;
 }
-.section-title::after {
+.chip-green  { background: var(--green-dim);  color: var(--green);  border-color: rgba(52,201,122,.25); }
+.chip-blue   { background: var(--accent-dim); color: var(--accent); border-color: rgba(79,142,247,.25); }
+.chip-yellow { background: var(--yellow-dim); color: var(--yellow); border-color: rgba(240,180,41,.25); }
+.chip-red    { background: var(--red-dim);    color: var(--red);    border-color: rgba(245,101,101,.25); }
+.chip-gray   { background: var(--surface2);   color: var(--ink3);   border-color: var(--border2); }
+
+/* ── layout ── */
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px 80px; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.g3-result { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.mt16 { margin-top: 16px; }
+.mt24 { margin-top: 24px; }
+
+/* ── section label ── */
+.section-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--ink3);
+  display: flex; align-items: center; gap: 12px;
+  margin: 44px 0 18px;
+}
+.section-label::after {
   content: ''; flex: 1; height: 1px; background: var(--border);
 }
 
-/* CARDS */
+/* ── card ── */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 20px;
+  border-radius: var(--r);
+  padding: 20px 22px;
 }
-.card + .card { margin-top: 0; }
-.card h3 { font-size: 14px; color: var(--ink); margin-bottom: 4px; }
-.card .card-meta { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.card-title { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.card-sub { font-size: 12px; color: var(--ink3); margin-bottom: 14px; }
 
-/* GRID */
-.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-.g3-hero { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-
-/* OVERVIEW CARDS */
+/* ── overview cards ── */
 .ov-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 20px;
-  border-top: 3px solid var(--accent);
+  border-top: 2px solid var(--accent);
+  border-radius: var(--r);
+  padding: 20px 22px;
 }
-.ov-card h3 { font-size: 14px; color: var(--ink); margin-bottom: 8px; }
-.ov-card p { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+.ov-card h3 { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+.ov-card p { font-size: 13px; color: var(--ink2); line-height: 1.65; }
+.ov-card strong { color: var(--ink); font-weight: 600; }
 
-/* CALLOUT */
+/* ── callout ── */
 .callout {
-  background: var(--accent-dim);
-  border: 1px solid #1c3a6a;
-  border-left: 4px solid var(--accent);
-  border-radius: var(--radius);
-  padding: 14px 18px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(79,142,247,.2);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r);
+  padding: 18px 22px;
 }
-.callout h3 { font-size: 14px; color: var(--accent); margin-bottom: 6px; }
-.callout p { font-size: 13.5px; color: var(--ink2); line-height: 1.65; }
+.callout h3 { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
+.callout p { font-size: 13.5px; color: var(--ink2); line-height: 1.7; }
+.callout strong { color: var(--ink); }
 
+/* ── insight banner ── */
 .insight {
-  background: #1a1e10;
-  border: 1px solid #2e3318;
-  border-left: 4px solid #6a8c1a;
-  border-radius: var(--radius);
-  padding: 14px 18px;
-  font-size: 13.5px; color: var(--ink2); line-height: 1.65;
+  background: rgba(52,201,122,.05);
+  border: 1px solid rgba(52,201,122,.15);
+  border-left: 3px solid var(--green);
+  border-radius: var(--r);
+  padding: 16px 20px;
+  font-size: 13px; color: var(--ink2); line-height: 1.7;
+}
+.insight strong { color: var(--green); }
+
+/* ── warn ── */
+.warn {
+  background: var(--red-dim);
+  border: 1px solid rgba(245,101,101,.2);
+  border-left: 3px solid var(--red);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 12.5px; color: #f4a0a0; line-height: 1.6;
   margin-top: 14px;
 }
-.insight b { color: #a8c547; }
+.warn strong { color: var(--red); }
 
-.warn-box {
-  background: var(--red-dim);
-  border: 1px solid #3a1a18;
-  border-left: 4px solid var(--red);
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 13px; color: #f4a0a0;
-  margin-top: 12px;
-}
-.warn-box b { color: var(--red); }
-
-/* RESULT CARD */
+/* ── result card ── */
 .result-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--r);
   overflow: hidden;
+  display: flex; flex-direction: column;
 }
-.result-card .rh {
-  padding: 14px 18px 10px;
+.result-card.primary {
+  border-color: rgba(79,142,247,.4);
+  box-shadow: 0 0 0 1px rgba(79,142,247,.1), 0 8px 32px rgba(79,142,247,.06);
+}
+.rc-head {
+  padding: 16px 20px 14px;
   border-bottom: 1px solid var(--border);
+  background: var(--surface2);
 }
-.result-card .rh h3 { font-size: 14px; color: var(--ink); }
-.result-card .rh .rh-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.result-card .rb { padding: 4px 0 8px; }
-
-/* TABLES */
-table { border-collapse: collapse; width: 100%; font-size: 13px; }
-th {
-  text-align: left; padding: 9px 14px; font-size: 11px;
-  font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
-  color: var(--muted); border-bottom: 1px solid var(--border);
+.rc-head h3 { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.rc-head .rc-meta { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+.result-card.primary .rc-head {
+  background: linear-gradient(135deg, rgba(79,142,247,.08) 0%, var(--surface2) 100%);
 }
-td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(255,255,255,.02); }
-.card table th, .card table td { padding: 8px 0; }
-.card table th { padding-top: 0; }
 
-/* BADGES */
-.b { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 700; }
-.b-pos { background: var(--green-dim); color: var(--green); }
-.b-neg { background: var(--red-dim); color: var(--red); }
-.b-zero { background: var(--surface2); color: var(--muted); }
-.b-star { background: #2a2010; color: #e3a535; }
+/* ── metric trio inside result card ── */
+.metric-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 0; border-top: 1px solid var(--border);
+}
+.metric-cell {
+  padding: 14px 18px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.metric-cell:last-child { border-right: none; }
+.metric-label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--ink3); font-weight: 600; }
+.metric-value { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--ink); line-height: 1.1; }
+.metric-value.good { color: var(--green); }
+.metric-value.neutral { color: var(--ink2); }
+.metric-sub { font-family: var(--mono); font-size: 11.5px; color: var(--ink3); }
 
-/* STATUS PILLS */
+/* ── condition table inside result card ── */
+.cond-table { width: 100%; }
+.cond-table tr { border-bottom: 1px solid var(--border); }
+.cond-table tr:last-child { border-bottom: none; }
+.cond-table td {
+  padding: 10px 18px;
+  font-size: 13px; color: var(--ink2);
+}
+.cond-table td:first-child { color: var(--ink3); font-size: 12.5px; }
+.cond-table td.val {
+  font-family: var(--mono); font-size: 13.5px; font-weight: 500;
+  color: var(--ink); text-align: right;
+}
+.cond-table tr.winner td { background: rgba(52,201,122,.05); }
+.cond-table tr.winner td.val { color: var(--green); }
+.cond-table tr.delta td {
+  padding-top: 8px; padding-bottom: 10px;
+  background: rgba(255,255,255,.02); border-top: 1px dashed var(--border);
+  font-size: 12px; color: var(--ink3);
+}
+.cond-table tr.delta td.val { font-size: 12px; color: var(--ink3); }
+.rc-note {
+  padding: 10px 18px 14px;
+  font-size: 12px; color: var(--ink3); line-height: 1.55;
+  border-top: 1px solid var(--border);
+}
+
+/* ── badge ── */
+.b {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 12px; font-weight: 600; font-family: var(--mono);
+}
+.b-pos  { background: var(--green-dim);  color: var(--green);  }
+.b-neg  { background: var(--red-dim);    color: var(--red);    }
+.b-zero { background: var(--surface2);   color: var(--ink3);   }
+.b-star { background: rgba(240,180,41,.15); color: var(--yellow); }
+
+/* ── tables ── */
+.data-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.data-table th {
+  text-align: left; padding: 10px 16px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .6px; color: var(--ink3);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.data-table td {
+  padding: 11px 16px; color: var(--ink2);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,.025); }
+.data-table td.mono { font-family: var(--mono); font-size: 13px; }
+.data-table td.highlight { color: var(--green); font-weight: 600; font-family: var(--mono); }
+.data-table td.warn-val { color: var(--red); font-family: var(--mono); }
+
+/* ── pills ── */
 .pill {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px; border-radius: 20px;
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
-  white-space: nowrap;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; letter-spacing: .4px;
+  text-transform: uppercase; white-space: nowrap;
+  border: 1px solid transparent;
 }
-.p-done { background: var(--green-dim); color: var(--green); }
-.p-running { background: var(--yellow-dim); color: var(--yellow); }
-.p-todo, .p-next, .p-then { background: var(--surface2); color: var(--muted); }
-.p-idea { background: #1e1535; color: var(--purple); }
-.p-active { background: var(--accent-dim); color: var(--accent); }
-.p-blocked { background: var(--red-dim); color: var(--red); }
-.p-crashed { background: var(--red-dim); color: var(--red); }
+.p-done    { background: var(--green-dim);   color: var(--green);  border-color: rgba(52,201,122,.25); }
+.p-running { background: var(--yellow-dim);  color: var(--yellow); border-color: rgba(240,180,41,.25); }
+.p-todo    { background: var(--surface2);    color: var(--ink3);   border-color: var(--border2); }
+.p-next    { background: var(--surface2);    color: var(--ink3);   border-color: var(--border2); }
+.p-then    { background: var(--surface2);    color: var(--ink3);   border-color: var(--border2); }
+.p-idea    { background: var(--purple-dim);  color: var(--purple); border-color: rgba(167,139,250,.25); }
+.p-active  { background: var(--accent-dim);  color: var(--accent); border-color: rgba(79,142,247,.25); }
+.p-blocked { background: var(--red-dim);     color: var(--red);    border-color: rgba(245,101,101,.25); }
+.p-crashed { background: var(--red-dim);     color: var(--red);    border-color: rgba(245,101,101,.25); }
 
-/* MILESTONE STRIP */
+/* ── task table ── */
+.task-table { width: 100%; border-collapse: collapse; }
+.task-table th {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .6px; color: var(--ink3); text-align: left;
+  padding: 10px 18px; border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.task-table td { padding: 14px 18px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.task-table tr:last-child td { border-bottom: none; }
+.task-table tr:hover td { background: rgba(255,255,255,.018); }
+.task-who { font-weight: 600; color: var(--ink); white-space: nowrap; font-size: 13.5px; }
+.task-track { font-size: 12.5px; color: var(--ink3); }
+.task-action { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+
+/* ── milestones ── */
 .milestones { display: flex; gap: 10px; flex-wrap: wrap; }
 .mile {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 8px; padding: 10px 14px;
-  display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 160px;
+  flex: 1; min-width: 150px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 6px;
 }
-.mile .mile-label { font-size: 12px; color: var(--ink2); line-height: 1.5; }
-.mile.done { border-color: #1a4526; }
-.mile.now { border-color: #3a2e10; background: #1a1810; }
-.mile.next { border-color: var(--border2); }
+.mile.done { border-color: rgba(52,201,122,.25); }
+.mile.now  { border-color: rgba(240,180,41,.25); background: rgba(240,180,41,.04); }
+.mile-text { font-size: 12.5px; color: var(--ink2); line-height: 1.5; }
 
-/* TASK TABLE specifics */
-.who { font-weight: 600; color: var(--ink); white-space: nowrap; }
-.next-action { font-size: 12.5px; color: var(--ink2); line-height: 1.5; }
+/* ── status list ── */
+.status-list { list-style: none; }
+.status-list li { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; font-size: 13.5px; color: var(--ink2); }
+.status-list li:not(:last-child) { border-bottom: 1px solid var(--border); }
 
-/* LINKS */
+/* ── kv table ── */
+.kv-table { width: 100%; border-collapse: collapse; }
+.kv-table td { padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; vertical-align: top; }
+.kv-table tr:last-child td { border-bottom: none; }
+.kv-table td:first-child { color: var(--ink); font-weight: 600; width: 110px; white-space: nowrap; padding-right: 24px; }
+code { font-family: var(--mono); font-size: 12.5px; background: var(--surface3); padding: 2px 6px; border-radius: 4px; color: var(--accent); }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-code { font-family: 'SF Mono', Consolas, monospace; font-size: 12.5px; background: var(--surface2); padding: 1px 5px; border-radius: 4px; color: var(--ink2); }
+/* ── decision table ── */
+.dec-table { width: 100%; border-collapse: collapse; }
+.dec-table th {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+  color: var(--ink3); text-align: left; padding: 10px 16px;
+  border-bottom: 1px solid var(--border); background: var(--surface2);
+}
+.dec-table td { padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--ink2); vertical-align: middle; }
+.dec-table tr:last-child td { border-bottom: none; }
+.dec-table td:first-child { color: var(--ink); font-weight: 600; white-space: nowrap; }
+.dec-table td.dim { color: var(--ink3); font-size: 12.5px; line-height: 1.55; }
+.dec-table td.validated { color: var(--green); font-weight: 600; }
 
-ul.clean { list-style: none; padding: 0; }
-ul.clean li { padding: 4px 0; font-size: 13.5px; color: var(--ink2); display: flex; align-items: flex-start; gap: 8px; }
-
-/* DELTA ROW highlight */
-.delta-row td { background: rgba(88,166,255,.04); font-size: 12.5px; color: var(--muted); border-top: 1px dashed var(--border); }
-
-@media(max-width:900px) { .g3, .g3-hero { grid-template-columns: 1fr 1fr; } }
-@media(max-width:640px) { .g2, .g3, .g3-hero { grid-template-columns: 1fr; } }
+@media(max-width:960px) { .g3, .g3-result { grid-template-columns: 1fr 1fr; } }
+@media(max-width:640px) { .g2, .g3, .g3-result { grid-template-columns: 1fr; } }
 </style>
-</head><body>
+</head>
+<body>
 
+<!-- NAV -->
 <nav>
-  <span class=nav-brand>SLFD</span>
-  <div class=nav-links>
-    <a href="#start">Overview</a>
-    <a href="#result">Results</a>
+  <span class="nav-brand">
+    <span class="nav-dot"></span>
+    SLFD
+  </span>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#results">Results</a>
     <a href="#decisions">Decisions</a>
     <a href="#tasks">Tasks</a>
-    <a href="#next">What's next</a>
+    <a href="#next">Next</a>
   </div>
-  <div class=nav-ext><a href="https://github.com/edward-lcl/feedback-distillation" target=_blank>GitHub ↗</a></div>
+  <div class="nav-right">
+    <span class="nav-meta">updated 2026-06-15</span>
+    <a class="nav-gh" href="https://github.com/edward-lcl/feedback-distillation" target="_blank">GitHub ↗</a>
+  </div>
 </nav>
 
-<div class=hero>
-  <h1>Step-Level Feedback Distillation</h1>
-  <p class=sub>Distilling step-level score + critique behavior from a privileged teacher into a small, ground-truth-free student — so it can catch reasoning mistakes step-by-step without seeing the answer.</p>
-  <div class=meta>
-    <span class="chip green">✓ Phase 0 complete</span>
-    <span class="chip blue">Gemma teacher locked</span>
-    <span class=meta-text>updated 2026-06-15 · <code>edward-lcl/feedback-distillation</code></span>
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Algoverse · Active Research</div>
+    <h1>Step-Level Feedback Distillation</h1>
+    <p class="hero-sub">Distilling step-level score + critique behavior from a privileged teacher into a small, ground-truth-free student — so it catches reasoning mistakes step-by-step without seeing the answer.</p>
+    <div class="hero-chips">
+      <span class="chip chip-green">✓ Phase 0 complete</span>
+      <span class="chip chip-blue">Gemma teacher locked</span>
+      <span class="chip chip-yellow">⚠ Qwen-27B replication pending</span>
+      <span class="chip chip-gray">edward-lcl/feedback-distillation</span>
+    </div>
   </div>
 </div>
 
-<div class=wrap>
+<div class="wrap">
 
 <!-- OVERVIEW -->
-<div class=section-title id=start>Overview</div>
-<div class=g3>
-  <div class=ov-card>
+<div class="section-label" id="overview">Overview</div>
+<div class="g3">
+  <div class="ov-card">
     <h3>What we're building</h3>
-    <p>A small <strong style="color:var(--ink)">GT-free student</strong> that reads a math solution and flags which step first goes wrong — not just whether the final answer is right. It learns from a <strong style="color:var(--ink)">privileged teacher</strong> that sees the reference solution while labeling.</p>
+    <p>A small <strong>GT-free student</strong> that reads a math solution and flags which step first goes wrong — not just whether the final answer is right. Trained from a <strong>privileged teacher</strong> that sees the reference solution while labeling.</p>
   </div>
-  <div class=ov-card>
+  <div class="ov-card">
     <h3>Why it was revived</h3>
-    <p>The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <strong style="color:var(--ink)">June 2026</strong> with a shift to step-level reasoning eval over final-answer accuracy. Target venue: <strong style="color:var(--ink)">COLM / AAAI / workshop</strong> — quality over date.</p>
+    <p>The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <strong>June 2026</strong> with a shift to step-level reasoning eval over final-answer accuracy. Target venue: <strong>COLM / AAAI / workshop</strong> — quality over date.</p>
   </div>
-  <div class=ov-card>
+  <div class="ov-card">
     <h3>Where we are</h3>
-    <p><strong style="color:var(--ink)">Phase 0 complete.</strong> Teacher, dataset, and privilege form all chosen by data. Core claim validated at N=150. Cross-teacher replication (Qwen-27B) pending restart after an oMLX crash. Next: fix student trainer + hand labeling to GPU.</p>
+    <p><strong>Phase 0 complete.</strong> Teacher, dataset, and privilege form all chosen by data. Core claim validated at N=150. Cross-teacher replication (Qwen-27B) needs restart after an oMLX crash. Next: fix student trainer → GPU handoff.</p>
   </div>
 </div>
 
-<div class=callout style="margin-top:14px">
+<div class="callout mt16">
   <h3>Research question</h3>
-  <p>Does distilling a teacher's <strong>step-level score + natural-language critique</strong> — and its <strong>privileged</strong> (answer-aware) judgment — into a small answer-blind student make it better at catching reasoning-step errors? <strong style="color:var(--ink)">Finding so far:</strong> privilege helps, but only when the problem is hard and the privilege is rich (a full worked solution, not a bare answer).</p>
+  <p>Does distilling a teacher's <strong>step-level score + natural-language critique</strong> — and its <strong>privileged</strong> (answer-aware) judgment — into a small answer-blind student make it better at catching reasoning-step errors? <strong>Finding:</strong> privilege helps, but only when the problem is hard and the privilege is rich (a full worked solution — not a bare answer).</p>
 </div>
 
-<!-- HEADLINE RESULT -->
-<div class=section-title id=result>Headline result — privilege × difficulty</div>
-<p style="font-size:13px;color:var(--muted);margin-bottom:14px">Green = privilege helped. Privilege buys signal only where the teacher can't self-verify, <em>and</em> only when given a full worked solution.</p>
+<!-- RESULTS -->
+<div class="section-label" id="results">Headline result — privilege × difficulty</div>
+<p style="font-size:13px;color:var(--ink3);margin-bottom:16px">Green = privilege helped. Privilege buys signal only where the teacher can't self-verify, <em>and</em> only when given a full worked solution.</p>
 
-<div class=g3-hero>
+<div class="g3-result">
+
   <!-- GSM8K -->
-  <div class=result-card>
-    <div class=rh>
+  <div class="result-card">
+    <div class="rc-head">
       <h3>GSM8K — easy math</h3>
-      <div class=rh-meta>Gemma teacher · N=50</div>
+      <div class="rc-meta">Gemma teacher · N=50</div>
     </div>
-    <div class=rb>
-      <table>
-        <tr><th>condition</th><th>F1</th><th>err_acc</th></tr>
-        <tr><td>no-GT</td><td><strong>0.889</strong></td><td>0.800</td></tr>
-        <tr><td>+ answer</td><td>0.856</td><td>0.800</td></tr>
-        <tr><td>+ full solution</td><td>0.837</td><td>0.720</td></tr>
-        <tr class=delta-row>
-          <td>Δ vs no-GT</td>
-          <td><span class="b b-neg">−0.033</span> / <span class="b b-neg">−0.052</span></td>
-          <td></td>
-        </tr>
-      </table>
+    <table class="cond-table">
+      <tr><td>no-GT</td>       <td class="val">0.889</td><td class="val">0.800</td></tr>
+      <tr><td>+ answer</td>    <td class="val">0.856</td><td class="val">0.800</td></tr>
+      <tr><td>+ full solution</td><td class="val">0.837</td><td class="val">0.720</td></tr>
+      <tr class="delta"><td>Δ vs no-GT</td><td class="val"><span class="b b-neg">−0.033</span></td><td class="val"><span class="b b-neg">−0.052</span></td></tr>
+    </table>
+    <div class="rc-note">Saturated. Teacher self-verifies grade-school arithmetic — privilege adds nothing and can slightly hurt.</div>
+    <div style="padding:0 18px 14px">
+      <div class="metric-row" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:0">
+        <div class="metric-cell"><div class="metric-label">solution Δ</div><div class="metric-value" style="font-size:20px;color:var(--red)">−0.05</div><div class="metric-sub">F1 gap</div></div>
+        <div class="metric-cell"><div class="metric-label">verdict</div><div class="metric-value" style="font-size:13px;color:var(--ink3);padding-top:4px">saturated</div><div class="metric-sub">easy math</div></div>
+      </div>
     </div>
-    <div style="padding:0 14px 12px;font-size:12.5px;color:var(--muted)">Saturated. Teacher self-verifies grade-school arithmetic; privilege adds nothing.</div>
   </div>
 
   <!-- MATH N=50 -->
-  <div class=result-card>
-    <div class=rh>
+  <div class="result-card">
+    <div class="rc-head">
       <h3>MATH — hard (preliminary)</h3>
-      <div class=rh-meta>Gemma teacher · N=50 · early signal</div>
+      <div class="rc-meta">Gemma teacher · N=50 · early signal</div>
     </div>
-    <div class=rb>
-      <table>
-        <tr><th>condition</th><th>F1</th><th>err_acc</th></tr>
-        <tr><td>no-GT</td><td>0.649</td><td>0.480</td></tr>
-        <tr><td>+ answer</td><td>0.750</td><td>0.600</td></tr>
-        <tr><td>+ full solution</td><td>0.781</td><td>0.640</td></tr>
-        <tr class=delta-row>
-          <td>Δ vs no-GT</td>
-          <td><span class="b b-pos">+0.101</span> / <span class="b b-pos">+0.132</span></td>
-          <td></td>
-        </tr>
-      </table>
+    <table class="cond-table">
+      <tr><td>no-GT</td>           <td class="val">0.649</td><td class="val">0.480</td></tr>
+      <tr><td>+ answer</td>        <td class="val">0.750</td><td class="val">0.600</td></tr>
+      <tr class="winner"><td>+ full solution</td><td class="val">0.781</td><td class="val">0.640</td></tr>
+      <tr class="delta"><td>Δ vs no-GT</td><td class="val"><span class="b b-pos">+0.101</span></td><td class="val"><span class="b b-pos">+0.132</span></td></tr>
+    </table>
+    <div class="rc-note">Strong early signal. Same direction as N=150 — confirmed at scale in the primary run →</div>
+    <div style="padding:0 18px 14px">
+      <div class="metric-row" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:0">
+        <div class="metric-cell"><div class="metric-label">solution Δ</div><div class="metric-value" style="font-size:20px;color:var(--green)">+0.13</div><div class="metric-sub">F1 gap</div></div>
+        <div class="metric-cell"><div class="metric-label">verdict</div><div class="metric-value" style="font-size:13px;color:var(--green);padding-top:4px">privilege helps</div><div class="metric-sub">hard math</div></div>
+      </div>
     </div>
-    <div style="padding:0 14px 12px;font-size:12.5px;color:var(--muted)">Strong signal at N=50. Confirmed at scale in the N=150 run →</div>
   </div>
 
-  <!-- MATH N=150 -->
-  <div class=result-card style="border-color:#1c3a6a;border-width:2px">
-    <div class=rh style="background:rgba(88,166,255,.05)">
-      <h3 style="color:var(--ink)">MATH — hard (confirmed) ★</h3>
-      <div class=rh-meta>Gemma teacher · N=150 · primary result</div>
+  <!-- MATH N=150 — PRIMARY -->
+  <div class="result-card primary">
+    <div class="rc-head">
+      <h3>MATH — hard (confirmed) ★</h3>
+      <div class="rc-meta">Gemma teacher · N=150 · <strong style="color:var(--accent)">primary result</strong></div>
     </div>
-    <div class=rb>
-      <table>
-        <tr><th>condition</th><th>F1</th><th>err_acc</th></tr>
-        <tr><td>no-GT</td><td>0.716</td><td>0.577</td></tr>
-        <tr><td>+ answer</td><td>0.716</td><td>0.577</td></tr>
-        <tr><td style="color:var(--green)"><strong>+ full solution</strong></td><td><strong style="color:var(--green)">0.786</strong></td><td><strong style="color:var(--green)">0.654</strong></td></tr>
-        <tr class=delta-row>
-          <td>Δ vs no-GT</td>
-          <td><span class="b b-zero">±0.000</span> / <span class="b b-pos">+0.070</span></td>
-          <td></td>
-        </tr>
-      </table>
+    <table class="cond-table">
+      <tr><td>no-GT</td>           <td class="val">0.716</td><td class="val">0.577</td></tr>
+      <tr><td>+ answer</td>        <td class="val">0.716</td><td class="val">0.577</td></tr>
+      <tr class="winner"><td>+ full solution</td><td class="val">0.786</td><td class="val">0.654</td></tr>
+      <tr class="delta"><td>Δ vs no-GT</td><td class="val"><span class="b b-zero">±0.000</span></td><td class="val"><span class="b b-pos">+0.070</span></td></tr>
+    </table>
+    <div class="rc-note">Bare answer is inert at scale. Full solution lifts error recall 0.58 → 0.65. This is the paper number.</div>
+    <div style="padding:0 18px 14px">
+      <div class="metric-row" style="border:1px solid rgba(79,142,247,.3);border-radius:8px;overflow:hidden;background:var(--accent-glow)">
+        <div class="metric-cell"><div class="metric-label">solution Δ</div><div class="metric-value good" style="font-size:26px">+0.07</div><div class="metric-sub">F1 gap (N=150)</div></div>
+        <div class="metric-cell"><div class="metric-label">err_recall Δ</div><div class="metric-value good" style="font-size:26px">+0.08</div><div class="metric-sub">0.577 → 0.654</div></div>
+      </div>
     </div>
-    <div style="padding:0 14px 12px;font-size:12.5px;color:var(--muted)">Bare answer is inert at scale. Full solution lifts error recall 0.58 → 0.65.</div>
   </div>
+
 </div>
 
-<div class=insight>
-  <b>Reading the three panels together:</b> The N=50 preliminary shows a stronger gap (+0.13 solution) than the N=150 confirmed run (+0.07) — both point the same direction. N=150 is the conservative, paper-ready number. The interesting wrinkle: bare answer gains at N=50 (+0.10) but flatlines at N=150 (±0.00) — possibly small-N noise, worth a brief note. The core claim is stable: <b>rich privilege (full worked solution) helps on hard problems; a bare answer does not.</b>
+<div class="insight mt16">
+  <strong>Reading all three panels:</strong> The N=50 preliminary shows a stronger solution gap (+0.13) than the N=150 confirmed run (+0.07) — both point the same direction; N=150 is the conservative, paper-ready estimate. Interesting wrinkle: bare answer also gains at N=50 (+0.10) but flatlines at N=150 (±0.00) — likely small-N noise, worth a brief note in the paper. The core claim is stable across both sample sizes: <strong>rich privilege (full worked solution) helps on hard problems; a bare answer does not</strong>.
 </div>
 
 <!-- CROSS-FAMILY -->
-<div class=section-title>Cross-family check — Qwen-27B teacher</div>
-<div class=g2>
-  <div class=result-card>
-    <div class=rh>
+<div class="section-label">Cross-family check — Qwen-27B</div>
+<div class="g2">
+  <div class="result-card">
+    <div class="rc-head">
       <h3>Qwen-27B ceiling (with GT, N=30)</h3>
-      <div class=rh-meta>Bakeoff run — ceiling estimate only</div>
+      <div class="rc-meta">Bakeoff run — ceiling estimate only, not privilege probe</div>
     </div>
-    <div class=rb>
-      <table>
-        <tr><th>condition</th><th>F1</th><th>correct_acc</th><th>error_acc</th></tr>
-        <tr><td>with-GT</td><td><strong>0.873</strong></td><td>0.917</td><td>0.833</td></tr>
-      </table>
-    </div>
-    <div style="padding:0 14px 12px">
-      <div class=warn-box><b>⚠ Privilege probe crashed</b> mid-run (oMLX ChunkedEncodingError, N=150). No no-GT / solution condition data yet. Needs restart — ETA ~2-3 hrs on oMLX.</div>
-    </div>
+    <table class="cond-table">
+      <tr><td>with-GT</td><td class="val">0.873</td><td class="val">0.833</td></tr>
+    </table>
+    <div class="warn"><strong>⚠ Privilege probe crashed</strong> mid-run — oMLX ChunkedEncodingError at N=150. No no-GT / solution condition data. Needs restart (~2-3 hrs on oMLX).</div>
+    <div style="height:14px"></div>
   </div>
-  <div class=card>
-    <h3>Why this matters</h3>
-    <p style="font-size:13px;color:var(--ink2);line-height:1.6;margin-top:8px">Gemma and Qwen are different families trained on different data. If the privilege×difficulty pattern holds for Qwen-27B, it's not a Gemma artifact — it's a property of step-level feedback under difficulty.</p>
-    <p style="font-size:13px;color:var(--ink2);line-height:1.6;margin-top:10px">The bakeoff F1 (0.873) shows Qwen-27B is a capable teacher. The privilege signal should be available — we just haven't measured the gap yet. Unblocks Saksham and Henry's replication section once confirmed.</p>
+  <div class="card">
+    <div class="card-title">Why this matters</div>
+    <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:12px">Gemma and Qwen are different families trained on different data. If the privilege×difficulty pattern holds for Qwen-27B, it's not a Gemma artifact — it's a property of step-level feedback under difficulty.</p>
+    <p style="font-size:13px;color:var(--ink2);line-height:1.7">Bakeoff F1 (0.873) shows Qwen-27B is a capable teacher — the privilege signal should be measurable. This unblocks Saksham and Henry's replication section once confirmed.</p>
   </div>
 </div>
 
 <!-- DECISIONS -->
-<div class=section-title id=decisions>Locked decisions <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted)">&nbsp;— settled, don't relitigate</span></div>
-<div class=result-card>
-  <div class=rb>
-    <table>
-      <tr><th style="width:160px">item</th><th>choice</th><th>why</th></tr>
-      <tr><td style="color:var(--ink)"><strong>Teacher</strong></td><td>Gemma-4-26b (official checkpoint)</td><td style="color:var(--muted);font-size:12.5px">F1 0.91, zero parse failures, ~12× faster than reasoning models, cross-family</td></tr>
-      <tr><td style="color:var(--ink)"><strong>Dataset</strong></td><td>ProcessBench MATH</td><td style="color:var(--muted);font-size:12.5px">GSM8K is saturated — privilege gap ≈ 0 there</td></tr>
-      <tr><td style="color:var(--ink)"><strong>Privilege signal</strong></td><td>Full worked reference solution</td><td style="color:var(--muted);font-size:12.5px">+0.07 F1 at N=150. Bare answer flips zero predictions at scale.</td></tr>
-      <tr><td style="color:var(--ink)"><strong>Core claim</strong></td><td><span style="color:var(--green)">✓ VALIDATED</span></td><td style="color:var(--muted);font-size:12.5px">≈0 on GSM8K + bare answer everywhere; +0.07 for full solution on MATH N=150</td></tr>
-    </table>
-  </div>
+<div class="section-label" id="decisions">Locked decisions</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+  <table class="dec-table">
+    <tr><th>Item</th><th>Choice</th><th>Why</th></tr>
+    <tr>
+      <td>Teacher</td>
+      <td>Gemma-4-26b (official checkpoint)</td>
+      <td class="dim">F1 0.91, zero parse failures, ~12× faster than reasoning models, cross-family</td>
+    </tr>
+    <tr>
+      <td>Dataset</td>
+      <td>ProcessBench MATH</td>
+      <td class="dim">GSM8K is saturated — privilege gap ≈ 0 there</td>
+    </tr>
+    <tr>
+      <td>Privilege signal</td>
+      <td>Full worked reference solution</td>
+      <td class="dim">+0.07 F1 at N=150. Bare answer flips zero predictions at scale.</td>
+    </tr>
+    <tr>
+      <td>Core claim</td>
+      <td class="validated">✓ VALIDATED</td>
+      <td class="dim">≈0 on GSM8K and bare answer everywhere; +0.07 full solution on MATH N=150</td>
+    </tr>
+  </table>
 </div>
 
-<!-- STATUS & ROADMAP -->
-<div class=section-title>Status &amp; roadmap</div>
-<div class=g2>
-  <div class=card>
-    <h3 style="color:var(--ink);margin-bottom:14px">Experiment status</h3>
-    <ul class=clean>
+<!-- ROADMAP -->
+<div class="section-label">Status &amp; roadmap</div>
+<div class="g2">
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">Experiment status</div>
+    <ul class="status-list">
       <li><span class="pill p-done">done</span> Teacher bake-off (5 models, N=30)</li>
       <li><span class="pill p-done">done</span> Privilege × difficulty — GSM8K N=50 + MATH N=50</li>
       <li><span class="pill p-done">done</span> Privilege × difficulty — Gemma · MATH N=150 (primary)</li>
       <li><span class="pill p-crashed">⚠ crashed</span> Cross-teacher — Qwen-27B · MATH N=150 (needs restart)</li>
     </ul>
   </div>
-  <div class=card>
-    <h3 style="color:var(--ink);margin-bottom:14px">Roadmap</h3>
-    <div class=milestones>
-      <div class="mile done"><span class="pill p-done">done</span><span class=mile-label>Teacher + dataset + privilege form locked by data</span></div>
-      <div class="mile now"><span class="pill p-running">now</span><span class=mile-label>Cross-teacher restart (Qwen-27B) + fix student trainer</span></div>
-      <div class=mile><span class="pill p-next">next</span><span class=mile-label>Hand MATH labeling to Saksham (GPU)</span></div>
-      <div class=mile><span class="pill p-then">then</span><span class=mile-label>Score-vs-critique ablation → paper draft</span></div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">Roadmap</div>
+    <div class="milestones">
+      <div class="mile done"><span class="pill p-done">done</span><div class="mile-text">Teacher + dataset + privilege form locked by data</div></div>
+      <div class="mile now"><span class="pill p-running">now</span><div class="mile-text">Cross-teacher restart + fix student trainer</div></div>
+      <div class="mile"><span class="pill p-next">next</span><div class="mile-text">Hand MATH labeling to Saksham (GPU)</div></div>
+      <div class="mile"><span class="pill p-then">then</span><div class="mile-text">Score-vs-critique ablation → paper draft</div></div>
     </div>
   </div>
 </div>
 
 <!-- TASKS -->
-<div class=section-title id=tasks>Task board</div>
-<div class=result-card>
-  <div class=rb>
-    <table>
-      <tr><th style="width:100px">who</th><th style="width:180px">track</th><th style="width:100px">status</th><th>next action</th></tr>
-      <tr>
-        <td class=who>Edward</td>
-        <td style="font-size:13px;color:var(--ink2)">Orchestration + trainer</td>
-        <td><span class="pill p-active">active</span></td>
-        <td class=next-action>① Restart Qwen-27B privilege probe (oMLX ChunkedEncodingError). ② Fix slfd_trainer — wire real LoRA (currently full-FT), score-head reads the boundary token. ③ Generate by-level MATH breakdown + flip examples for Henry.</td>
-      </tr>
-      <tr>
-        <td class=who>Saksham</td>
-        <td style="font-size:13px;color:var(--ink2)">GPU pipeline</td>
-        <td><span class="pill p-blocked">blocked</span></td>
-        <td class=next-action>Official Gemma via vLLM → label MATH train set with SOLUTION-privilege → train GT-free student → eval on ProcessBench MATH. Unblocks when cross-teacher replication confirms.</td>
-      </tr>
-      <tr>
-        <td class=who>Henry</td>
-        <td style="font-size:13px;color:var(--ink2)">Research / paper</td>
-        <td><span class="pill p-active">active</span></td>
-        <td class=next-action>Draft Related Work (PRM lit positioning) + results narrative around the GSM8K-vs-MATH table. See <a href="/HANDOFF_HENRY.md">HANDOFF_HENRY.md</a>. Blocking on: by-level breakdown + flip examples from Edward.</td>
-      </tr>
-    </table>
-  </div>
+<div class="section-label" id="tasks">Task board</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+  <table class="task-table">
+    <tr><th>Who</th><th>Track</th><th>Status</th><th>Next action</th></tr>
+    <tr>
+      <td><div class="task-who">Edward</div><div class="task-track">Orchestration + trainer</div></td>
+      <td></td>
+      <td><span class="pill p-active">active</span></td>
+      <td class="task-action">① Restart Qwen-27B privilege probe (oMLX ChunkedEncodingError mid-run). ② Fix <code>slfd_trainer</code>: wire real LoRA (currently full-FT), score-head reads the boundary token. ③ Generate by-level MATH breakdown + flip examples for Henry.</td>
+    </tr>
+    <tr>
+      <td><div class="task-who">Saksham</div><div class="task-track">GPU pipeline</div></td>
+      <td></td>
+      <td><span class="pill p-blocked">blocked</span></td>
+      <td class="task-action">Official Gemma via vLLM → label MATH train set with SOLUTION-privilege → train GT-free student → eval on ProcessBench MATH. <strong style="color:var(--ink)">Unblocks when cross-teacher confirms.</strong></td>
+    </tr>
+    <tr>
+      <td><div class="task-who">Henry</div><div class="task-track">Research / paper</div></td>
+      <td></td>
+      <td><span class="pill p-active">active</span></td>
+      <td class="task-action">Draft Related Work (PRM lit positioning) + results narrative around the GSM8K-vs-MATH table. See <a href="/HANDOFF_HENRY.md">HANDOFF_HENRY.md</a>. Blocking input: by-level breakdown + flip examples from Edward.</td>
+    </tr>
+  </table>
 </div>
 
 <!-- BAKEOFF -->
-<div class=section-title>Teacher bake-off <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted)">&nbsp;— with-GT ceiling, N=30</span></div>
-<div class=result-card>
-  <div class=rb>
-    <table>
-      <tr><th>teacher</th><th>F1</th><th>correct_acc</th><th>error_acc</th><th>parse_fail</th></tr>
-      <tr>
-        <td><span class="b b-star">★</span>&nbsp; gemma-4-26b-a4b-it-MLX-4bit</td>
-        <td><strong style="color:var(--green)">0.909</strong></td><td>1.000</td><td>0.833</td><td>0.000</td>
-      </tr>
-      <tr>
-        <td>Qwen3_6-27B-OBLITERATED-MLX-4bit</td>
-        <td><strong>0.873</strong></td><td>0.917</td><td>0.833</td><td>0.000</td>
-      </tr>
-      <tr>
-        <td>Qwen3_6-35B-A3B-nvfp4</td>
-        <td>0.839</td><td>1.000</td><td>0.722</td><td><span style="color:var(--yellow)">0.019</span></td>
-      </tr>
-      <tr>
-        <td>Qwen3-4B-Thinking-2507-MLX-8bit</td>
-        <td><span style="color:var(--red)">0.000</span></td><td>1.000</td><td>0.000</td><td><span style="color:var(--red)">0.846</span></td>
-      </tr>
-    </table>
-  </div>
-  <div style="padding:4px 14px 12px;font-size:12px;color:var(--muted)">Note: "OBLITERATED" quant used for ceiling estimate only. Official Gemma checkpoint used for the reported labeling pass. Gemma selected: best F1, zero parse failures, fastest throughput.</div>
+<div class="section-label">Teacher bake-off <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink3)">&nbsp;— with-GT ceiling, N=30</span></div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+  <table class="data-table">
+    <tr><th>Teacher</th><th>F1</th><th>correct_acc</th><th>error_acc</th><th>parse_fail</th></tr>
+    <tr>
+      <td><span class="b b-star">★</span>&nbsp; gemma-4-26b-a4b-it-MLX-4bit</td>
+      <td class="highlight">0.909</td><td class="mono">1.000</td><td class="mono">0.833</td><td class="mono">0.000</td>
+    </tr>
+    <tr>
+      <td>Qwen3_6-27B-OBLITERATED-MLX-4bit</td>
+      <td class="mono">0.873</td><td class="mono">0.917</td><td class="mono">0.833</td><td class="mono">0.000</td>
+    </tr>
+    <tr>
+      <td>Qwen3_6-35B-A3B-nvfp4</td>
+      <td class="mono">0.839</td><td class="mono">1.000</td><td class="mono">0.722</td><td class="mono" style="color:var(--yellow)">0.019</td>
+    </tr>
+    <tr>
+      <td>Qwen3-4B-Thinking-2507-MLX-8bit</td>
+      <td class="warn-val">0.000</td><td class="mono">1.000</td><td class="warn-val">0.000</td><td class="warn-val">0.846</td>
+    </tr>
+  </table>
+  <div style="padding:10px 16px 14px;font-size:12px;color:var(--ink3);border-top:1px solid var(--border)">Note: "OBLITERATED" quant used for ceiling estimate only. Official Gemma checkpoint used for the reported labeling pass. Gemma selected: best F1, zero parse failures, fastest throughput.</div>
 </div>
 
 <!-- HOW WE WORK -->
-<div class=section-title id=how>How we work</div>
-<div class=result-card>
-  <div class=rb>
-    <table>
-      <tr><th style="width:120px"></th><th></th></tr>
-      <tr><td style="color:var(--ink);font-weight:600">Cadence</td><td style="font-size:13px">Weekly <strong style="color:var(--ink)">Sunday</strong> syncs · ~10 hrs/week each · Slack async between meetings</td></tr>
-      <tr><td style="color:var(--ink);font-weight:600">Compute</td><td style="font-size:13px">Two-phase: quick runs on <strong style="color:var(--ink)">Apple Silicon</strong> (M-series, 48 GB, oMLX at :8000) → full runs on <strong style="color:var(--ink)">2×RTX 3090</strong> (48 GB VRAM) via SSH</td></tr>
-      <tr><td style="color:var(--ink);font-weight:600">Code</td><td style="font-size:13px"><strong style="color:var(--ink)">GitHub only</strong> — single repo <code>edward-lcl/feedback-distillation</code>, frequent commits, no Colab sprawl</td></tr>
-      <tr><td style="color:var(--ink);font-weight:600">Method</td><td style="font-size:13px">Structured (Pydantic) step feedback · chain-of-thought evaluation over final-answer accuracy · Co-Scientist-style hypothesis iteration</td></tr>
-    </table>
-  </div>
+<div class="section-label">How we work</div>
+<div class="card">
+  <table class="kv-table">
+    <tr><td>Cadence</td><td>Weekly <strong style="color:var(--ink)">Sunday</strong> syncs · ~10 hrs/week each · Slack async between meetings</td></tr>
+    <tr><td>Compute</td><td>Two-phase: <strong style="color:var(--ink)">Apple Silicon M5 Pro</strong> (48 GB, oMLX) for quick runs → <strong style="color:var(--ink)">2×RTX 3090</strong> (48 GB VRAM) via SSH for full labeling</td></tr>
+    <tr><td>Code</td><td><strong style="color:var(--ink)">GitHub only</strong> — single repo <code>edward-lcl/feedback-distillation</code>, frequent commits, no Colab sprawl</td></tr>
+    <tr><td>Method</td><td>Structured (Pydantic) step feedback · chain-of-thought eval over final-answer accuracy · Co-Scientist-style hypothesis iteration</td></tr>
+  </table>
 </div>
 
 <!-- WHAT'S NEXT -->
-<div class=section-title id=next>What's next &amp; handoff gates</div>
-<div class=card>
-  <ul class=clean>
-    <li><span class="pill p-crashed">⚠ restart</span> Cross-teacher replication — Qwen-27B · MATH N=150 (oMLX crash, no data). ~2-3 hrs.</li>
-    <li><span class="pill p-todo">todo</span> By-level MATH breakdown — does solution-gap widen with difficulty level 1→5? (Paper predicts yes.)</li>
+<div class="section-label" id="next">What's next &amp; handoff gates</div>
+<div class="card">
+  <ul class="status-list">
+    <li><span class="pill p-crashed">⚠ restart</span> Cross-teacher replication — Qwen-27B · MATH N=150 (oMLX crash, no data saved). ~2-3 hrs.</li>
+    <li><span class="pill p-todo">todo</span> By-level MATH breakdown — does solution-gap widen with difficulty level 1→5? Paper predicts yes.</li>
     <li><span class="pill p-todo">todo</span> Flip examples — steps where solution-privilege catches what no-GT misses. 2-3 clean cases for the paper.</li>
-    <li><span class="pill p-todo">todo</span> Spot-check why with_answer ≡ no_gt at N=150 (gains at N=50 but flatlines at scale — real teacher behavior or distribution effect?).</li>
-    <li><span class="pill p-todo">todo</span> Switch to official Gemma checkpoint for the reported labeling pass (not the abliterated community quant).</li>
-    <li><span class="pill p-idea">idea</span> Harder set (OlympiadBench) may widen the solution gap — optional extension.</li>
+    <li><span class="pill p-todo">todo</span> Spot-check why with_answer ≡ no_gt at N=150 (gains at N=50 but flatlines at scale).</li>
+    <li><span class="pill p-todo">todo</span> Switch to official Gemma checkpoint for the reported labeling pass.</li>
+    <li><span class="pill p-idea">idea</span> OlympiadBench may widen the solution gap further — optional extension.</li>
   </ul>
-  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)">
-    Handoff gates: <strong style="color:var(--ink)">Saksham</strong> unblocks when cross-teacher confirms ·
+  <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--ink3)">
+    Handoff gates: <strong style="color:var(--ink)">Saksham</strong> unblocks on cross-teacher confirm ·
     <strong style="color:var(--ink)">Henry</strong> can start related-work now; blocks on flip examples + by-level from Edward ·
-    📄 <a href="/HANDOFF_HENRY.md">Henry handoff doc</a>
+    <a href="/HANDOFF_HENRY.md">Henry handoff doc ↗</a>
   </div>
 </div>
 
-</div>
-</body></html>
+</div><!-- /wrap -->
+</body>
+</html>
