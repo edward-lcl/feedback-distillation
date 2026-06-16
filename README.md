@@ -66,11 +66,17 @@ the signal.
 | Difficulty | Δ F1 (full solution − no-GT) | reading |
 |---|---|---|
 | GSM8K (easy) | ≈ 0 (−0.05) | teacher self-verifies; privilege redundant |
-| **MATH (hard)** | **+0.07** (N=150) | the sweet spot |
+| **MATH (hard)** | **+0.05** (N=400, 95% CI [0.01, 0.09]) | the sweet spot — **significant** |
 | OlympiadBench (hardest) | ≈ 0 (−0.03, verified) | teacher can't use the reference |
 
-A bare *answer* flips ≈0 predictions everywhere. Cross-family **confirmed** (Qwen-27B
-teacher: +0.082 on MATH). Teacher selected by bake-off (**Gemma-4-26b**, F1 0.91).
+The MATH gap is significant at N=400 (95% CI excludes zero; the earlier N=150 +0.07 was
+underpowered). Within MATH the sweet spot replicates: the gap peaks at the intermediate
+levels (L3 +0.11) and collapses at L1 (−0.13, too easy) and the hardest tail.
+**Mechanism:** the gain is a *rescue of self-verification failures* — privilege rescues
+33% of the errors the no-GT teacher misses while breaking only 12% it already caught, and
+the rescue rate falls with reference length (0.37→0.33→0.28). A bare *answer* flips ≈0
+predictions everywhere. Cross-family **confirmed** (Qwen-27B teacher: +0.082 on MATH).
+Teacher selected by bake-off (**Gemma-4-26b**, F1 0.91).
 
 ### Pipeline (built &amp; smoke-tested)
 
