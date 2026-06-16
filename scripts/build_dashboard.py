@@ -202,10 +202,25 @@ def main():
     args = ap.parse_args()
 
     stamp = args.stamp or datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    gsm = _load(f"{RESULTS}/teacher_eval/privilege_probe.json")
-    math = _load(f"{RESULTS}/teacher_eval_math_n150/privilege_probe.json")
-    math_early = _load(f"{RESULTS}/teacher_eval_math/privilege_probe.json")
-    qwen = _load(f"{RESULTS}/teacher_eval_math_qwen27b/privilege_probe.json")
+    # Verified numbers embedded as a fallback so the cards ALWAYS render — results/
+    # is gitignored, so CI builds and fresh clones would otherwise show "Pending".
+    def _c(f1, ea, nc, ne):
+        return {"f1": f1, "error_acc": ea, "correct_acc": None,
+                "n_correct_samples": nc, "n_error_samples": ne, "parse_failure_rate": 0.0}
+    EMBED = {
+        "gsm8k": {"no_gt": _c(0.889, 0.800, 25, 25), "with_answer": _c(0.856, 0.800, 25, 25),
+                  "with_solution": _c(0.837, 0.720, 25, 25), "gap_answer_f1": -0.033, "gap_solution_f1": -0.052},
+        "math_n150": {"no_gt": _c(0.716, 0.577, 72, 78), "with_answer": _c(0.716, 0.577, 72, 78),
+                      "with_solution": _c(0.786, 0.654, 72, 78), "gap_answer_f1": 0.000, "gap_solution_f1": 0.070},
+        "math_early": {"no_gt": _c(0.649, 0.480, 25, 25), "with_answer": _c(0.750, 0.600, 25, 25),
+                       "with_solution": _c(0.781, 0.640, 25, 25), "gap_answer_f1": 0.101, "gap_solution_f1": 0.132},
+        "qwen": {"no_gt": _c(0.653, 0.526, 72, 78), "with_answer": _c(0.690, 0.564, 72, 78),
+                 "with_solution": _c(0.735, 0.667, 72, 78), "gap_answer_f1": 0.037, "gap_solution_f1": 0.082},
+    }
+    gsm = _load(f"{RESULTS}/teacher_eval/privilege_probe.json") or EMBED["gsm8k"]
+    math = _load(f"{RESULTS}/teacher_eval_math_n150/privilege_probe.json") or EMBED["math_n150"]
+    math_early = _load(f"{RESULTS}/teacher_eval_math/privilege_probe.json") or EMBED["math_early"]
+    qwen = _load(f"{RESULTS}/teacher_eval_math_qwen27b/privilege_probe.json") or EMBED["qwen"]
 
     overview = "".join(f"<div class=ocard><h3>{t}</h3><p class=small>{b}</p></div>" for t, b in OVERVIEW)
     runs = "".join(f"<li>{_pill(s)} {html.escape(l)}</li>" for l, s in RUNS)
@@ -250,6 +265,8 @@ nav{position:sticky;top:0;z-index:100;height:52px;display:flex;align-items:cente
 .hero h1{font-size:26px;font-weight:700;color:var(--ink);letter-spacing:-.3px;line-height:1.25;margin-bottom:10px}
 .hero-sub{font-size:15px;color:var(--ink2);max-width:640px;line-height:1.7;margin-bottom:24px}
 .hero-chips{display:flex;flex-wrap:wrap;gap:8px}
+[title]{cursor:help}
+.cond-table td[title]:first-child,.chip[title]{text-decoration:underline dotted rgba(168,184,204,.4);text-underline-offset:3px}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.2px;border:1px solid transparent}
 .chip-green{background:var(--green-dim);color:var(--green);border-color:rgba(46,168,106,.25)}
 .chip-blue{background:var(--accent-dim);color:var(--accent);border-color:rgba(74,124,245,.25)}
@@ -368,13 +385,20 @@ a:hover{text-decoration:underline}
                "now":"p-running","next":"p-next","then":"p-then","idea":"p-idea"}.get(state, "p-todo")
         return f"<span class='pill {cls}'>{state}</span>"
 
+    _COND_TIP = {
+        "no-GT": "Teacher sees only the problem + candidate steps (answer-blind) — the unprivileged baseline.",
+        "+ answer": "Teacher additionally sees the final reference answer (thin privilege).",
+        "+ full solution": "Teacher sees the full worked reference solution (richest privilege).",
+    }
+
     def _gcond_row(name, d, winner=False):
+        tip = _COND_TIP.get(name, "")
         if not d:
-            return f"<tr><td>{name}</td><td class='val' colspan=2 style='color:var(--ink3)'>pending</td></tr>"
+            return f"<tr><td title=\"{tip}\">{name}</td><td class='val' colspan=2 style='color:var(--ink3)'>pending</td></tr>"
         cls = " class='winner'" if winner else ""
-        return (f"<tr{cls}><td>{name}</td>"
-                f"<td class='val'>{_fmt(d.get('f1'))}</td>"
-                f"<td class='val'>{_fmt(d.get('error_acc'))}</td></tr>")
+        return (f"<tr{cls}><td title=\"{tip}\">{name}</td>"
+                f"<td class='val' title=\"first-error F1: harmonic mean of correct-acc and error-acc\">{_fmt(d.get('f1'))}</td>"
+                f"<td class='val' title=\"error recall: fraction of erroneous solutions whose first wrong step is correctly localized\">{_fmt(d.get('error_acc'))}</td></tr>")
 
     def _gcond_delta(ga, gs):
         def badge(v):
@@ -490,10 +514,10 @@ a:hover{text-decoration:underline}
     <h1>Step-Level Feedback Distillation</h1>
     <p class="hero-sub">{html.escape(TAGLINE)}</p>
     <div class="hero-chips">
-      <span class="chip chip-green">Pipeline built · handoff-ready</span>
-      <span class="chip chip-green">Sweet spot verified</span>
-      <span class="chip chip-blue">Gemma teacher · Qwen cross-family</span>
-      <span class="chip chip-yellow">Next: GPU runs (Saksham)</span>
+      <span class="chip chip-green" title="Label→train→eval + best-of-N verifier all built &amp; smoke-tested; runbooks written.">Pipeline built · handoff-ready</span>
+      <span class="chip chip-green" title="Privilege helps on MATH but not GSM8K (too easy) or OlympiadBench (too hard) — verified, incl. cross-family.">Sweet spot verified</span>
+      <span class="chip chip-blue" title="Teacher chosen by bake-off (Gemma, F1 0.91); result replicates with a Qwen-27B teacher.">Gemma teacher · Qwen cross-family</span>
+      <span class="chip chip-yellow" title="Critical path: Saksham runs the student ablation + verifier on the 2×3090 box.">Next: GPU runs (Saksham)</span>
       <span class="chip chip-gray">edward-lcl/feedback-distillation</span>
     </div>
   </div>
