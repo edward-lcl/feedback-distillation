@@ -17,14 +17,16 @@ class SLFDTrainer:
 
     def __init__(self, student, teacher, dataset: list[dict], loss_flags=None, device=None, dev_mode=False):
         import torch.nn as nn
-        from models.device import is_dev_mode
+        from models.device import is_dev_mode, best_device
         self.student = student
         self.teacher = teacher
         self.dataset = dataset
         self.dev_mode = is_dev_mode(dev_mode)
         if self.dev_mode:
             print("DEV MODE: reduced batch/steps for local Apple Silicon")
-        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Match the student's device (MPS on Apple Silicon, CUDA, or CPU) — the
+        # student model is already placed there, so inputs must follow.
+        self.device = device or best_device()
         self.loss_flags = loss_flags or [True, True, True, False]  # LM, hidden, score, logit
         self.loss_config = LossConfig(self.loss_flags)
         self.threshold_policy = AdaptiveWeightedKDPolicyEMA(
@@ -32,17 +34,25 @@ class SLFDTrainer:
             device=str(self.device),
         )
 
-        # Hidden alignment projection
-        self.teacher.model.eval()
-        with torch.no_grad():
-            dummy = "test"
-            s_out = self.student.model(**self.student.tokenizer(dummy, return_tensors="pt").to(self.device), output_hidden_states=True, return_dict=True)
-            t_out = self.teacher.model(**self.teacher.tokenizer(dummy, return_tensors="pt").to(self.device), output_hidden_states=True, return_dict=True)
-            s_dim = s_out.hidden_states[-1].size(-1)
-            t_dim = t_out.hidden_states[-1].size(-1)
-        self.align_hidden = (
-            nn.Linear(s_dim, t_dim) if s_dim != t_dim else nn.Identity()
-        ).to(self.device).to(torch.float32)
+        # Hidden alignment projection.
+        # Offline distillation: the labeled dataset already carries the teacher's
+        # score + feedback, so the active losses (LM, score) need no live teacher.
+        # The teacher is only consulted here to size the hidden-alignment layer,
+        # which feeds the optional hidden loss. When teacher is None we skip the
+        # probe entirely and train fully locally (no 72B load required).
+        if self.teacher is not None:
+            self.teacher.model.eval()
+            with torch.no_grad():
+                dummy = "test"
+                s_out = self.student.model(**self.student.tokenizer(dummy, return_tensors="pt").to(self.device), output_hidden_states=True, return_dict=True)
+                t_out = self.teacher.model(**self.teacher.tokenizer(dummy, return_tensors="pt").to(self.device), output_hidden_states=True, return_dict=True)
+                s_dim = s_out.hidden_states[-1].size(-1)
+                t_dim = t_out.hidden_states[-1].size(-1)
+            self.align_hidden = (
+                nn.Linear(s_dim, t_dim) if s_dim != t_dim else nn.Identity()
+            ).to(self.device).to(torch.float32)
+        else:
+            self.align_hidden = nn.Identity().to(self.device)
 
         self.optimizer = AdamW([
             {"params": self.student.model.parameters(), "lr": 5e-7, "weight_decay": 0.01},
@@ -103,8 +113,16 @@ class SLFDTrainer:
                     continue
 
                 total_loss = sum(aggregated.values())
+                # Skip non-finite steps so a single NaN/Inf can't corrupt weights
+                # (fp16 on MPS overflows easily). The checkpoint stays clean.
+                if not torch.isfinite(total_loss):
+                    print(f"  step {step}: non-finite loss ({total_loss.item()}), skipping")
+                    self.optimizer.zero_grad()
+                    continue
                 self.optimizer.zero_grad()
                 total_loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.student.model.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(self.student.score_head.parameters(), max_norm=1.0)
                 self.optimizer.step()
 
                 for k, v in aggregated.items():
@@ -116,3 +134,18 @@ class SLFDTrainer:
                     print(f"  step {step}: {parts}")
 
         return {"loss_history": loss_history, "steps": step}
+
+    def save_checkpoint(self, path: str):
+        """Bundle the trained student weights, score head, and alignment layer.
+
+        The score head is the component eval actually reads — saving only the
+        base model (as the old README implied) would discard the learned scorer.
+        """
+        import os
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        torch.save({
+            "model": self.student.model.state_dict(),
+            "score_head": self.student.score_head.state_dict(),
+            "align_hidden": self.align_hidden.state_dict(),
+        }, path)
+        print(f"Saved checkpoint → {path}")

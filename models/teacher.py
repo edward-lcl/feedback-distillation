@@ -16,12 +16,24 @@ from .device import (
 )
 
 
-def _parse_score(response: str) -> float:
-    m = re.search(r'Score:\s*([-\d.]+)', response)
+def _parse_score(response: str) -> float | None:
+    """Parse a step score from the teacher's reply.
+
+    Accepts "Score: X" anywhere, or a bare leading number (the prompt ends in
+    "Score: ", so models often reply with just the number). Returns a float
+    clamped to [-1, 1], or None if unparseable. None means "drop this label" —
+    the old behavior of defaulting to -1.0 silently injected false error labels
+    whenever the teacher deviated from the format.
+    """
+    m = re.search(r'Score:\s*(-?\d+(?:\.\d+)?)', response)
+    if not m:
+        m = re.match(r'\s*(-?\d+(?:\.\d+)?)', response)
+    if not m:
+        return None
     try:
-        return float(m.group(1)) if m else -1.0
-    except (ValueError, AttributeError):
-        return -1.0
+        return max(-1.0, min(1.0, float(m.group(1))))
+    except ValueError:
+        return None
 
 
 class TeacherModel:
@@ -31,16 +43,51 @@ class TeacherModel:
     signal that the student never sees at test time.
     """
 
+    # Chat-templated models answer fresh — they do NOT continue a trailing
+    # "Score: " cue. So the format contract must be explicit, and the local
+    # path additionally prefills the assistant turn with "Score: ".
     STEP_EVAL_PROMPT = (
         "You are evaluating a single reasoning step in a math solution.\n"
         "The correct final answer is provided — use it to judge correctness.\n\n"
         "Problem: {problem}\n"
-        "Full solution so far:\n{solution_prefix}\n"
+        "Solution so far:\n{solution_prefix}\n"
         "Current step: {step_text}\n"
         "Correct answer: {gt_answer}\n\n"
-        "Is this step correct? Score -1.0 (wrong) to 1.0 (correct).\n"
-        "Explain precisely what is wrong if incorrect (1-2 sentences).\n\n"
-        "Score: "
+        "Score the current step from -1.0 (definitely wrong) to 1.0 (definitely correct).\n"
+        "Reply in EXACTLY this format and nothing else:\n"
+        "Score: <number>\n"
+        "Feedback: <1-2 sentences; if the step is correct, write 'Correct.'>"
+    )
+
+    # Richer-privilege variant: the teacher sees the full worked reference
+    # solution, not just the final number. A bare answer is weak privilege on
+    # easy math (the teacher can self-verify); a worked solution is strong
+    # privilege. Used to test whether the ~0 privileged gap on GSM8K was an
+    # artifact of thin privilege rather than privilege being useless.
+    STEP_EVAL_PROMPT_SOLUTION = (
+        "You are evaluating a single reasoning step in a math solution.\n"
+        "A correct reference solution is provided — use it to judge correctness.\n\n"
+        "Problem: {problem}\n"
+        "Solution so far:\n{solution_prefix}\n"
+        "Current step: {step_text}\n"
+        "Reference solution:\n{gt_solution}\n\n"
+        "Score the current step from -1.0 (definitely wrong) to 1.0 (definitely correct).\n"
+        "Reply in EXACTLY this format and nothing else:\n"
+        "Score: <number>\n"
+        "Feedback: <1-2 sentences; if the step is correct, write 'Correct.'>"
+    )
+
+    # GT-free variant — used to measure the privileged gap (how much the GT
+    # answer actually helps the teacher). Identical except no answer line.
+    STEP_EVAL_PROMPT_NO_GT = (
+        "You are evaluating a single reasoning step in a math solution.\n\n"
+        "Problem: {problem}\n"
+        "Solution so far:\n{solution_prefix}\n"
+        "Current step: {step_text}\n\n"
+        "Score the current step from -1.0 (definitely wrong) to 1.0 (definitely correct).\n"
+        "Reply in EXACTLY this format and nothing else:\n"
+        "Score: <number>\n"
+        "Feedback: <1-2 sentences; if the step is correct, write 'Correct.'>"
     )
 
     def __init__(self, model_name: str = None, dev_mode: bool = False):
@@ -57,7 +104,7 @@ class TeacherModel:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         print(f"TeacherModel loaded: {model_name} on {self.device} (frozen)")
 
-    def _generate(self, prompt: str, max_new_tokens: int = 150) -> str:
+    def _generate(self, prompt: str, max_new_tokens: int = 150, prefill: str = "") -> str:
         max_length = MPS_SAFE_MAX_LENGTH if is_mps() else 1024
         # Use chat template if available — improves format adherence on smaller models
         if hasattr(self.tokenizer, "apply_chat_template") and self.tokenizer.chat_template:
@@ -67,9 +114,14 @@ class TeacherModel:
             )
         else:
             formatted = prompt
-        inputs = self.tokenizer(
-            formatted, return_tensors="pt", truncation=True, max_length=max_length
-        ).to(self.model.device)
+        # Assistant prefill: start the reply for the model ("Score: ") so the
+        # continuation is the number — small models otherwise drift to prose.
+        formatted += prefill
+        inputs = self.tokenizer(formatted, return_tensors="pt").to(self.model.device)
+        # On overflow keep the TAIL — the current step and "Score:" cue live at
+        # the end; right-truncation made the model continue the solution text.
+        if inputs["input_ids"].shape[1] > max_length:
+            inputs = {k: v[:, -max_length:] for k, v in inputs.items()}
         input_len = inputs["input_ids"].shape[1]
         with torch.no_grad():
             out = self.model.generate(
@@ -85,19 +137,30 @@ class TeacherModel:
         problem: str,
         solution_prefix: str,
         step_text: str,
-        gt_answer: str,
+        gt_answer: str = None,
     ) -> dict:
         """
-        Returns: {score: float, feedback: str, is_error: bool}
-        is_error = True means this step is likely wrong.
+        Returns: {score: float|None, feedback: str, is_error: bool|None, parse_failed: bool}
+        is_error = True means this step is likely wrong. gt_answer=None uses the
+        GT-free prompt (for measuring the privileged gap). score=None means the
+        reply was unparseable — drop the label downstream, never train on it.
         """
-        prompt = self.STEP_EVAL_PROMPT.format(
-            problem=problem,
-            solution_prefix=solution_prefix,
-            step_text=step_text,
-            gt_answer=gt_answer,
-        )
-        response = self._generate(prompt)
+        if gt_answer is not None:
+            prompt = self.STEP_EVAL_PROMPT.format(
+                problem=problem,
+                solution_prefix=solution_prefix,
+                step_text=step_text,
+                gt_answer=gt_answer,
+            )
+        else:
+            prompt = self.STEP_EVAL_PROMPT_NO_GT.format(
+                problem=problem,
+                solution_prefix=solution_prefix,
+                step_text=step_text,
+            )
+        # Prefill "Score: " — the reply comes back as just the number onward
+        # (e.g. "0.8\nFeedback: ..."); _parse_score accepts the bare number.
+        response = self._generate(prompt, prefill="Score: ")
         score = _parse_score(response)
 
         # Extract feedback text after "Score: X.XX\n"
@@ -115,7 +178,8 @@ class TeacherModel:
         return {
             "score": score,
             "feedback": feedback,
-            "is_error": score < 0.0,
+            "is_error": (score < 0.0) if score is not None else None,
+            "parse_failed": score is None,
         }
 
     def label_solution(

@@ -143,7 +143,7 @@ a:hover{text-decoration:underline}
     <a href="#next">Next</a>
   </div>
   <div class="nav-right">
-    <span class="nav-meta">updated 2026-06-16 02:41</span>
+    <span class="nav-meta">updated 2026-06-16 03:52</span>
     <a class="nav-gh" href="https://github.com/edward-lcl/feedback-distillation" target="_blank">GitHub ↗</a>
   </div>
 </nav>
@@ -156,7 +156,7 @@ a:hover{text-decoration:underline}
     <div class="hero-chips">
       <span class="chip chip-green">Phase 0 complete</span>
       <span class="chip chip-blue">Gemma teacher locked</span>
-      <span class="chip chip-yellow">Qwen-27B replication pending</span>
+      <span class="chip chip-green">Cross-family confirmed (Qwen-27B)</span>
       <span class="chip chip-gray">edward-lcl/feedback-distillation</span>
     </div>
   </div>
@@ -165,7 +165,7 @@ a:hover{text-decoration:underline}
 <div class="wrap">
 
 <div class="section-label" id="overview">Project overview</div>
-<div class="g3"><div class='ov-card'><h3>🧩 What we're building</h3><p>A small <b>ground-truth-free student</b> that reads a math solution and flags <i>which step</i> the reasoning first goes wrong — not just whether the final answer is right. It learns this from a stronger <b>privileged teacher</b> that sees the reference solution while labeling.</p></div><div class='ov-card'><h3>🔄 Why it was revived</h3><p>The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <b>June 2026</b> with a shift to <b>step-level reasoning evaluation</b> over final-answer accuracy. Target: a publishable result for the <b>COLM workshop (~early July)</b> — flexible; quality over the date.</p></div><div class='ov-card'><h3>📍 Where we are today</h3><p><b>Phase-0 teacher gate complete.</b> Teacher, dataset, and privilege form are all chosen <i>by data</i>, and the core claim is validated. Next: confirm it generalizes across model families, fix the student trainer, then hand labeling to the GPU box.</p></div></div>
+<div class="g3"><div class='ov-card'><h3>What we're building</h3><p>A small <b>ground-truth-free student</b> that reads a math solution and flags <i>which step</i> the reasoning first goes wrong — not just whether the final answer is right. It learns this from a stronger <b>privileged teacher</b> that sees the reference solution while labeling.</p></div><div class='ov-card'><h3>Why it was revived</h3><p>The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <b>June 2026</b> with a shift to <b>step-level reasoning evaluation</b> over final-answer accuracy. Target: a publishable result for the <b>COLM workshop (~early July)</b> — flexible; quality over the date.</p></div><div class='ov-card'><h3>Where we are today</h3><p><b>Phase-0 teacher gate complete.</b> Teacher, dataset, and privilege form are all chosen <i>by data</i>, and the core claim is validated. Next: confirm it generalizes across model families, fix the student trainer, then hand labeling to the GPU box.</p></div></div>
 
 <div class="callout" style="margin-top:16px">
   <h3>The research question</h3>
@@ -186,7 +186,7 @@ a:hover{text-decoration:underline}
 
 <div class="section-label">Cross-family replication — Qwen-27B</div>
 <div class="g2">
-  <div class='result-card'><div class='rc-head'><h3>Qwen-27B · MATH N=150</h3><div class='rc-meta'>Privilege probe — crashed, needs restart</div></div><div style='padding:16px 18px'><div class='warn'><strong>Crashed</strong> — oMLX ChunkedEncodingError mid-run. No data. Needs restart (~2-3 hrs).</div></div></div>
+  <div class='result-card'><div class='rc-head'><h3>Qwen-27B · MATH N=150</h3><div class='rc-meta'>Cross-family confirmation · N=150</div></div><div style='padding:16px 18px'><p style='color:var(--ink3);font-size:13px;padding:4px 0'>Pending</p></div></div>
   <div class="card">
     <div class="card-title">Why this matters</div>
     <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-top:8px">If the privilege×difficulty pattern holds for Qwen-27B too, it's not a Gemma artifact — it's a property of step-level feedback under difficulty. Bakeoff F1 (0.873) shows Qwen-27B is a capable teacher. Unblocks Saksham once confirmed.</p>
@@ -205,7 +205,7 @@ a:hover{text-decoration:underline}
 <div class="g2">
   <div class="card">
     <div class="card-title" style="margin-bottom:14px">Experiment status</div>
-    <ul class="status-list"><li><span class='pill p-done'>done</span> Teacher bake-off (5 models, N=30)</li><li><span class='pill p-done'>done</span> Privilege × difficulty (Gemma · GSM8K + MATH N=150)</li><li><span class='pill p-crashed'>crashed</span> Cross-teacher replication (Qwen-27B · MATH N=150)</li></ul>
+    <ul class="status-list"><li><span class='pill p-done'>done</span> Teacher bake-off (5 models, N=30)</li><li><span class='pill p-done'>done</span> Privilege × difficulty (Gemma · GSM8K + MATH N=150)</li><li><span class='pill p-done'>done</span> Cross-teacher replication (Qwen-27B · MATH N=150)</li></ul>
   </div>
   <div class="card">
     <div class="card-title" style="margin-bottom:14px">Roadmap</div>
@@ -237,7 +237,7 @@ a:hover{text-decoration:underline}
 
 <div class="section-label" id="next">What's next &amp; handoff gates</div>
 <div class="card">
-  <ul class="status-list"><li><span class='pill p-todo'>todo</span> Restart cross-teacher replication (Qwen-27B · MATH N=150) — oMLX ChunkedEncodingError, no data saved.</li><li><span class='pill p-todo'>todo</span> Spot-check why with_answer ≡ no_gt at N=150 (wiring confirmed; behavior is real).</li><li><span class='pill p-todo'>todo</span> Use the OFFICIAL Gemma checkpoint (not the abliterated community quant) for the reported labeling pass.</li><li><span class='pill p-idea'>idea</span> A harder set (OlympiadBench) may widen the solution gap — optional extension.</li></ul>
+  <ul class="status-list"><li><span class='pill p-done'>done</span> Cross-teacher replication (Qwen-27B) confirms the pattern — solution gap +0.082, not a Gemma artifact.</li><li><span class='pill p-todo'>todo</span> Spot-check why with_answer ≡ no_gt at N=150 (wiring confirmed; behavior is real).</li><li><span class='pill p-todo'>todo</span> Use the OFFICIAL Gemma checkpoint (not the abliterated community quant) for the reported labeling pass.</li><li><span class='pill p-idea'>idea</span> A harder set (OlympiadBench) may widen the solution gap — optional extension.</li></ul>
   <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--ink3)">
     Handoff: <strong style="color:var(--ink)">Saksham</strong> unblocks on cross-teacher confirm ·
     <strong style="color:var(--ink)">Henry</strong> can start now; blocks on flip examples + by-level from Edward ·
