@@ -83,6 +83,25 @@ MILESTONES = [
     ("now", "Run Phase 2/3 at scale on GPU — student ablation + verifier numbers"),
     ("then", "CIs + baselines + paper draft (sweet spot + downstream verifier)"),
 ]
+
+# Path to submission — granular, owner-tagged, so everyone (esp. Saksham) has line of sight.
+PATH_TO_SUBMISSION = [
+    ("done", "Team", "Teacher / dataset / privilege locked; sweet spot verified across 3 difficulty tiers + cross-family."),
+    ("done", "Edward", "Full pipeline built &amp; smoke-tested (probe → student ablation → best-of-N verifier); runbooks written."),
+    ("now", "Saksham", "Phase 2 on GPU — serve official Gemma (vLLM), run <code>run_student_ablation.sh</code> → score-vs-critique &amp; privileged-vs-noGT tables. Runbook: HANDOFF_SAKSHAM.md."),
+    ("next", "Saksham", "Phase 3 on GPU — <code>bon_rerank.py</code> → does the PRM verifier beat majority vote (final-answer accuracy)?"),
+    ("next", "Edward", "Bootstrap CIs / seeds on every gap; baselines (Math-Shepherd PRM, self-critique)."),
+    ("next", "Henry", "Fold results + sweet-spot framing + the verifier section into the Overleaf draft."),
+    ("then", "Team", "Submit — COLM (early July) / AAAI / workshop. Quality over the date."),
+]
+
+OVERLEAF_URL = "https://www.overleaf.com/2555239245xpdcmsxkrzgx"
+LINKS = [
+    ("Paper (Overleaf)", OVERLEAF_URL),
+    ("Saksham runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_SAKSHAM.md"),
+    ("Henry runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_HENRY.md"),
+    ("Repo", "https://github.com/edward-lcl/feedback-distillation"),
+]
 # ------------------------------------------------------------------------------
 
 
@@ -205,11 +224,12 @@ def main():
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SLFD — project dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- System fonts only — no external dependency, so text always renders instantly
+     (the Google Fonts version could blank out on a slow/blocked network). Inter is
+     used if installed locally; otherwise the OS sans-serif. -->
+<style>:root{}</style>
 <style>
-:root{--bg:#0a0c10;--bg2:#0d1117;--surface:#111620;--surface2:#161c28;--surface3:#1c2436;--border:#1f2a3e;--border2:#2a374f;--ink:#e8edf5;--ink2:#a8b8cc;--ink3:#5e7490;--accent:#4a7cf5;--accent-dim:rgba(74,124,245,.10);--accent-glow:rgba(74,124,245,.04);--green:#2ea86a;--green-dim:rgba(46,168,106,.10);--red:#d95f5f;--red-dim:rgba(217,95,95,.10);--yellow:#c4972a;--yellow-dim:rgba(196,151,42,.10);--purple:#8b74d4;--purple-dim:rgba(139,116,212,.10);--r:8px;--font:'Inter',-apple-system,sans-serif;--mono:'JetBrains Mono','SF Mono',monospace}
+:root{--bg:#0a0c10;--bg2:#0d1117;--surface:#111620;--surface2:#161c28;--surface3:#1c2436;--border:#1f2a3e;--border2:#2a374f;--ink:#e8edf5;--ink2:#a8b8cc;--ink3:#5e7490;--accent:#4a7cf5;--accent-dim:rgba(74,124,245,.10);--accent-glow:rgba(74,124,245,.04);--green:#2ea86a;--green-dim:rgba(46,168,106,.10);--red:#d95f5f;--red-dim:rgba(217,95,95,.10);--yellow:#c4972a;--yellow-dim:rgba(196,151,42,.10);--purple:#8b74d4;--purple-dim:rgba(139,116,212,.10);--r:8px;--font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:'JetBrains Mono','SF Mono','Cascadia Code',Consolas,monospace}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:var(--font);font-size:14px;line-height:1.65;color:var(--ink2);background:var(--bg);-webkit-font-smoothing:antialiased}
@@ -307,8 +327,16 @@ nav{position:sticky;top:0;z-index:100;height:52px;display:flex;align-items:cente
 .task-who{font-weight:600;color:var(--ink);white-space:nowrap;font-size:13.5px}
 .task-track{font-size:12.5px;color:var(--ink3)}
 .task-action{font-size:13px;color:var(--ink2);line-height:1.6}
-.milestones{display:flex;gap:10px;flex-wrap:wrap}
-.mile{flex:1;min-width:150px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.milestones{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.mile{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.path{list-style:none;padding:0;margin:0}
+.path li{display:flex;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)}
+.path li:last-child{border-bottom:none}
+.path .ptext{font-size:13.5px;color:var(--ink2);line-height:1.5}
+.path .pwho{font-weight:600;color:var(--ink)}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.links a{display:inline-flex;align-items:center;gap:6px;font-size:13px;border:1px solid var(--border2);padding:8px 14px;border-radius:8px;color:var(--ink);background:var(--surface2)}
+.links a:hover{border-color:var(--accent);text-decoration:none}
 .mile.done{border-color:rgba(46,168,106,.25)}
 .mile.now{border-color:rgba(196,151,42,.25);background:rgba(196,151,42,.04)}
 .mile-text{font-size:12.5px;color:var(--ink2);line-height:1.5}
@@ -429,6 +457,11 @@ a:hover{text-decoration:underline}
         f"{_gpill(s)}<div class='mile-text'>{html.escape(t)}</div></div>"
         for s, t in MILESTONES)
 
+    path_html = "".join(
+        f"<li>{_gpill(s)}<div class='ptext'><span class='pwho'>{who}:</span> {t}</div></li>"
+        for s, who, t in PATH_TO_SUBMISSION)
+    links_html = "".join(f"<a href='{u}' target='_blank'>{html.escape(n)} ↗</a>" for n, u in LINKS)
+
     bakeoff_html = bakeoff_rows_dark()
 
     htmldoc = head + f"""
@@ -440,6 +473,7 @@ a:hover{text-decoration:underline}
     <a href="#results">Results</a>
     <a href="#decisions">Decisions</a>
     <a href="#tasks">Tasks</a>
+    <a href="#path">Path</a>
     <a href="#next">Next</a>
     <a href="https://github.com/edward-lcl/feedback-distillation/blob/main/paper/SLFD.pdf" target="_blank">Paper ↗</a>
   </div>
@@ -536,15 +570,19 @@ a:hover{text-decoration:underline}
   <table class="kv-table">{how_html}</table>
 </div>
 
-<div class="section-label" id="next">What's next &amp; handoff gates</div>
+<div class="section-label" id="path">Path to submission</div>
 <div class="card">
-  <ul class="status-list">{bullets_html}</ul>
-  <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--ink3)">
-    Handoff: <strong style="color:var(--ink)">Saksham</strong> unblocks on cross-teacher confirm ·
-    <strong style="color:var(--ink)">Henry</strong> can start now; blocks on flip examples + by-level from Edward ·
-    <a href="https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_HENRY.md" target="_blank">Henry handoff on GitHub ↗</a>
+  <ul class="path">{path_html}</ul>
+  <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12.5px;color:var(--ink3)">
+    <strong style="color:var(--accent)">Saksham — you're up.</strong> The two GPU runs above are the critical path; everything they need is in the runbook. Pipeline is built and smoke-tested, so this is run-and-report, not build.
   </div>
 </div>
+
+<div class="section-label">Docs &amp; runbooks</div>
+<div class="card"><div class="links">{links_html}</div></div>
+
+<div class="section-label" id="next">Bulletproofing &amp; open items</div>
+<div class="card"><ul class="status-list">{bullets_html}</ul></div>
 
 </div>
 </body>
