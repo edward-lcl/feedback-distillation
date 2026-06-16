@@ -101,6 +101,7 @@ def main():
     kept, n_correct, n_incorrect = [], 0, 0
     for p in tqdm(problems, desc="problems"):
         problem, gt = p["problem"], str(p.get("gt_answer", ""))
+        gt_solution = p.get("gt_solution", "")
         got_c, got_i = 0, 0
         for _ in range(args.k):
             if got_c >= args.need_correct and got_i >= args.need_incorrect:
@@ -118,6 +119,7 @@ def main():
                 "problem": problem,
                 "solution": text,
                 "gt_answer": gt,
+                "gt_solution": gt_solution,
                 "model_answer": model_answer,
                 "solution_correct": correct,
             })

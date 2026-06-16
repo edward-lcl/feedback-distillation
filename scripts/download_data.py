@@ -128,13 +128,31 @@ def build_gsm8k(output: str, n: int | None, split: str):
     _write_jsonl(output, rows)
 
 
+def build_math_train(output: str, n: int | None, split: str = "train"):
+    """Hendrycks MATH -> {problem, solution, gt_answer, gt_solution} training
+    source. Carries gt_solution so labeling can run SOLUTION-privilege."""
+    from datasets import load_dataset
+    ds = load_dataset("nlile/hendrycks-MATH-benchmark", split=split)
+    rows = []
+    for i, ex in enumerate(ds):
+        if n and i >= n:
+            break
+        p = (ex.get("problem") or "").strip()
+        if not p:
+            continue
+        sol = ex.get("solution") or ""
+        rows.append({"problem": p, "solution": sol,
+                     "gt_answer": ex.get("answer") or "", "gt_solution": sol})
+    _write_jsonl(output, rows)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--processbench", action="store_true",
                         help="Download ProcessBench eval set (gold step labels).")
     parser.add_argument("--config", default="math",
                         help="ProcessBench config: gsm8k | math | olympiadbench | omnimath")
-    parser.add_argument("--train_source", choices=["gsm8k"], default=None,
+    parser.add_argument("--train_source", choices=["gsm8k", "math"], default=None,
                         help="Download a training source for teacher labeling.")
     parser.add_argument("--split", default="train", help="Split for the training source.")
     parser.add_argument("--n", type=int, default=None, help="Cap number of examples.")
@@ -145,8 +163,10 @@ def main():
         build_processbench(args.config, args.output, args.n)
     elif args.train_source == "gsm8k":
         build_gsm8k(args.output, args.n, args.split)
+    elif args.train_source == "math":
+        build_math_train(args.output, args.n, args.split)
     else:
-        raise SystemExit("Pass --processbench or --train_source gsm8k.")
+        raise SystemExit("Pass --processbench or --train_source {gsm8k,math}.")
 
 
 if __name__ == "__main__":

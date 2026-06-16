@@ -95,17 +95,20 @@ class SLFDTrainer:
                     # read, no generation).
                     student_score_logit = self.student.score_step(problem, solution_prefix, step_text)
 
-                    # L_feedback_LM
-                    input_ids, labels, attn_mask = self.student.prepare_step_inputs_and_labels(
-                        problem, solution_prefix, step_text, teacher_feedback, teacher_score
-                    )
-                    lm_out = self.student.model(
-                        input_ids=input_ids.to(self.device),
-                        attention_mask=attn_mask.to(self.device),
-                        labels=labels.to(self.device),
-                        return_dict=True,
-                    )
-                    batch_losses["lm_loss"].append(lm_out.loss)
+                    # L_feedback_LM — natural-language critique loss. Gated by the
+                    # LM flag so the score-only ablation trains the scorer alone
+                    # (score+critique = LM on; score-only = LM off).
+                    if self.loss_flags[0]:
+                        input_ids, labels, attn_mask = self.student.prepare_step_inputs_and_labels(
+                            problem, solution_prefix, step_text, teacher_feedback, teacher_score
+                        )
+                        lm_out = self.student.model(
+                            input_ids=input_ids.to(self.device),
+                            attention_mask=attn_mask.to(self.device),
+                            labels=labels.to(self.device),
+                            return_dict=True,
+                        )
+                        batch_losses["lm_loss"].append(lm_out.loss)
 
                     # L_score
                     target = torch.tensor([teacher_score], dtype=torch.float32, device=self.device)
