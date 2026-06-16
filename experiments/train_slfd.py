@@ -49,6 +49,10 @@ def main():
     parser.add_argument("--train_dtype", choices=["auto", "fp32", "fp16"], default="auto",
                         help="Weight precision for training. 'auto' uses fp32 on MPS "
                              "(fp16 NaNs there) and the device default elsewhere.")
+    parser.add_argument("--ablation", choices=["score_critique", "score_only"],
+                        default="score_critique",
+                        help="score_critique = scorer + NL critique (L_score+L_LM); "
+                             "score_only = scorer alone (the headline ablation).")
     args = parser.parse_args()
 
     dataset = load_dataset(args.dataset)
@@ -65,8 +69,14 @@ def main():
     if use_fp32 and student.model.dtype != torch.float32:
         student.model.float()
         print("Training in float32 (numerically stable on MPS).")
+    # Ablation -> loss_flags [LM, hidden, score, logit]. score_only drops the
+    # critique (LM) loss so we can isolate whether distilling the NL critique helps.
+    loss_flags = ([True, False, True, False] if args.ablation == "score_critique"
+                  else [False, False, True, False])
+    print(f"Ablation: {args.ablation}  (loss_flags={loss_flags})")
     # teacher=None: offline distillation, labels are already in the dataset.
-    trainer = SLFDTrainer(student, teacher=None, dataset=dataset, dev_mode=args.dev_mode)
+    trainer = SLFDTrainer(student, teacher=None, dataset=dataset,
+                          loss_flags=loss_flags, dev_mode=args.dev_mode)
 
     summary = trainer.train(epochs=args.epochs, batch_size=args.batch_size, max_steps=args.max_steps)
     trainer.save_checkpoint(args.checkpoint)
