@@ -30,6 +30,8 @@ nav{position:sticky;top:0;z-index:100;height:52px;display:flex;align-items:cente
 .hero h1{font-size:26px;font-weight:700;color:var(--ink);letter-spacing:-.3px;line-height:1.25;margin-bottom:10px}
 .hero-sub{font-size:15px;color:var(--ink2);max-width:640px;line-height:1.7;margin-bottom:24px}
 .hero-chips{display:flex;flex-wrap:wrap;gap:8px}
+[title]{cursor:help}
+.cond-table td[title]:first-child,.chip[title]{text-decoration:underline dotted rgba(168,184,204,.4);text-underline-offset:3px}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.2px;border:1px solid transparent}
 .chip-green{background:var(--green-dim);color:var(--green);border-color:rgba(46,168,106,.25)}
 .chip-blue{background:var(--accent-dim);color:var(--accent);border-color:rgba(74,124,245,.25)}
@@ -154,7 +156,7 @@ a:hover{text-decoration:underline}
     <a href="https://github.com/edward-lcl/feedback-distillation/blob/main/paper/SLFD.pdf" target="_blank">Paper ↗</a>
   </div>
   <div class="nav-right">
-    <span class="nav-meta">updated 2026-06-16 17:09</span>
+    <span class="nav-meta">updated 2026-06-16 17:18</span>
     <a class="nav-gh" href="https://www.overleaf.com/2555239245xpdcmsxkrzgx" target="_blank">Paper ↗</a>
     <a class="nav-gh" href="https://github.com/edward-lcl/feedback-distillation" target="_blank">GitHub ↗</a>
   </div>
@@ -166,10 +168,10 @@ a:hover{text-decoration:underline}
     <h1>Step-Level Feedback Distillation</h1>
     <p class="hero-sub">Teaching a small, answer-blind model to catch reasoning mistakes step-by-step — by distilling a stronger teacher that&#x27;s allowed to peek at the answer.</p>
     <div class="hero-chips">
-      <span class="chip chip-green">Pipeline built · handoff-ready</span>
-      <span class="chip chip-green">Sweet spot verified</span>
-      <span class="chip chip-blue">Gemma teacher · Qwen cross-family</span>
-      <span class="chip chip-yellow">Next: GPU runs (Saksham)</span>
+      <span class="chip chip-green" title="Label→train→eval + best-of-N verifier all built &amp; smoke-tested; runbooks written.">Pipeline built · handoff-ready</span>
+      <span class="chip chip-green" title="Privilege helps on MATH but not GSM8K (too easy) or OlympiadBench (too hard) — verified, incl. cross-family.">Sweet spot verified</span>
+      <span class="chip chip-blue" title="Teacher chosen by bake-off (Gemma, F1 0.91); result replicates with a Qwen-27B teacher.">Gemma teacher · Qwen cross-family</span>
+      <span class="chip chip-yellow" title="Critical path: Saksham runs the student ablation + verifier on the 2×3090 box.">Next: GPU runs (Saksham)</span>
       <span class="chip chip-gray">edward-lcl/feedback-distillation</span>
     </div>
   </div>
@@ -188,9 +190,33 @@ a:hover{text-decoration:underline}
 <div class="section-label" id="results">Results — privilege × difficulty</div>
 <p style="font-size:13px;color:var(--ink3);margin-bottom:16px">Privilege buys signal only where the teacher can't self-verify, <em>and</em> only when given a full worked solution.</p>
 <div class="g3">
-  <div class='result-card'><div class='rc-head'><h3>GSM8K — easy math</h3><div class='rc-meta'>Gemma · N=50</div></div><div style='padding:16px 18px'><p style='color:var(--ink3);font-size:13px;padding:4px 0'>Pending</p></div></div>
-  <div class='result-card'><div class='rc-head'><h3>MATH — hard (preliminary)</h3><div class='rc-meta'>Gemma · N=50 · early signal</div></div><div style='padding:16px 18px'><p style='color:var(--ink3);font-size:13px;padding:4px 0'>Pending</p></div></div>
-  <div class='result-card primary'><div class='rc-head'><h3>MATH — hard · N=150 (primary)</h3><div class='rc-meta'>Gemma · confirmed result</div></div><div style='padding:16px 18px'><p style='color:var(--ink3);font-size:13px;padding:4px 0'>Pending</p></div></div>
+  <div class='result-card'>
+  <div class='rc-head'><h3>GSM8K — easy math</h3><div class='rc-meta'>Gemma · N=50</div></div>
+  <table class='cond-table'><tr><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2)'></th><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2);text-align:right'>F1</th><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2);text-align:right'>err_acc</th></tr><tr><td title="Teacher sees only the problem + candidate steps (answer-blind) — the unprivileged baseline.">no-GT</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.889</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.800</td></tr><tr><td title="Teacher additionally sees the final reference answer (thin privilege).">+ answer</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.856</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.800</td></tr><tr class='winner'><td title="Teacher sees the full worked reference solution (richest privilege).">+ full solution</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.837</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.720</td></tr><tr class='delta'><td>Δ vs no-GT</td><td class='val'><span class='b b-neg'>-0.033</span></td><td class='val'><span class='b b-neg'>-0.052</span></td></tr></table>
+  <div style='padding:0 18px 14px'>
+  <div style='display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:8px;overflow:hidden'>
+    <div class='metric-cell'><div class='metric-label'>solution Δ</div><div class='metric-value' style='font-size:20px;color:var(--red)'>-0.05</div><div class='metric-sub'>F1 gap</div></div>
+    <div class='metric-cell'><div class='metric-label'>verdict</div><div class='metric-value' style='font-size:13px;color:var(--red);padding-top:4px'>saturated</div><div class='metric-sub'>vs no-GT</div></div>
+  </div></div>
+</div>
+  <div class='result-card'>
+  <div class='rc-head'><h3>MATH — hard (preliminary)</h3><div class='rc-meta'>Gemma · N=50 · early signal</div></div>
+  <table class='cond-table'><tr><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2)'></th><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2);text-align:right'>F1</th><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2);text-align:right'>err_acc</th></tr><tr><td title="Teacher sees only the problem + candidate steps (answer-blind) — the unprivileged baseline.">no-GT</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.649</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.480</td></tr><tr><td title="Teacher additionally sees the final reference answer (thin privilege).">+ answer</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.750</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.600</td></tr><tr class='winner'><td title="Teacher sees the full worked reference solution (richest privilege).">+ full solution</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.781</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.640</td></tr><tr class='delta'><td>Δ vs no-GT</td><td class='val'><span class='b b-pos'>+0.101</span></td><td class='val'><span class='b b-pos'>+0.132</span></td></tr></table>
+  <div style='padding:0 18px 14px'>
+  <div style='display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:8px;overflow:hidden'>
+    <div class='metric-cell'><div class='metric-label'>solution Δ</div><div class='metric-value' style='font-size:20px;color:var(--green)'>+0.13</div><div class='metric-sub'>F1 gap</div></div>
+    <div class='metric-cell'><div class='metric-label'>verdict</div><div class='metric-value' style='font-size:13px;color:var(--green);padding-top:4px'>privilege helps</div><div class='metric-sub'>vs no-GT</div></div>
+  </div></div>
+</div>
+  <div class='result-card primary'>
+  <div class='rc-head'><h3>MATH — hard · N=150 (primary)</h3><div class='rc-meta'>Gemma · confirmed result</div></div>
+  <table class='cond-table'><tr><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2)'></th><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2);text-align:right'>F1</th><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2);text-align:right'>err_acc</th></tr><tr><td title="Teacher sees only the problem + candidate steps (answer-blind) — the unprivileged baseline.">no-GT</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.716</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.577</td></tr><tr><td title="Teacher additionally sees the final reference answer (thin privilege).">+ answer</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.716</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.577</td></tr><tr class='winner'><td title="Teacher sees the full worked reference solution (richest privilege).">+ full solution</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.786</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.654</td></tr><tr class='delta'><td>Δ vs no-GT</td><td class='val'><span class='b b-zero'>+0.000</span></td><td class='val'><span class='b b-pos'>+0.070</span></td></tr></table>
+  <div style='padding:0 18px 14px'>
+  <div style='display:grid;grid-template-columns:1fr 1fr;border:1px solid rgba(74,124,245,.3);border-radius:8px;overflow:hidden;background:var(--accent-glow)'>
+    <div class='metric-cell'><div class='metric-label'>solution Δ F1</div><div class='metric-value good' style='font-size:26px'>+0.07</div><div class='metric-sub'>N=150</div></div>
+    <div class='metric-cell'><div class='metric-label'>err_recall Δ</div><div class='metric-value good' style='font-size:26px'>+0.08</div><div class='metric-sub'>0.577 → 0.654</div></div>
+  </div></div>
+</div>
 </div>
 
 <div class="insight" style="margin-top:16px">
@@ -199,7 +225,15 @@ a:hover{text-decoration:underline}
 
 <div class="section-label">Cross-family replication — Qwen-27B</div>
 <div class="g2">
-  <div class='result-card'><div class='rc-head'><h3>Qwen-27B · MATH N=150</h3><div class='rc-meta'>Cross-family confirmation · N=150</div></div><div style='padding:16px 18px'><p style='color:var(--ink3);font-size:13px;padding:4px 0'>Pending</p></div></div>
+  <div class='result-card'>
+  <div class='rc-head'><h3>Qwen-27B · MATH N=150</h3><div class='rc-meta'>Cross-family confirmation · N=150</div></div>
+  <table class='cond-table'><tr><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2)'></th><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2);text-align:right'>F1</th><th style='padding:8px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);border-bottom:1px solid var(--border);background:var(--surface2);text-align:right'>err_acc</th></tr><tr><td title="Teacher sees only the problem + candidate steps (answer-blind) — the unprivileged baseline.">no-GT</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.653</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.526</td></tr><tr><td title="Teacher additionally sees the final reference answer (thin privilege).">+ answer</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.690</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.564</td></tr><tr class='winner'><td title="Teacher sees the full worked reference solution (richest privilege).">+ full solution</td><td class='val' title="first-error F1: harmonic mean of correct-acc and error-acc">0.735</td><td class='val' title="error recall: fraction of erroneous solutions whose first wrong step is correctly localized">0.667</td></tr><tr class='delta'><td>Δ vs no-GT</td><td class='val'><span class='b b-pos'>+0.037</span></td><td class='val'><span class='b b-pos'>+0.082</span></td></tr></table>
+  <div style='padding:0 18px 14px'>
+  <div style='display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:8px;overflow:hidden'>
+    <div class='metric-cell'><div class='metric-label'>solution Δ</div><div class='metric-value' style='font-size:20px;color:var(--green)'>+0.08</div><div class='metric-sub'>F1 gap</div></div>
+    <div class='metric-cell'><div class='metric-label'>verdict</div><div class='metric-value' style='font-size:13px;color:var(--green);padding-top:4px'>privilege helps</div><div class='metric-sub'>vs no-GT</div></div>
+  </div></div>
+</div>
   <div class="card">
     <div class="card-title">Why this matters</div>
     <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-top:8px">If the privilege×difficulty pattern holds for Qwen-27B too, it's not a Gemma artifact — it's a property of step-level feedback under difficulty. Bakeoff F1 (0.873) shows Qwen-27B is a capable teacher. Unblocks Saksham once confirmed.</p>
