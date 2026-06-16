@@ -57,7 +57,7 @@ TASKS = [  # who, track, status (active|blocked|queued|done), next action
     ("Saksham", "GPU pipeline", "active",
      "UNBLOCKED — cross-teacher confirmed. Serve official Gemma (vLLM), then ./scripts/run_privilege_probe.sh on the GPU box. Full runbook: HANDOFF_SAKSHAM.md."),
     ("Henry", "Research / paper", "active",
-     "Draft Related Work (PRM lit positioning) + results narrative around the GSM8K-vs-MATH table. See HANDOFF_HENRY.md on GitHub. Blocking on: by-level breakdown + flip examples from Edward."),
+    "✓ Related Work (PRM positioning) · ✓ Results narrative (GSM8K-vs-MATH) — both in paper/. ☐ by-level breakdown + flip examples (Edward) · ☐ significance test on solution gap · ☐ assemble paper skeleton."),
 ]
 
 HOW_WE_WORK = [
