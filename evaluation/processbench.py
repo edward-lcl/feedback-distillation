@@ -3,6 +3,7 @@ ProcessBench evaluation harness.
 Measures step-error detection F1 and first-error-step accuracy.
 """
 import json
+import torch
 from sklearn.metrics import f1_score, precision_score, recall_score
 
 
@@ -28,7 +29,12 @@ def evaluate_processbench(student, dataset_path: str, max_samples: int = None) -
             prefix = ""
             pred_labels = []
             for step in steps:
-                _, _, score_logit = student.evaluate_step(problem, prefix, step["text"])
+                # Use the SAME representation training optimizes — the score head
+                # on the prompt's step-boundary token (score_step) — not the
+                # generated response. no_grad: eval needs no graph (and avoids a
+                # per-step grad-graph memory leak).
+                with torch.no_grad():
+                    score_logit = student.score_step(problem, prefix, step["text"])
                 pred_is_error = float(score_logit.item()) < 0.0
                 pred_labels.append(int(pred_is_error))
                 y_true.append(int(step.get("is_error", False)))

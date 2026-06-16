@@ -53,9 +53,9 @@ DECISIONS = [
 
 TASKS = [  # who, track, status (active|blocked|queued|done), next action
     ("Edward", "Orchestration + trainer", "active",
-     "Fix slfd_trainer: wire real LoRA (currently full-FT), score-head reads the boundary token. Then design the score-vs-critique student ablation."),
-    ("Saksham", "GPU pipeline", "blocked",
-     "Official Gemma via vLLM → label MATH train set with SOLUTION-privilege → train GT-free student → eval on ProcessBench MATH. Unblocks once cross-teacher replication confirms."),
+     "Trainer fixed — real LoRA (1.75% params) + boundary-token score head, train/eval aligned. Next: full label → train → eval on GPU + the score-vs-critique student ablation."),
+    ("Saksham", "GPU pipeline", "active",
+     "UNBLOCKED — cross-teacher confirmed. Serve official Gemma (vLLM), then ./scripts/run_privilege_probe.sh on the GPU box. Full runbook: HANDOFF_SAKSHAM.md."),
     ("Henry", "Research / paper", "active",
      "Draft Related Work (PRM lit positioning) + results narrative around the GSM8K-vs-MATH table. See HANDOFF_HENRY.md on GitHub. Blocking on: by-level breakdown + flip examples from Edward."),
 ]
