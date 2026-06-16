@@ -26,18 +26,19 @@ OVERVIEW = [
     ("Why it was revived",
      "The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <b>June 2026</b> with a shift to <b>step-level reasoning evaluation</b> over final-answer accuracy. Target: a publishable result for the <b>COLM workshop (~early July)</b> — flexible; quality over the date."),
     ("Where we are today",
-     "<b>Phase-0 teacher gate complete.</b> Teacher, dataset, and privilege form are all chosen <i>by data</i>, and the core claim is validated. Next: confirm it generalizes across model families, fix the student trainer, then hand labeling to the GPU box."),
+     "<b>Pipeline built end-to-end</b> (probe → student ablation → best-of-N verifier), all smoke-tested. Teacher/dataset/privilege locked; the privilege <b>sweet spot</b> is verified (helps on MATH, not GSM8K or OlympiadBench) and replicates cross-family. Next: run Phase 2/3 at scale on the GPU box for the headline numbers."),
 ]
 
 RESEARCH_Q = ("The research question",
     "Does distilling a teacher's <b>step-level score + natural-language critique</b> — and its <b>privileged</b> (answer-aware) judgment — into a small answer-blind student make it better at catching reasoning-step errors? <b>Finding:</b> privilege has a <b>tractability sweet spot</b> — it helps only where the teacher both <i>needs</i> the reference (can't self-verify) and can <i>use</i> it; and only <b>rich</b> privilege works (a worked solution, not a bare answer).")
 
-PHASE = "Phase 0 (teacher gate) complete — research design validated by data"
+PHASE = "Pipeline built & validated (probe → student → verifier); sweet-spot finding verified — next is the at-scale GPU run"
 
 RUNS = [  # (label, state) state in {running, done, queued}
     ("Teacher bake-off (5 models, N=30)", "done"),
-    ("Privilege × difficulty (Gemma · GSM8K + MATH N=150)", "done"),
+    ("Privilege × difficulty (GSM8K · MATH · OlympiadBench)", "done"),
     ("Cross-teacher replication (Qwen-27B · MATH N=150)", "done"),
+    ("Student ablation + best-of-N verifier @ scale (GPU)", "queued"),
 ]
 
 DECISIONS = [
@@ -68,17 +69,19 @@ HOW_WE_WORK = [
 ]
 
 BULLETPROOFING = [
-    ("done", "Cross-teacher replication (Qwen-27B) confirms the pattern — solution gap +0.082, not a Gemma artifact."),
-    ("todo", "Spot-check why with_answer ≡ no_gt at N=150 (wiring confirmed; behavior is real)."),
-    ("todo", "Use the OFFICIAL Gemma checkpoint (not the abliterated community quant) for the reported labeling pass."),
-    ("idea", "A harder set (OlympiadBench) may widen the solution gap — optional extension."),
+    ("done", "Cross-teacher (Qwen-27B) confirms the pattern — solution gap +0.082, not a Gemma artifact."),
+    ("done", "OlympiadBench (OE-only, verified) — privilege ≈0 there → sweet spot, NOT monotonic with difficulty."),
+    ("done", "with_answer ≡ no_gt confirmed real (bare answer inert), not a wiring bug."),
+    ("todo", "Bootstrap CIs / multiple seeds on the gaps; baselines (Math-Shepherd, self-critique)."),
+    ("todo", "Use the OFFICIAL Gemma checkpoint for the reported labeling pass."),
+    ("idea", "Does a stronger teacher extend the sweet spot upward on OlympiadBench?"),
 ]
 
 MILESTONES = [
-    ("done", "Teacher + dataset + privilege form locked by data"),
-    ("now", "Confirm generalization (cross-teacher) + fix student trainer"),
-    ("next", "Hand MATH labeling to Saksham (GPU)"),
-    ("then", "Score-vs-critique student ablation → paper draft"),
+    ("done", "Teacher/dataset/privilege locked; sweet spot verified (GSM8K·MATH·OlympiadBench)"),
+    ("done", "Student pipeline built: trainer fixed + ablation + best-of-N verifier (smoke-tested)"),
+    ("now", "Run Phase 2/3 at scale on GPU — student ablation + verifier numbers"),
+    ("then", "CIs + baselines + paper draft (sweet spot + downstream verifier)"),
 ]
 # ------------------------------------------------------------------------------
 
