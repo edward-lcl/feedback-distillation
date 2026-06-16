@@ -54,8 +54,12 @@ class SLFDTrainer:
         else:
             self.align_hidden = nn.Identity().to(self.device)
 
+        # Train only what's trainable: LoRA adapters (base is frozen by peft) +
+        # the score head + the alignment layer. LoRA tolerates a much higher LR
+        # than the old full-FT 5e-7.
+        trainable_model_params = [p for p in self.student.model.parameters() if p.requires_grad]
         self.optimizer = AdamW([
-            {"params": self.student.model.parameters(), "lr": 5e-7, "weight_decay": 0.01},
+            {"params": trainable_model_params, "lr": 1e-4, "weight_decay": 0.01},
             {"params": self.student.score_head.parameters(), "lr": 5e-5, "weight_decay": 0.01},
             {"params": self.align_hidden.parameters(), "lr": 1e-6, "weight_decay": 0.01},
         ], betas=(0.9, 0.999), eps=1e-8)
@@ -87,8 +91,9 @@ class SLFDTrainer:
                     if not problem or not step_text:
                         continue
 
-                    # Student forward — score_logit has gradient
-                    _, _, student_score_logit = self.student.evaluate_step(problem, solution_prefix, step_text)
+                    # Student forward — score_logit has gradient (boundary-token
+                    # read, no generation).
+                    student_score_logit = self.student.score_step(problem, solution_prefix, step_text)
 
                     # L_feedback_LM
                     input_ids, labels, attn_mask = self.student.prepare_step_inputs_and_labels(

@@ -1,5 +1,7 @@
 # Handoff — Saksham (GPU box, 2×3090 / 48 GB)
 
+**Status: UNBLOCKED (2026-06-16).** The cross-teacher gate passed (Qwen-27B confirms the pattern), so you're clear to run. Start at step 0 below.
+
 _Goal: reproduce the privilege × difficulty result with an **official** Gemma checkpoint at scale. This is the validated, ready-to-run experiment. (Full student training is **not** ready yet — see bottom.)_
 
 ## 0. Get the code
