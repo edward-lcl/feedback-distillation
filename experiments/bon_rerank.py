@@ -80,8 +80,12 @@ def main():
     n_p1 = n_maj = n_prm = n_oracle = total = 0
     for r in rows:
         problem, gt = r["problem"], str(r["gt_answer"])
-        cands = [t for t in (generate(GEN_PROMPT.format(problem=problem)).strip()
-                             for _ in range(args.n)) if t]
+        from concurrent.futures import ThreadPoolExecutor
+        prompt = GEN_PROMPT.format(problem=problem)
+        with ThreadPoolExecutor(max_workers=args.n) as pool:
+            futures = [pool.submit(generate, prompt) for _ in range(args.n)]
+            cands = [f.result().strip() for f in futures]
+        cands = [t for t in cands if t]
         if not cands:
             continue
         total += 1
