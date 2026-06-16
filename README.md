@@ -53,6 +53,43 @@ filtering/ranking scheme.
 
 ---
 
+## Status & key finding (June 2026)
+
+**Live dashboard:** https://feedback-distillation.exe.xyz · **Paper:** [Overleaf](https://www.overleaf.com/2555239245xpdcmsxkrzgx)
+
+**Headline — privilege has a *tractability sweet spot*.** A privileged (answer-aware)
+teacher's step labels help the GT-free student only where the teacher *needs* the
+reference (can't self-verify) **and** can *use* it (the problem is tractable). And only
+*rich* privilege works — a bare final answer is inert; the full worked solution carries
+the signal.
+
+| Difficulty | Δ F1 (full solution − no-GT) | reading |
+|---|---|---|
+| GSM8K (easy) | ≈ 0 (−0.05) | teacher self-verifies; privilege redundant |
+| **MATH (hard)** | **+0.07** (N=150) | the sweet spot |
+| OlympiadBench (hardest) | ≈ 0 (−0.03, verified) | teacher can't use the reference |
+
+A bare *answer* flips ≈0 predictions everywhere. Cross-family **confirmed** (Qwen-27B
+teacher: +0.082 on MATH). Teacher selected by bake-off (**Gemma-4-26b**, F1 0.91).
+
+### Pipeline (built &amp; smoke-tested)
+
+| Phase | Command | Output |
+|---|---|---|
+| 1 — privilege probe | `scripts/run_privilege_probe.sh` | the privilege gap per difficulty tier |
+| 2 — student ablation | `scripts/run_student_ablation.sh` | score-only vs score+critique · privileged vs no-GT |
+| 3 — verifier (best-of-N) | `experiments/bon_rerank.py` | does the GT-free PRM beat majority vote at test time? |
+| analysis | `experiments/evidence_pack.py` | bootstrap CIs · by-level breakdown · flip examples |
+
+Teacher labeling runs against any OpenAI-compatible endpoint (oMLX locally, vLLM on GPU):
+set `OMLX_URL` / `OMLX_MODEL` / `OMLX_API_KEY`.
+
+### Runbooks
+- **Saksham (GPU):** [`HANDOFF_SAKSHAM.md`](HANDOFF_SAKSHAM.md) — serve Gemma, run Phases 1–3.
+- **Henry (paper):** [`HANDOFF_HENRY.md`](HANDOFF_HENRY.md) — sweet-spot framing, results, verifier section.
+
+---
+
 ## Architecture
 
 ```
@@ -64,7 +101,7 @@ filtering/ranking scheme.
   │   segment_steps()              ← data/step_segmentation.py     │
   │            │                                                   │
   │            ▼                                                   │
-  │   TeacherModel.label_solution()   ← Qwen2.5-7B, FROZEN         │
+  │   TeacherModel.label_solution()   ← Gemma-4-26b, FROZEN       │
   │     per step → {score, feedback, is_error}                     │
   │     (uses gt_answer — the privileged signal)                  │
   │            │                                                   │
@@ -105,8 +142,12 @@ preceding steps alone.
 
 | Role | Model | Params | Trained? | GT access |
 |------|-------|--------|----------|-----------|
-| **Teacher** | `Qwen/Qwen2.5-7B-Instruct` | 7B | **Frozen** | Yes (labeling only) |
+| **Teacher** | Gemma-4-26b class (bake-off winner; official ckpt for the reported run) | ~26B | **Frozen** | Yes (labeling only) |
 | **Student** | `Qwen/Qwen2.5-1.5B-Instruct` + LoRA + score head | 1.5B | **Trainable** | **No** |
+
+> Teacher chosen by a with-GT bake-off (Gemma F1 0.91, zero parse failures, fastest);
+> a Qwen-27B teacher reproduces the finding (cross-family). Older drafts named a
+> Qwen2.5-7B teacher — superseded.
 
 The teacher is loaded once for offline labeling and never updated. The student
 is the only trained component: its base weights (via LoRA), a linear scoring
