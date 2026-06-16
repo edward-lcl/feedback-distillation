@@ -69,8 +69,10 @@ def build_processbench(config: str, output: str, n: int | None):
         # final_answer / solution can be lists — flatten to strings.
         def _flat(x):
             return ", ".join(map(str, x)) if isinstance(x, list) else (str(x) if x else "")
-        for c in ("OE_TO_maths_en_COMP", "OE_MM_maths_en_COMP",
-                  "TP_TO_maths_en_COMP", "TP_MM_maths_en_COMP"):
+        # OE (open-ended / final-answer) only — matches ProcessBench's olympiadbench
+        # problem type. TP (theorem-proving) "solutions" are proofs, not step-aligned
+        # final-answer derivations, so they're a misaligned per-step reference.
+        for c in ("OE_TO_maths_en_COMP", "OE_MM_maths_en_COMP"):
             try:
                 src = load_dataset("Hothan/OlympiadBench", c, split="train")
             except Exception:

@@ -30,7 +30,7 @@ OVERVIEW = [
 ]
 
 RESEARCH_Q = ("The research question",
-    "Does distilling a teacher's <b>step-level score + natural-language critique</b> — and its <b>privileged</b> (answer-aware) judgment — into a small answer-blind student make it better at catching reasoning-step errors? <b>Finding so far:</b> privilege helps, but only when the problem is <b>hard</b> and the privilege is <b>rich</b> (a worked solution, not a bare answer).")
+    "Does distilling a teacher's <b>step-level score + natural-language critique</b> — and its <b>privileged</b> (answer-aware) judgment — into a small answer-blind student make it better at catching reasoning-step errors? <b>Finding:</b> privilege has a <b>tractability sweet spot</b> — it helps only where the teacher both <i>needs</i> the reference (can't self-verify) and can <i>use</i> it; and only <b>rich</b> privilege works (a worked solution, not a bare answer).")
 
 PHASE = "Phase 0 (teacher gate) complete — research design validated by data"
 
@@ -47,8 +47,8 @@ DECISIONS = [
      "GSM8K is saturated — the privilege gap is ≈0 there"),
     ("Privilege signal", "Full worked reference solution",
      "+0.07 F1 on MATH (N=150). A bare answer flips ZERO predictions — the teacher needs a reference reasoning trace, not a number."),
-    ("Core claim", "VALIDATED — rich privilege helps on hard problems",
-     "≈0 on GSM8K and for bare answers everywhere; +0.07 for the full solution on MATH"),
+    ("Core claim", "VALIDATED — privilege has a tractability sweet spot",
+     "gap_solution: GSM8K ≈0 · MATH +0.07 · OlympiadBench ≈0 (verified) — helps only mid-difficulty; bare answer inert everywhere."),
 ]
 
 TASKS = [  # who, track, status (active|blocked|queued|done), next action
