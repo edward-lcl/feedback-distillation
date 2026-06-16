@@ -154,7 +154,7 @@ a:hover{text-decoration:underline}
     <a href="https://github.com/edward-lcl/feedback-distillation/blob/main/paper/SLFD.pdf" target="_blank">Paper ↗</a>
   </div>
   <div class="nav-right">
-    <span class="nav-meta">updated 2026-06-16 16:58</span>
+    <span class="nav-meta">updated 2026-06-16 17:04</span>
     <a class="nav-gh" href="https://github.com/edward-lcl/feedback-distillation" target="_blank">GitHub ↗</a>
   </div>
 </nav>
@@ -165,9 +165,10 @@ a:hover{text-decoration:underline}
     <h1>Step-Level Feedback Distillation</h1>
     <p class="hero-sub">Teaching a small, answer-blind model to catch reasoning mistakes step-by-step — by distilling a stronger teacher that&#x27;s allowed to peek at the answer.</p>
     <div class="hero-chips">
-      <span class="chip chip-green">Phase 0 complete</span>
-      <span class="chip chip-blue">Gemma teacher locked</span>
-      <span class="chip chip-green">Cross-family confirmed (Qwen-27B)</span>
+      <span class="chip chip-green">Pipeline built · handoff-ready</span>
+      <span class="chip chip-green">Sweet spot verified</span>
+      <span class="chip chip-blue">Gemma teacher · Qwen cross-family</span>
+      <span class="chip chip-yellow">Next: GPU runs (Saksham)</span>
       <span class="chip chip-gray">edward-lcl/feedback-distillation</span>
     </div>
   </div>
@@ -228,7 +229,7 @@ a:hover{text-decoration:underline}
 <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
   <table class="task-table">
     <tr><th>Who</th><th>Track</th><th>Status</th><th>Next action</th></tr>
-    <tr><td><div class='task-who'>Edward</div><div class='task-track'>Orchestration + trainer</div></td><td></td><td><span class='pill p-active'>active</span></td><td class='task-action'>Trainer fixed — real LoRA (1.75% params) + boundary-token score head, train/eval aligned. Next: full label → train → eval on GPU + the score-vs-critique student ablation.</td></tr><tr><td><div class='task-who'>Saksham</div><div class='task-track'>GPU pipeline</div></td><td></td><td><span class='pill p-active'>active</span></td><td class='task-action'>UNBLOCKED — cross-teacher confirmed. Serve official Gemma (vLLM), then ./scripts/run_privilege_probe.sh on the GPU box. Full runbook: HANDOFF_SAKSHAM.md.</td></tr><tr><td><div class='task-who'>Henry</div><div class='task-track'>Research / paper</div></td><td></td><td><span class='pill p-active'>active</span></td><td class='task-action'>✓ Related Work (PRM positioning) · ✓ Results narrative (GSM8K-vs-MATH) — both in paper/. ☐ by-level breakdown + flip examples (Edward) · ☐ significance test on solution gap · ☐ assemble paper skeleton.</td></tr>
+    <tr><td><div class='task-who'>Edward</div><div class='task-track'>Trainer + analysis</div></td><td></td><td><span class='pill p-active'>active</span></td><td class='task-action'>Build DONE — trainer fixed (LoRA + boundary score head) and the full ablation + best-of-N verifier pipeline merged & smoke-tested. While Saksham runs GPU: generate Henry's evidence pack (by-level + flip examples) + bootstrap CIs on the privilege gaps; then analyze the student-ablation results.</td></tr><tr><td><div class='task-who'>Saksham</div><div class='task-track'>GPU pipeline</div></td><td></td><td><span class='pill p-active'>active</span></td><td class='task-action'>UNBLOCKED — cross-teacher confirmed. Serve official Gemma (vLLM), then ./scripts/run_privilege_probe.sh on the GPU box. Full runbook: HANDOFF_SAKSHAM.md.</td></tr><tr><td><div class='task-who'>Henry</div><div class='task-track'>Research / paper</div></td><td></td><td><span class='pill p-active'>active</span></td><td class='task-action'>✓ Related Work (PRM positioning) · ✓ Results narrative (GSM8K-vs-MATH) — both in paper/. ☐ by-level breakdown + flip examples (Edward) · ☐ significance test on solution gap · ☐ assemble paper skeleton.</td></tr>
   </table>
 </div>
 
