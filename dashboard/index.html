@@ -144,7 +144,7 @@ a:hover{text-decoration:underline}
     <a href="https://github.com/edward-lcl/feedback-distillation/blob/main/paper/SLFD.pdf" target="_blank">Paper ↗</a>
   </div>
   <div class="nav-right">
-    <span class="nav-meta">updated 2026-06-16 16:16</span>
+    <span class="nav-meta">updated 2026-06-16 16:39</span>
     <a class="nav-gh" href="https://github.com/edward-lcl/feedback-distillation" target="_blank">GitHub ↗</a>
   </div>
 </nav>
@@ -166,7 +166,7 @@ a:hover{text-decoration:underline}
 <div class="wrap">
 
 <div class="section-label" id="overview">Project overview</div>
-<div class="g3"><div class='ov-card'><h3>What we're building</h3><p>A small <b>ground-truth-free student</b> that reads a math solution and flags <i>which step</i> the reasoning first goes wrong — not just whether the final answer is right. It learns this from a stronger <b>privileged teacher</b> that sees the reference solution while labeling.</p></div><div class='ov-card'><h3>Why it was revived</h3><p>The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <b>June 2026</b> with a shift to <b>step-level reasoning evaluation</b> over final-answer accuracy. Target: a publishable result for the <b>COLM workshop (~early July)</b> — flexible; quality over the date.</p></div><div class='ov-card'><h3>Where we are today</h3><p><b>Phase-0 teacher gate complete.</b> Teacher, dataset, and privilege form are all chosen <i>by data</i>, and the core claim is validated. Next: confirm it generalizes across model families, fix the student trainer, then hand labeling to the GPU box.</p></div></div>
+<div class="g3"><div class='ov-card'><h3>What we're building</h3><p>A small <b>ground-truth-free student</b> that reads a math solution and flags <i>which step</i> the reasoning first goes wrong — not just whether the final answer is right. It learns this from a stronger <b>privileged teacher</b> that sees the reference solution while labeling.</p></div><div class='ov-card'><h3>Why it was revived</h3><p>The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <b>June 2026</b> with a shift to <b>step-level reasoning evaluation</b> over final-answer accuracy. Target: a publishable result for the <b>COLM workshop (~early July)</b> — flexible; quality over the date.</p></div><div class='ov-card'><h3>Where we are today</h3><p><b>Pipeline built end-to-end</b> (probe → student ablation → best-of-N verifier), all smoke-tested. Teacher/dataset/privilege locked; the privilege <b>sweet spot</b> is verified (helps on MATH, not GSM8K or OlympiadBench) and replicates cross-family. Next: run Phase 2/3 at scale on the GPU box for the headline numbers.</p></div></div>
 
 <div class="callout" style="margin-top:16px">
   <h3>The research question</h3>
@@ -206,11 +206,11 @@ a:hover{text-decoration:underline}
 <div class="g2">
   <div class="card">
     <div class="card-title" style="margin-bottom:14px">Experiment status</div>
-    <ul class="status-list"><li><span class='pill p-done'>done</span> Teacher bake-off (5 models, N=30)</li><li><span class='pill p-done'>done</span> Privilege × difficulty (Gemma · GSM8K + MATH N=150)</li><li><span class='pill p-done'>done</span> Cross-teacher replication (Qwen-27B · MATH N=150)</li></ul>
+    <ul class="status-list"><li><span class='pill p-done'>done</span> Teacher bake-off (5 models, N=30)</li><li><span class='pill p-done'>done</span> Privilege × difficulty (GSM8K · MATH · OlympiadBench)</li><li><span class='pill p-done'>done</span> Cross-teacher replication (Qwen-27B · MATH N=150)</li><li><span class='pill p-todo'>queued</span> Student ablation + best-of-N verifier @ scale (GPU)</li></ul>
   </div>
   <div class="card">
     <div class="card-title" style="margin-bottom:14px">Roadmap</div>
-    <div class="milestones"><div class='mile done'><span class='pill p-done'>done</span><div class='mile-text'>Teacher + dataset + privilege form locked by data</div></div><div class='mile now'><span class='pill p-running'>now</span><div class='mile-text'>Confirm generalization (cross-teacher) + fix student trainer</div></div><div class='mile '><span class='pill p-next'>next</span><div class='mile-text'>Hand MATH labeling to Saksham (GPU)</div></div><div class='mile '><span class='pill p-then'>then</span><div class='mile-text'>Score-vs-critique student ablation → paper draft</div></div></div>
+    <div class="milestones"><div class='mile done'><span class='pill p-done'>done</span><div class='mile-text'>Teacher/dataset/privilege locked; sweet spot verified (GSM8K·MATH·OlympiadBench)</div></div><div class='mile done'><span class='pill p-done'>done</span><div class='mile-text'>Student pipeline built: trainer fixed + ablation + best-of-N verifier (smoke-tested)</div></div><div class='mile now'><span class='pill p-running'>now</span><div class='mile-text'>Run Phase 2/3 at scale on GPU — student ablation + verifier numbers</div></div><div class='mile '><span class='pill p-then'>then</span><div class='mile-text'>CIs + baselines + paper draft (sweet spot + downstream verifier)</div></div></div>
   </div>
 </div>
 
@@ -238,7 +238,7 @@ a:hover{text-decoration:underline}
 
 <div class="section-label" id="next">What's next &amp; handoff gates</div>
 <div class="card">
-  <ul class="status-list"><li><span class='pill p-done'>done</span> Cross-teacher replication (Qwen-27B) confirms the pattern — solution gap +0.082, not a Gemma artifact.</li><li><span class='pill p-todo'>todo</span> Spot-check why with_answer ≡ no_gt at N=150 (wiring confirmed; behavior is real).</li><li><span class='pill p-todo'>todo</span> Use the OFFICIAL Gemma checkpoint (not the abliterated community quant) for the reported labeling pass.</li><li><span class='pill p-idea'>idea</span> A harder set (OlympiadBench) may widen the solution gap — optional extension.</li></ul>
+  <ul class="status-list"><li><span class='pill p-done'>done</span> Cross-teacher (Qwen-27B) confirms the pattern — solution gap +0.082, not a Gemma artifact.</li><li><span class='pill p-done'>done</span> OlympiadBench (OE-only, verified) — privilege ≈0 there → sweet spot, NOT monotonic with difficulty.</li><li><span class='pill p-done'>done</span> with_answer ≡ no_gt confirmed real (bare answer inert), not a wiring bug.</li><li><span class='pill p-todo'>todo</span> Bootstrap CIs / multiple seeds on the gaps; baselines (Math-Shepherd, self-critique).</li><li><span class='pill p-todo'>todo</span> Use the OFFICIAL Gemma checkpoint for the reported labeling pass.</li><li><span class='pill p-idea'>idea</span> Does a stronger teacher extend the sweet spot upward on OlympiadBench?</li></ul>
   <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--ink3)">
     Handoff: <strong style="color:var(--ink)">Saksham</strong> unblocks on cross-teacher confirm ·
     <strong style="color:var(--ink)">Henry</strong> can start now; blocks on flip examples + by-level from Edward ·
