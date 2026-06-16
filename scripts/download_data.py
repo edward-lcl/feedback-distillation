@@ -64,6 +64,22 @@ def build_processbench(config: str, output: str, n: int | None):
                 if p:
                     gt_map[p] = {"answer": ex.get("answer") or "",
                                  "solution": ex.get("solution") or ""}
+    elif config == "olympiadbench":
+        # Join from Hothan/OlympiadBench text+MM math configs (~96% coverage).
+        # final_answer / solution can be lists — flatten to strings.
+        def _flat(x):
+            return ", ".join(map(str, x)) if isinstance(x, list) else (str(x) if x else "")
+        for c in ("OE_TO_maths_en_COMP", "OE_MM_maths_en_COMP",
+                  "TP_TO_maths_en_COMP", "TP_MM_maths_en_COMP"):
+            try:
+                src = load_dataset("Hothan/OlympiadBench", c, split="train")
+            except Exception:
+                continue
+            for ex in src:
+                p = (ex.get("question") or "").strip()
+                if p:
+                    gt_map[p] = {"answer": _flat(ex.get("final_answer")),
+                                 "solution": _flat(ex.get("solution"))}
 
     rows, joined = [], 0
     for i, ex in enumerate(ds):
