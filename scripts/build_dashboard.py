@@ -53,8 +53,8 @@ DECISIONS = [
 ]
 
 TASKS = [  # who, track, status (active|blocked|queued|done), next action
-    ("Edward", "Orchestration + trainer", "active",
-     "Trainer fixed — real LoRA (1.75% params) + boundary-token score head, train/eval aligned. Next: full label → train → eval on GPU + the score-vs-critique student ablation."),
+    ("Edward", "Trainer + analysis", "active",
+     "Build DONE — trainer fixed (LoRA + boundary score head) and the full ablation + best-of-N verifier pipeline merged & smoke-tested. While Saksham runs GPU: generate Henry's evidence pack (by-level + flip examples) + bootstrap CIs on the privilege gaps; then analyze the student-ablation results."),
     ("Saksham", "GPU pipeline", "active",
      "UNBLOCKED — cross-teacher confirmed. Serve official Gemma (vLLM), then ./scripts/run_privilege_probe.sh on the GPU box. Full runbook: HANDOFF_SAKSHAM.md."),
     ("Henry", "Research / paper", "active",
@@ -489,9 +489,10 @@ a:hover{text-decoration:underline}
     <h1>Step-Level Feedback Distillation</h1>
     <p class="hero-sub">{html.escape(TAGLINE)}</p>
     <div class="hero-chips">
-      <span class="chip chip-green">Phase 0 complete</span>
-      <span class="chip chip-blue">Gemma teacher locked</span>
-      <span class="chip chip-green">Cross-family confirmed (Qwen-27B)</span>
+      <span class="chip chip-green">Pipeline built · handoff-ready</span>
+      <span class="chip chip-green">Sweet spot verified</span>
+      <span class="chip chip-blue">Gemma teacher · Qwen cross-family</span>
+      <span class="chip chip-yellow">Next: GPU runs (Saksham)</span>
       <span class="chip chip-gray">edward-lcl/feedback-distillation</span>
     </div>
   </div>
