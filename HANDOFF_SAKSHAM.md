@@ -58,3 +58,15 @@ It labels MATH train data twice (privileged solution + no-GT), trains the cells 
 - **priv_critique vs nogt_critique** — does the teacher's privilege transfer to the student?
 
 Tiny local smoke first (no GPU teacher needed): `DEV=1 GEN_BACKEND=local N_TRAIN=4 N_EVAL=10 ./scripts/run_student_ablation.sh`
+
+## Phase 3 — use the PRM as a test-time verifier (the impact result)
+Once Phase 2 yields a student checkpoint, measure what the verifier is worth downstream:
+```bash
+OMLX_MODEL=<generator> ./.venv/bin/python -m experiments.bon_rerank \
+    --dataset data/processbench_math_shuffled.jsonl \
+    --checkpoint checkpoints/priv_critique.pt --n 8 --max_samples 200
+```
+Samples N candidate solutions per problem, re-ranks with the student PRM, and reports
+**pass@1 / majority_vote / prm_rerank / oracle_pass@N**. Headline: `prm_rerank > majority_vote`
+means the GT-free verifier improves reasoning at inference (a fraction of the teacher's cost).
+(NOTE: answer-matching is the simple numeric/string matcher — swap in a symbolic MATH checker for final numbers.)
