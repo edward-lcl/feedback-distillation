@@ -143,7 +143,7 @@ a:hover{text-decoration:underline}
     <a href="#next">Next</a>
   </div>
   <div class="nav-right">
-    <span class="nav-meta">updated 2026-06-16 03:52</span>
+    <span class="nav-meta">updated 2026-06-16 04:14</span>
     <a class="nav-gh" href="https://github.com/edward-lcl/feedback-distillation" target="_blank">GitHub ↗</a>
   </div>
 </nav>
@@ -217,7 +217,7 @@ a:hover{text-decoration:underline}
 <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
   <table class="task-table">
     <tr><th>Who</th><th>Track</th><th>Status</th><th>Next action</th></tr>
-    <tr><td><div class='task-who'>Edward</div><div class='task-track'>Orchestration + trainer</div></td><td></td><td><span class='pill p-active'>active</span></td><td class='task-action'>Fix slfd_trainer: wire real LoRA (currently full-FT), score-head reads the boundary token. Then design the score-vs-critique student ablation.</td></tr><tr><td><div class='task-who'>Saksham</div><div class='task-track'>GPU pipeline</div></td><td></td><td><span class='pill p-blocked'>blocked</span></td><td class='task-action'>Official Gemma via vLLM → label MATH train set with SOLUTION-privilege → train GT-free student → eval on ProcessBench MATH. Unblocks once cross-teacher replication confirms.</td></tr><tr><td><div class='task-who'>Henry</div><div class='task-track'>Research / paper</div></td><td></td><td><span class='pill p-active'>active</span></td><td class='task-action'>Draft Related Work (PRM lit positioning) + results narrative around the GSM8K-vs-MATH table. See HANDOFF_HENRY.md on GitHub. Blocking on: by-level breakdown + flip examples from Edward.</td></tr>
+    <tr><td><div class='task-who'>Edward</div><div class='task-track'>Orchestration + trainer</div></td><td></td><td><span class='pill p-active'>active</span></td><td class='task-action'>Trainer fixed — real LoRA (1.75% params) + boundary-token score head, train/eval aligned. Next: full label → train → eval on GPU + the score-vs-critique student ablation.</td></tr><tr><td><div class='task-who'>Saksham</div><div class='task-track'>GPU pipeline</div></td><td></td><td><span class='pill p-active'>active</span></td><td class='task-action'>UNBLOCKED — cross-teacher confirmed. Serve official Gemma (vLLM), then ./scripts/run_privilege_probe.sh on the GPU box. Full runbook: HANDOFF_SAKSHAM.md.</td></tr><tr><td><div class='task-who'>Henry</div><div class='task-track'>Research / paper</div></td><td></td><td><span class='pill p-active'>active</span></td><td class='task-action'>Draft Related Work (PRM lit positioning) + results narrative around the GSM8K-vs-MATH table. See HANDOFF_HENRY.md on GitHub. Blocking on: by-level breakdown + flip examples from Edward.</td></tr>
   </table>
 </div>
 
