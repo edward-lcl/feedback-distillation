@@ -136,35 +136,59 @@ python -m spacy download en_core_web_sm
 
 ## Pipeline
 
+**One command for the whole loop** (teacher labeling runs on your local oMLX
+server — no 72B download, no API credits):
+
+```bash
+export OMLX_API_KEY=...   # your oMLX server key; omit if the server is open
+./run_experiment.sh       # download → label → train → save → eval
+```
+
+Or run the four stages by hand:
+
+### 0. Download data
+
+```bash
+# Eval set — ProcessBench ships GOLD step-error labels (no teacher needed):
+python -m scripts.download_data --processbench --config math \
+    --output data/processbench_test.jsonl
+
+# Training source — GSM8K problems for the teacher to label:
+python -m scripts.download_data --train_source gsm8k --n 300 \
+    --output data/raw/gsm8k_train.jsonl
+```
+
 ### 1. Label steps with the teacher (offline)
 
 ```bash
 python -m data.label_pipeline \
-    --input data/raw/math_shepherd_sample.jsonl \
-    --output data/labeled/math_shepherd_labeled.jsonl \
-    --max_samples 500
+    --input data/raw/gsm8k_train.jsonl \
+    --output data/labeled/gsm8k_labeled.jsonl \
+    --max_samples 300 \
+    --use_omlx              # call local oMLX instead of loading the 72B teacher
 ```
 
 Produces labeled JSONL (see [`data/README.md`](data/README.md) for the format).
 
-### 2. Train the student (distillation)
+### 2. Train the student (distillation) + save a checkpoint
 
-```python
-from models.student import StudentModel
-from models.teacher import TeacherModel
-from training.slfd_trainer import SLFDTrainer
-
-student = StudentModel()
-teacher = TeacherModel()
-trainer = SLFDTrainer(student, teacher, dataset)   # dataset = list of per-step dicts
-trainer.train(epochs=2, batch_size=4)
+```bash
+python -m experiments.train_slfd \
+    --dataset data/labeled/gsm8k_labeled.jsonl \
+    --checkpoint checkpoints/slfd_student.pt \
+    --epochs 2 --batch_size 4
 ```
+
+The labeled JSONL already carries the teacher's per-step score and critique, so
+training runs **fully locally on the student alone** — the teacher is not
+reloaded. The checkpoint bundles the base model, the trained score head, and the
+alignment layer. (`train_slfd` flattens per-solution records into per-step
+examples automatically; `data/flatten_labels.py` exposes this standalone.)
 
 ### 3. Evaluate on ProcessBench-style step-error detection
 
 ```bash
 python -m experiments.run_processbench \
-    --student_model Qwen/Qwen2.5-1.5B-Instruct \
     --checkpoint checkpoints/slfd_student.pt \
     --dataset data/processbench_test.jsonl \
     --max_samples 500
@@ -172,6 +196,12 @@ python -m experiments.run_processbench \
 
 Reports step-error **F1 / precision / recall** and **first-error-step
 accuracy**.
+
+### Local smoke test (Apple Silicon, tiny models)
+
+```bash
+./run_local.sh   # 10 synthetic samples, dev-mode 0.5B/1.5B models
+```
 
 ---
 

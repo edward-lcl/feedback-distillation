@@ -21,11 +21,11 @@ RESULTS = "results"
 TAGLINE = "Teaching a small, answer-blind model to catch reasoning mistakes step-by-step — by distilling a stronger teacher that's allowed to peek at the answer."
 
 OVERVIEW = [
-    ("🧩 What we're building",
+    ("What we're building",
      "A small <b>ground-truth-free student</b> that reads a math solution and flags <i>which step</i> the reasoning first goes wrong — not just whether the final answer is right. It learns this from a stronger <b>privileged teacher</b> that sees the reference solution while labeling."),
-    ("🔄 Why it was revived",
+    ("Why it was revived",
      "The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <b>June 2026</b> with a shift to <b>step-level reasoning evaluation</b> over final-answer accuracy. Target: a publishable result for the <b>COLM workshop (~early July)</b> — flexible; quality over the date."),
-    ("📍 Where we are today",
+    ("Where we are today",
      "<b>Phase-0 teacher gate complete.</b> Teacher, dataset, and privilege form are all chosen <i>by data</i>, and the core claim is validated. Next: confirm it generalizes across model families, fix the student trainer, then hand labeling to the GPU box."),
 ]
 
@@ -37,7 +37,7 @@ PHASE = "Phase 0 (teacher gate) complete — research design validated by data"
 RUNS = [  # (label, state) state in {running, done, queued}
     ("Teacher bake-off (5 models, N=30)", "done"),
     ("Privilege × difficulty (Gemma · GSM8K + MATH N=150)", "done"),
-    ("Cross-teacher replication (Qwen-27B · MATH N=150)", "crashed"),
+    ("Cross-teacher replication (Qwen-27B · MATH N=150)", "done"),
 ]
 
 DECISIONS = [
@@ -68,7 +68,7 @@ HOW_WE_WORK = [
 ]
 
 BULLETPROOFING = [
-    ("todo", "Restart cross-teacher replication (Qwen-27B · MATH N=150) — oMLX ChunkedEncodingError, no data saved."),
+    ("done", "Cross-teacher replication (Qwen-27B) confirms the pattern — solution gap +0.082, not a Gemma artifact."),
     ("todo", "Spot-check why with_answer ≡ no_gt at N=150 (wiring confirmed; behavior is real)."),
     ("todo", "Use the OFFICIAL Gemma checkpoint (not the abliterated community quant) for the reported labeling pass."),
     ("idea", "A harder set (OlympiadBench) may widen the solution gap — optional extension."),
@@ -453,7 +453,7 @@ a:hover{text-decoration:underline}
     <div class="hero-chips">
       <span class="chip chip-green">Phase 0 complete</span>
       <span class="chip chip-blue">Gemma teacher locked</span>
-      <span class="chip chip-yellow">Qwen-27B replication pending</span>
+      <span class="chip chip-green">Cross-family confirmed (Qwen-27B)</span>
       <span class="chip chip-gray">edward-lcl/feedback-distillation</span>
     </div>
   </div>
@@ -483,7 +483,7 @@ a:hover{text-decoration:underline}
 
 <div class="section-label">Cross-family replication — Qwen-27B</div>
 <div class="g2">
-  {_gpriv_card(qwen, "Qwen-27B · MATH N=150", "Privilege probe — crashed, needs restart", running=True)}
+  {_gpriv_card(qwen, "Qwen-27B · MATH N=150", "Cross-family confirmation · N=150", running=False)}
   <div class="card">
     <div class="card-title">Why this matters</div>
     <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-top:8px">If the privilege×difficulty pattern holds for Qwen-27B too, it's not a Gemma artifact — it's a property of step-level feedback under difficulty. Bakeoff F1 (0.873) shows Qwen-27B is a capable teacher. Unblocks Saksham once confirmed.</p>

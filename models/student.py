@@ -63,8 +63,11 @@ class StudentModel:
         print(f"StudentModel loaded: {model_name} on {self.device}")
 
     def _generate(self, prompt: str, max_new_tokens: int = 150) -> str:
-        max_length = MPS_SAFE_MAX_LENGTH if is_mps() else 512
-        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_length).to(self.device)
+        max_length = MPS_SAFE_MAX_LENGTH if is_mps() else 1024
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+        # Keep the TAIL on overflow — the step + "Score:" cue are at the end.
+        if inputs["input_ids"].shape[1] > max_length:
+            inputs = {k: v[:, -max_length:] for k, v in inputs.items()}
         model = self.model.module if hasattr(self.model, "module") else self.model
         with torch.no_grad():
             out = model.generate(
@@ -97,8 +100,10 @@ class StudentModel:
 
         # Score head forward — OUTSIDE no_grad so gradients flow.
         # Cast hidden states (float16 on MPS) to float32 before the float32 score head.
-        sh_max_length = MPS_SAFE_MAX_LENGTH if is_mps() else 256
-        inputs = self.tokenizer(response, return_tensors="pt", truncation=True, max_length=sh_max_length).to(self.device)
+        sh_max_length = MPS_SAFE_MAX_LENGTH if is_mps() else 1024
+        inputs = self.tokenizer(response, return_tensors="pt").to(self.device)
+        if inputs["input_ids"].shape[1] > sh_max_length:
+            inputs = {k: v[:, -sh_max_length:] for k, v in inputs.items()}
         out = self.model(**inputs, output_hidden_states=True, return_dict=True)
         last_hidden = out.hidden_states[-1][:, -1, :].to(torch.float32)
         score_logit = self.score_head(last_hidden).squeeze(-1)  # grad flows here

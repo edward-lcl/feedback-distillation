@@ -16,38 +16,78 @@ Usage:
     python -m data.label_pipeline --input ... --output ... --use_omlx
 """
 import json
+import os
+import re
 import argparse
 from tqdm import tqdm
 from models.teacher import TeacherModel, _parse_score
 from data.step_segmentation import segment_steps
 
+# Reasoning ("thinking") teachers emit a chain of thought before the answer —
+# either inside <think>...</think> tags or as plain prose. We must (a) give them
+# enough token budget to reach the "Score:" line, and (b) strip any think block
+# before parsing so leftover reasoning text can't confuse the score/feedback
+# extraction. The cap is a ceiling, not a fixed cost: greedy decoding stops at
+# EOS once the model emits its Score/Feedback, so a generous budget is ~free
+# except on the rare step where the model rambles.
+OMLX_LABEL_MAX_TOKENS = int(os.environ.get("OMLX_LABEL_MAX_TOKENS", "1024"))
+_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 
-def label_step_omlx(problem, solution_prefix, step_text, gt_answer, api_url="http://localhost:8000/v1") -> dict:
-    """Call oMLX server for step labeling instead of loading model locally."""
-    import requests
-    prompt = TeacherModel.STEP_EVAL_PROMPT.format(
-        problem=problem, solution_prefix=solution_prefix,
-        step_text=step_text, gt_answer=gt_answer,
-    )
-    resp = requests.post(f"{api_url}/chat/completions", json={
-        "model": "default",  # oMLX serves whatever is loaded
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 150,
-        "temperature": 0.0,
-    }, timeout=30)
-    resp.raise_for_status()
-    content = resp.json()["choices"][0]["message"]["content"]
+
+def _strip_think(text: str) -> str:
+    """Remove <think>...</think> blocks. If a think block is left unclosed (the
+    model ran out of budget mid-reasoning) keep only the text after the last
+    </think>, or empty if it never closed — there is no parseable answer there."""
+    text = _THINK_RE.sub("", text)
+    if "</think>" in text:
+        text = text.rsplit("</think>", 1)[-1]
+    elif "<think>" in text:
+        text = ""
+    return text.strip()
+
+
+def label_step_omlx(problem, solution_prefix, step_text, gt_answer, client=None,
+                    api_url="http://localhost:8000/v1",
+                    max_tokens=OMLX_LABEL_MAX_TOKENS, gt_solution=None) -> dict:
+    """Call oMLX server for step labeling instead of loading model locally.
+
+    Privilege level (strongest first): gt_solution (full worked reference) >
+    gt_answer (bare final number) > neither (GT-free, for the privileged gap)."""
+    from models.omlx_client import OmlxClient
+    client = client or OmlxClient(api_url=api_url)
+    if gt_solution is not None:
+        prompt = TeacherModel.STEP_EVAL_PROMPT_SOLUTION.format(
+            problem=problem, solution_prefix=solution_prefix,
+            step_text=step_text, gt_solution=gt_solution,
+        )
+    elif gt_answer is not None:
+        prompt = TeacherModel.STEP_EVAL_PROMPT.format(
+            problem=problem, solution_prefix=solution_prefix,
+            step_text=step_text, gt_answer=gt_answer,
+        )
+    else:
+        prompt = TeacherModel.STEP_EVAL_PROMPT_NO_GT.format(
+            problem=problem, solution_prefix=solution_prefix, step_text=step_text,
+        )
+    content = _strip_think(client.chat(prompt, max_tokens=max_tokens, temperature=0.0))
     score = _parse_score(content)
     parts = content.split("Feedback:", 1)
     feedback = parts[1].strip().split("\n")[0].strip() if len(parts) > 1 else ""
-    return {"score": score, "feedback": feedback, "is_error": score < 0.0}
+    return {
+        "score": score,
+        "feedback": feedback,
+        "is_error": (score < 0.0) if score is not None else None,
+        "parse_failed": score is None,
+    }
 
 
 def label_solution_omlx(problem, steps, gt_answer, api_url="http://localhost:8000/v1") -> list[dict]:
+    from models.omlx_client import OmlxClient
+    client = OmlxClient(api_url=api_url)
     labels = []
     prefix = ""
     for step in steps:
-        labels.append(label_step_omlx(problem, prefix, step, gt_answer, api_url=api_url))
+        labels.append(label_step_omlx(problem, prefix, step, gt_answer, client=client))
         prefix += step + "\n"
     return labels
 

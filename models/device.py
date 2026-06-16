@@ -4,8 +4,11 @@ import os
 import torch
 
 
-# MPS can fail on long sequences / certain ops — cap sequence length here.
-MPS_SAFE_MAX_LENGTH = 256
+# Generation context cap on MPS. The old value (256) silently right-truncated
+# real prompts — cutting off the "Score:" cue and instructions, so models just
+# continued the solution text and every label was garbage. 2048 covers GSM8K/
+# ProcessBench prompts comfortably; 0.5–7B fp16 KV caches at 2048 are tiny.
+MPS_SAFE_MAX_LENGTH = 2048
 
 # Dev-mode models fit alongside each other in 16GB Apple Silicon.
 DEV_MODELS = {

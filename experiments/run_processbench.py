@@ -30,8 +30,17 @@ def main():
     student = StudentModel(args.student_model, dev_mode=args.dev_mode)
     if args.checkpoint:
         import torch
-        student.model.load_state_dict(torch.load(args.checkpoint, map_location="cpu"), strict=False)
-        print(f"Loaded checkpoint: {args.checkpoint}")
+        ckpt = torch.load(args.checkpoint, map_location="cpu")
+        if isinstance(ckpt, dict) and "score_head" in ckpt:
+            # Bundled checkpoint from train_slfd: restore base model AND the
+            # score head (the component eval reads to predict step errors).
+            student.model.load_state_dict(ckpt["model"], strict=False)
+            student.score_head.load_state_dict(ckpt["score_head"])
+            print(f"Loaded checkpoint (model + score head): {args.checkpoint}")
+        else:
+            # Legacy: a bare model state_dict.
+            student.model.load_state_dict(ckpt, strict=False)
+            print(f"Loaded checkpoint (model only — no score head): {args.checkpoint}")
 
     results = evaluate_processbench(student, args.dataset, args.max_samples)
     print(json.dumps(results, indent=2))
