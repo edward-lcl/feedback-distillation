@@ -479,6 +479,7 @@ a:hover{text-decoration:underline}
   </div>
   <div class="nav-right">
     <span class="nav-meta">updated {stamp}</span>
+    <a class="nav-gh" href="{OVERLEAF_URL}" target="_blank">Paper ↗</a>
     <a class="nav-gh" href="https://github.com/edward-lcl/feedback-distillation" target="_blank">GitHub ↗</a>
   </div>
 </nav>

@@ -1,52 +1,47 @@
 # Handoff — Henry (research / analysis + paper)
 
-_Last updated 2026-06-15. Async-friendly, no compute needed. Dashboard: https://feedback-distillation.exe.xyz_
+_Updated 2026-06-16. Async-friendly, no compute needed. Paper: https://www.overleaf.com/2555239245xpdcmsxkrzgx · Dashboard: https://feedback-distillation.exe.xyz_
 
-## The one thing to internalize
+Your Overleaf draft is already strong (Related Work, the position, and the GSM8K/MATH/cross-family results are in). This runbook covers what's **changed** since you drafted it, and what's left to land.
 
-We validated the project's core claim today, and it has a sharp, defensible spine:
+## The spine — now sharper (and one thing to FIX)
 
-> **Privileged supervision helps a step-error-detecting teacher only when the problem is hard *and* the privilege is rich.**
-> - GSM8K (easy): privilege gap ≈ 0 at every level — a strong teacher already self-verifies grade-school arithmetic.
-> - MATH (hard): a bare final *answer* still does nothing, but the full worked *solution* lifts error recall 0.58 → 0.65 (gap **+0.07**, N=150, Gemma teacher).
+The finding is a **tractability sweet spot**, not a monotonic difficulty effect:
 
-That's the paper. Everything below turns it into a submission.
+> Privileged supervision helps the teacher **only where it both NEEDS the reference (can't self-verify) and can USE it (problem is tractable)**. Verified Δ solution-gap F1:
+> - **GSM8K (easy): ≈ 0** — strong teacher self-verifies; privilege redundant.
+> - **MATH (hard): +0.07** (N=150; error recall 0.58→0.65) — the sweet spot.
+> - **OlympiadBench (hardest): ≈ 0** (−0.03, OE-only verified) — teacher can't use an olympiad-level reference.
+> Plus **richness matters**: a bare answer is inert; only the full worked solution helps. Cross-family **confirmed** (Qwen-27B, +0.082 on MATH).
+
+**FIX in your draft:** §2.3 currently says *"on hard problems it opens. Difficulty is the moderator."* — that's the old monotonic reading and our OlympiadBench result **contradicts it**. Reframe to the sweet spot. (Edward staged the OlympiadBench LaTeX block + the exact §1.4 / §2.3 edits.)
 
 ## What's settled — do NOT relitigate
-
 | | choice |
 |---|---|
 | Teacher | Gemma-4-26b class (official ckpt for the reported run) |
-| Dataset | ProcessBench **MATH** (GSM8K too saturated to show the effect) |
+| Dataset | ProcessBench **MATH** primary; GSM8K + OlympiadBench as the difficulty tiers |
 | Privilege signal | **full worked solution** (a bare answer is inert) |
 | Eval | ProcessBench-style first-error F1, GT-free at student test time |
 
 ## Your mission (in priority order)
+**A. Related work & positioning** — already drafted; keep. Novelty = (1) score+critique as a distillation target, (2) the privilege **sweet-spot** characterization (when privilege can be distilled at all).
 
-**A. Related work & positioning (write).** Frame our contribution against process-reward-model literature, which treats step scoring as a *scalar* signal and the PRM as a frozen *scorer/ranker*. Our novelty: (1) the teacher's step **score+critique behavior as a distillation target**, and (2) the **privilege×difficulty×richness** result. Core papers:
-- Math-Shepherd (arXiv:2312.08935) — automatic step supervision
-- Lightman et al., "Let's Verify Step by Step" (arXiv:2305.20050) — process > outcome supervision
-- GenPRM / ThinkPRM — *generative* PRMs that reason about step correctness
-- CLEAR (arXiv:2504.07116) — contrastive expert/amateur feedback (our prior framing)
-- LightReasoner (arXiv:2510.07962) — small models extracting signal from large ones
+**B. Results narrative** — update to the **3-tier sweet spot** (GSM8K ≈0 → MATH +0.07 → OlympiadBench ≈0) + the richness panel + cross-family. The sweet-spot contrast (not the monotonic claim) is the load-bearing figure.
 
-**B. Results narrative (write).** Turn the privilege×difficulty data into the paper's results story: privilege buys signal exactly where self-verification fails, and only when rich enough. The GSM8K-vs-MATH contrast is the key figure.
+**C. Add the downstream-verifier section (new — §2.6).** The frontier/impact angle, not in the draft yet: the GT-free student PRM used as a test-time verifier (best-of-N re-rank) → final-answer accuracy vs majority vote. Numbers come from Saksham's Phase 3 (`bon_rerank.py`); a stub is fine for now.
 
-**C. Interpret the evidence pack (light analysis).** Edward will generate two artifacts for you:
-- **By-level breakdown** — does the MATH solution-gap grow with MATH difficulty level (1→5)? (Predicts: gap widens with level.)
-- **Flip examples** — concrete steps where solution-privilege catches an error that no-GT misses. Categorize the error types; pick 2–3 illustrative ones for the paper.
+**D. Interpret the evidence pack (incoming).** Edward is generating, from a per-sample probe log:
+- **By-tier / by-level breakdown** — note the prediction has CHANGED: not "gap widens with level," but a sweet spot (rises GSM8K→MATH, falls at OlympiadBench).
+- **Flip examples** — concrete steps the teacher catches only with the solution; categorize error types, pick 2–3 for the paper.
+- **Bootstrap CIs** on every gap (so +0.07 ships with a confidence interval).
 
 ## Inputs you have
-
-- Dashboard (live): https://feedback-distillation.exe.xyz
-- Result JSONs in `results/teacher_eval*/privilege_probe.json` (GSM8K, MATH N=50/N=150)
-- Eval data: `data/processbench_math_shuffled.jsonl` (GT answer + solution joined)
-- Evidence pack: _to be delivered (by-level breakdown + flip examples)_
+- Paper (Overleaf): https://www.overleaf.com/2555239245xpdcmsxkrzgx
+- Dashboard (live, "Path to submission" shows the full runway): https://feedback-distillation.exe.xyz
+- Result JSONs: `results/teacher_eval*/privilege_probe.json` (GSM8K, MATH N=50/150, Qwen-27B, OlympiadBench OE)
+- Eval data: `data/processbench_math_shuffled.jsonl`
+- Evidence pack + CIs: _being delivered by Edward (per-sample log → by-tier + flips + CIs)._
 
 ## Deliverable
-
-A paper skeleton (Overleaf or Google Doc — your call) with **Related Work** and the **privilege×difficulty results section** drafted. Target venue is flexible (COLM/AAAI/workshop) — quality over the date.
-
-## Open question for you to weigh in on
-
-Cross-teacher replication (Qwen-27B) is running now — if it confirms the pattern holds beyond Gemma, the difficulty×richness claim is family-independent. If it diverges, we need to discuss framing. Check the dashboard's "cross-family check" card.
+The Overleaf draft, updated to the sweet-spot framing, with Related Work + the 3-tier results + the downstream-verifier section. Target venue flexible (COLM/AAAI/workshop) — quality over the date.
