@@ -2,7 +2,7 @@
 
 **Status: UNBLOCKED (2026-06-16).** The cross-teacher gate passed (Qwen-27B confirms the pattern), so you're clear to run. Start at step 0 below.
 
-_Goal: reproduce the privilege × difficulty result with an **official** Gemma checkpoint at scale. This is the validated, ready-to-run experiment. (Full student training is **not** ready yet — see bottom.)_
+_Goal: reproduce the privilege × difficulty result with an **official** Gemma checkpoint at scale. Phase 1 (the probe) is below; Phase 2 (the full student run + ablations — the paper result) is at the bottom, now also ready._
 
 ## 0. Get the code
 ```bash
@@ -48,5 +48,13 @@ From `results/teacher_eval_math_<model>/privilege_probe.json`:
 - Higher N for tighter CIs: `N=300 ./scripts/run_privilege_probe.sh`.
 - A second official family (e.g. a Qwen2.5/3 instruct) for an extra cross-family point.
 
-## Not ready yet (don't run): full student training
-The label → train → eval student pipeline (`label_pipeline` → `train_slfd` → `run_processbench`) is **blocked on trainer fixes** (real LoRA wiring + score-head reads the boundary token) — Edward's track. Hold until that lands; this probe is the GPU task for now.
+## Phase 2 — the full student run (READY — the paper result)
+The trainer is fixed (real LoRA + boundary-token score head), so the GT-free student pipeline is turnkey. One command runs both headline ablations:
+```bash
+N_TRAIN=300 N_EVAL=400 EPOCHS=2 ./scripts/run_student_ablation.sh
+```
+It labels MATH train data twice (privileged solution + no-GT), trains the cells (score-only vs score+critique), and evals on ProcessBench MATH. Report the printed table:
+- **priv_critique vs priv_scoreonly** — does distilling the NL critique help?
+- **priv_critique vs nogt_critique** — does the teacher's privilege transfer to the student?
+
+Tiny local smoke first (no GPU teacher needed): `DEV=1 GEN_BACKEND=local N_TRAIN=4 N_EVAL=10 ./scripts/run_student_ablation.sh`
