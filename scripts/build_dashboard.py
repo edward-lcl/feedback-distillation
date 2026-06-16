@@ -47,9 +47,9 @@ DECISIONS = [
     ("Dataset", "ProcessBench MATH",
      "GSM8K is saturated — the privilege gap is ≈0 there"),
     ("Privilege signal", "Full worked reference solution",
-     "+0.07 F1 on MATH (N=150). A bare answer flips ZERO predictions — the teacher needs a reference reasoning trace, not a number."),
+     "+0.05 F1 on MATH (N=400, 95% CI [0.01, 0.09], significant). A bare answer flips ZERO predictions — the teacher needs a reference reasoning trace, not a number."),
     ("Core claim", "VALIDATED — privilege has a tractability sweet spot",
-     "gap_solution: GSM8K ≈0 · MATH +0.07 · OlympiadBench ≈0 (verified) — helps only mid-difficulty; bare answer inert everywhere."),
+     "gap_solution: GSM8K ≈0 · MATH +0.05 (95% CI [0.01, 0.09], significant) · OlympiadBench ≈0 (verified) — helps only mid-difficulty; bare answer inert everywhere."),
 ]
 
 TASKS = [  # who, track, status (active|blocked|queued|done), next action
@@ -58,7 +58,7 @@ TASKS = [  # who, track, status (active|blocked|queued|done), next action
     ("Saksham", "GPU pipeline", "active",
      "UNBLOCKED — cross-teacher confirmed. Serve official Gemma (vLLM), then ./scripts/run_privilege_probe.sh on the GPU box. Full runbook: HANDOFF_SAKSHAM.md."),
     ("Henry", "Research / paper", "active",
-    "✓ Related Work (PRM positioning) · ✓ Results narrative (GSM8K-vs-MATH) — both in paper/. ☐ by-level breakdown + flip examples (Edward) · ☐ significance test on solution gap · ☐ assemble paper skeleton."),
+    "✓ Related Work (PRM positioning) · ✓ Results narrative (GSM8K-vs-MATH) — both in paper/. ✓ by-level breakdown + flip examples (N=400) · ✓ significance test on solution gap (+0.05, 95% CI [0.01, 0.09]) · ✓ mechanism (rescue × tractability). ☐ fold sweet-spot + mechanism into the draft · ☐ assemble paper skeleton."),
 ]
 
 HOW_WE_WORK = [
@@ -210,15 +210,18 @@ def main():
     EMBED = {
         "gsm8k": {"no_gt": _c(0.889, 0.800, 25, 25), "with_answer": _c(0.856, 0.800, 25, 25),
                   "with_solution": _c(0.837, 0.720, 25, 25), "gap_answer_f1": -0.033, "gap_solution_f1": -0.052},
-        "math_n150": {"no_gt": _c(0.716, 0.577, 72, 78), "with_answer": _c(0.716, 0.577, 72, 78),
-                      "with_solution": _c(0.786, 0.654, 72, 78), "gap_answer_f1": 0.000, "gap_solution_f1": 0.070},
+        # MATH headline = definitive N=400 evidence run: solution gap +0.051, 95% CI
+        # [0.010, 0.093] (significant). no-GT vs +solution were the two conditions run at
+        # N=400; the "+answer flips zero" result is the stable N=150 finding (kept inert).
+        "math_main": {"no_gt": _c(0.726, 0.608, 173, 227), "with_answer": _c(0.726, 0.608, 173, 227),
+                      "with_solution": _c(0.777, 0.661, 173, 227), "gap_answer_f1": 0.000, "gap_solution_f1": 0.051},
         "math_early": {"no_gt": _c(0.649, 0.480, 25, 25), "with_answer": _c(0.750, 0.600, 25, 25),
                        "with_solution": _c(0.781, 0.640, 25, 25), "gap_answer_f1": 0.101, "gap_solution_f1": 0.132},
         "qwen": {"no_gt": _c(0.653, 0.526, 72, 78), "with_answer": _c(0.690, 0.564, 72, 78),
                  "with_solution": _c(0.735, 0.667, 72, 78), "gap_answer_f1": 0.037, "gap_solution_f1": 0.082},
     }
     gsm = _load(f"{RESULTS}/teacher_eval/privilege_probe.json") or EMBED["gsm8k"]
-    math = _load(f"{RESULTS}/teacher_eval_math_n150/privilege_probe.json") or EMBED["math_n150"]
+    math = _load(f"{RESULTS}/evidence_pack_n400/privilege_probe.json") or EMBED["math_main"]
     math_early = _load(f"{RESULTS}/teacher_eval_math/privilege_probe.json") or EMBED["math_early"]
     qwen = _load(f"{RESULTS}/teacher_eval_math_qwen27b/privilege_probe.json") or EMBED["qwen"]
 
@@ -538,11 +541,17 @@ a:hover{text-decoration:underline}
 <div class="g3">
   {_gpriv_card(gsm, "GSM8K — easy math", "Gemma · N=50")}
   {_gpriv_card(math_early, "MATH — hard (preliminary)", "Gemma · N=50 · early signal")}
-  {_gpriv_card(math, "MATH — hard · N=150 (primary)", "Gemma · confirmed result", primary=True)}
+  {_gpriv_card(math, "MATH — hard · N=400 (primary)", "Gemma · definitive · 95% CI [0.01, 0.09]", primary=True)}
 </div>
 
 <div class="insight" style="margin-top:16px">
-  <strong>Reading across panels:</strong> The N=50 preliminary shows a stronger solution gap (+0.13) than the N=150 confirmed run (+0.07) — both point the same direction. N=150 is the conservative, paper-ready number. Core claim is stable: <strong>rich privilege (full worked solution) helps on hard problems; a bare answer does not.</strong>
+  <strong>Reading across panels:</strong> The N=50 preliminary shows a stronger solution gap (+0.13) than the definitive N=400 run (<strong>+0.05, 95% CI [0.01, 0.09] — significant</strong>) — both point the same direction; N=400 is the paper headline. Within MATH the gap peaks at the intermediate levels (L3 +0.11) and collapses at L1 (−0.13, too easy) and the hardest tail — the sweet spot replicates inside the dataset. The bare-answer row is inert (+0.00, measured at N=150). Core claim is stable: <strong>rich privilege (full worked solution) helps on hard-but-tractable problems; a bare answer does not.</strong>
+</div>
+
+<div class="insight" style="margin-top:14px" title="Decomposed from the N=400 per-sample log (experiments/mechanism_analysis.py). Gate 1 isolates WHERE the gain comes from; Gate 2 shows it fades as the reference gets harder to follow.">
+  <strong>Mechanism — why privilege helps (N=400):</strong> the gain is a <em>rescue of self-verification failures</em>, not a raw difficulty effect.
+  <strong>Gate 1 (needs help):</strong> of 227 error problems, the no-GT teacher <strong>missed 89</strong> → +solution <strong>rescues 29 (33%)</strong>; of the 138 it already caught, +solution <strong>breaks only 17 (12%)</strong> — the benefit concentrates exactly where the teacher can't self-verify.
+  <strong>Gate 2 (can use):</strong> rescue rate falls monotonically with reference length (short <strong>0.37</strong> → mid <strong>0.33</strong> → long <strong>0.28</strong>) — the reference only helps when the teacher can follow it. The moderator is <strong>self-verification-failure × tractability</strong>.
 </div>
 
 <div class="section-label">Cross-family replication — Qwen-27B</div>
