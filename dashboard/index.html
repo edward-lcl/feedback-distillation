@@ -17,21 +17,21 @@
   --surface3:   #1c2436;
   --border:     #1f2a3e;
   --border2:    #2a374f;
-  --ink:        #f0f4ff;
-  --ink2:       #b8c5d6;
-  --ink3:       #7a8fa8;
-  --accent:     #4f8ef7;
-  --accent-dim: rgba(79,142,247,.12);
-  --accent-glow:rgba(79,142,247,.06);
-  --green:      #34c97a;
-  --green-dim:  rgba(52,201,122,.12);
-  --red:        #f56565;
-  --red-dim:    rgba(245,101,101,.12);
-  --yellow:     #f0b429;
-  --yellow-dim: rgba(240,180,41,.12);
-  --purple:     #a78bfa;
-  --purple-dim: rgba(167,139,250,.12);
-  --r:          10px;
+  --ink:        #e8edf5;
+  --ink2:       #a8b8cc;
+  --ink3:       #5e7490;
+  --accent:     #4a7cf5;
+  --accent-dim: rgba(74,124,245,.10);
+  --accent-glow:rgba(74,124,245,.04);
+  --green:      #2ea86a;
+  --green-dim:  rgba(46,168,106,.10);
+  --red:        #d95f5f;
+  --red-dim:    rgba(217,95,95,.10);
+  --yellow:     #c4972a;
+  --yellow-dim: rgba(196,151,42,.10);
+  --purple:     #8b74d4;
+  --purple-dim: rgba(139,116,212,.10);
+  --r:          8px;
   --font:       'Inter', -apple-system, sans-serif;
   --mono:       'JetBrains Mono', 'SF Mono', monospace;
 }
@@ -70,13 +70,9 @@ nav {
   display: flex; align-items: center; gap: 8px;
 }
 .nav-dot {
-  width: 8px; height: 8px; border-radius: 50%;
+  width: 7px; height: 7px; border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  animation: pulse 2.5s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%,100% { opacity: 1; } 50% { opacity: .4; }
+  opacity: .85;
 }
 .nav-links { display: flex; gap: 2px; }
 .nav-links a {
@@ -97,25 +93,18 @@ nav {
 /* ── hero ── */
 .hero {
   position: relative; overflow: hidden;
-  padding: 52px 36px 44px;
+  padding: 44px 36px 36px;
   border-bottom: 1px solid var(--border);
-  background: linear-gradient(160deg, #0d1729 0%, var(--bg) 65%);
-}
-.hero::before {
-  content: '';
-  position: absolute; top: -120px; right: -80px;
-  width: 500px; height: 500px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(79,142,247,.08) 0%, transparent 70%);
-  pointer-events: none;
+  background: var(--bg2);
 }
 .hero-inner { max-width: 1120px; margin: 0 auto; }
 .hero-eyebrow {
-  font-size: 11.5px; font-weight: 600; letter-spacing: 1.2px;
-  text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+  font-size: 11px; font-weight: 600; letter-spacing: 1.4px;
+  text-transform: uppercase; color: var(--ink3); margin-bottom: 12px;
 }
 .hero h1 {
-  font-size: 30px; font-weight: 700; color: var(--ink);
-  letter-spacing: -.5px; line-height: 1.25; margin-bottom: 12px;
+  font-size: 26px; font-weight: 700; color: var(--ink);
+  letter-spacing: -.3px; line-height: 1.25; margin-bottom: 10px;
 }
 .hero-sub {
   font-size: 15px; color: var(--ink2); max-width: 640px;
@@ -411,13 +400,13 @@ a:hover { text-decoration: underline; }
 <!-- HERO -->
 <div class="hero">
   <div class="hero-inner">
-    <div class="hero-eyebrow">Algoverse · Active Research</div>
+    <div class="hero-eyebrow">Algoverse / JKJ · Active Research</div>
     <h1>Step-Level Feedback Distillation</h1>
     <p class="hero-sub">Distilling step-level score + critique behavior from a privileged teacher into a small, ground-truth-free student — so it catches reasoning mistakes step-by-step without seeing the answer.</p>
     <div class="hero-chips">
-      <span class="chip chip-green">✓ Phase 0 complete</span>
+      <span class="chip chip-green">Phase 0 complete</span>
       <span class="chip chip-blue">Gemma teacher locked</span>
-      <span class="chip chip-yellow">⚠ Qwen-27B replication pending</span>
+      <span class="chip chip-yellow">Qwen-27B replication pending</span>
       <span class="chip chip-gray">edward-lcl/feedback-distillation</span>
     </div>
   </div>
@@ -426,7 +415,7 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
 
 <!-- OVERVIEW -->
-<div class="section-label" id="overview">Overview</div>
+<div class="section-label" id="overview">Project overview</div>
 <div class="g3">
   <div class="ov-card">
     <h3>What we're building</h3>
@@ -448,7 +437,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <!-- RESULTS -->
-<div class="section-label" id="results">Headline result — privilege × difficulty</div>
+<div class="section-label" id="results">Results — privilege × difficulty</div>
 <p style="font-size:13px;color:var(--ink3);margin-bottom:16px">Green = privilege helped. Privilege buys signal only where the teacher can't self-verify, <em>and</em> only when given a full worked solution.</p>
 
 <div class="g3-result">
@@ -498,8 +487,8 @@ a:hover { text-decoration: underline; }
   <!-- MATH N=150 — PRIMARY -->
   <div class="result-card primary">
     <div class="rc-head">
-      <h3>MATH — hard (confirmed) ★</h3>
-      <div class="rc-meta">Gemma teacher · N=150 · <strong style="color:var(--accent)">primary result</strong></div>
+      <h3>MATH — hard · N=150 (primary)</h3>
+      <div class="rc-meta">Gemma teacher · confirmed result</div>
     </div>
     <table class="cond-table">
       <tr><td>no-GT</td>           <td class="val">0.716</td><td class="val">0.577</td></tr>
@@ -523,7 +512,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <!-- CROSS-FAMILY -->
-<div class="section-label">Cross-family check — Qwen-27B</div>
+<div class="section-label">Cross-family replication — Qwen-27B</div>
 <div class="g2">
   <div class="result-card">
     <div class="rc-head">
@@ -615,13 +604,13 @@ a:hover { text-decoration: underline; }
       <td><div class="task-who">Henry</div><div class="task-track">Research / paper</div></td>
       <td></td>
       <td><span class="pill p-active">active</span></td>
-      <td class="task-action">Draft Related Work (PRM lit positioning) + results narrative around the GSM8K-vs-MATH table. See <a href="/HANDOFF_HENRY.md">HANDOFF_HENRY.md</a>. Blocking input: by-level breakdown + flip examples from Edward.</td>
+      <td class="task-action">Draft Related Work (PRM lit positioning) + results narrative around the GSM8K-vs-MATH table. See <a href="https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_HENRY.md" target="_blank">HANDOFF_HENRY.md on GitHub ↗</a>. Blocking input: by-level breakdown + flip examples from Edward.</td>
     </tr>
   </table>
 </div>
 
 <!-- BAKEOFF -->
-<div class="section-label">Teacher bake-off <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink3)">&nbsp;— with-GT ceiling, N=30</span></div>
+<div class="section-label">Teacher evaluation — with-GT ceiling, N=30</div>
 <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
   <table class="data-table">
     <tr><th>Teacher</th><th>F1</th><th>correct_acc</th><th>error_acc</th><th>parse_fail</th></tr>
@@ -670,7 +659,7 @@ a:hover { text-decoration: underline; }
   <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--ink3)">
     Handoff gates: <strong style="color:var(--ink)">Saksham</strong> unblocks on cross-teacher confirm ·
     <strong style="color:var(--ink)">Henry</strong> can start related-work now; blocks on flip examples + by-level from Edward ·
-    <a href="/HANDOFF_HENRY.md">Henry handoff doc ↗</a>
+    <a href="https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_HENRY.md" target="_blank">Henry handoff doc on GitHub ↗</a>
   </div>
 </div>
 
