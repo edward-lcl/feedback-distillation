@@ -432,12 +432,13 @@ a:hover{text-decoration:underline}
 <body>
 <nav>
   <span class="nav-brand"><span class="nav-dot"></span>SLFD</span>
-  <div class="nav-links">
+<div class="nav-links">
     <a href="#overview">Overview</a>
     <a href="#results">Results</a>
     <a href="#decisions">Decisions</a>
     <a href="#tasks">Tasks</a>
     <a href="#next">Next</a>
+    <a href="https://github.com/edward-lcl/feedback-distillation/blob/main/paper/SLFD.pdf" target="_blank">Paper ↗</a>
   </div>
   <div class="nav-right">
     <span class="nav-meta">updated {stamp}</span>
