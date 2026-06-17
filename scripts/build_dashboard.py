@@ -64,7 +64,7 @@ TASKS = [  # who, track, status (active|blocked|queued|done), next action
     ("Saksham", "GPU pipeline", "active",
      "First end-to-end run done (gemma-2-9b fallback). NEXT: (1) commit/push run JSONs to a branch, (2) re-score the 3 saved checkpoints threshold-free (no retrain) → compare on ROC/PR-AUC, (3) switch teacher to canonical Gemma-4-26b, then scale. Runbook: HANDOFF_SAKSHAM.md (READ FIRST block)."),
     ("Henry", "Research / paper", "active",
-    "✓ Related Work (PRM positioning) · ✓ Results narrative (GSM8K-vs-MATH) — both in paper/. ✓ by-level breakdown + flip examples (N=400) · ✓ significance test on solution gap (+0.05, 95% CI [0.01, 0.09]) · ✓ mechanism (rescue × tractability). ☐ fold sweet-spot + mechanism into the draft · ☐ assemble paper skeleton."),
+    "✓ Related Work (PRM positioning) · ✓ Results restructured to 3-tier sweet spot · ✓ by-level figure (N=400, inverted-U) + mechanism (rescue × tractability) · ✓ significance (+0.05, 95% CI [0.010, 0.093]) · ✓ downstream-verifier §2.7 stub · ✓ full draft assembled + compiles. ☐ paste 2–3 flip cases from per_sample.jsonl · ☐ OlympiadBench gap cell (Table 2) · ☐ §2.7 real numbers (gated on Saksham re-score)."),
 ]
 
 HOW_WE_WORK = [
