@@ -94,6 +94,25 @@ def evaluate_processbench(student, dataset_path: str, max_samples: int = None) -
     # clean_specificity = TN / (TN+FP) over steps
     tn = sum(1 for t, p in zip(y_true, y_pred) if t == 0 and p == 0)
 
+    pred_error_rate = sum(y_pred) / n_steps
+    error_recall = (sum(1 for t, p in zip(y_true, y_pred) if t == 1 and p == 1) / n_pos) if n_pos else None
+
+    # --- runtime self-check: surface degeneracy LOUDLY so an agent re-running
+    # this notices immediately instead of trusting a near-zero F1 as "capability". ---
+    warnings = []
+    if pred_error_rate < 0.02:
+        warnings.append(
+            f"SILENT COLLAPSE: predicts 'error' on only {pred_error_rate:.1%} of steps "
+            f"(recall≈{(error_recall or 0):.2f}). F1/first_error_acc are MEANINGLESS here — "
+            f"the cell banks the error-free base rate for free. Compare cells on roc_auc/pr_auc, "
+            f"and check the score-head threshold/calibration before trusting any gap.")
+    if pred_error_rate > 0.98:
+        warnings.append(
+            f"ALWAYS-FLAG COLLAPSE: predicts 'error' on {pred_error_rate:.1%} of steps — "
+            f"high recall is trivial; compare on roc_auc/pr_auc, not recall/F1.")
+    if not has_both:
+        warnings.append("DEGENERATE EVAL: only one true class present in this slice — roc_auc/pr_auc undefined.")
+
     return {
         # --- threshold-dependent (fixed cutoff at logit<0): interpret with care ---
         "f1": f1_score(y_true, y_pred, zero_division=0),
@@ -104,11 +123,13 @@ def evaluate_processbench(student, dataset_path: str, max_samples: int = None) -
         "roc_auc": roc_auc,
         "pr_auc": pr_auc,
         # --- split diagnostics: expose silent/degenerate collapse ---
-        "error_recall": (sum(1 for t, p in zip(y_true, y_pred) if t == 1 and p == 1) / n_pos) if n_pos else None,
+        "error_recall": error_recall,
         "clean_specificity": (tn / n_neg) if n_neg else None,
-        "pred_error_rate": sum(y_pred) / n_steps,
+        "pred_error_rate": pred_error_rate,
         "first_error_acc_errs": (err_seqs_correct / err_seqs) if err_seqs else None,
         "clean_seq_acc": (clean_seqs_correct / clean_seqs) if clean_seqs else None,
         "n_steps": len(y_true),
         "n_error_steps": n_pos,
+        # --- self-check: non-empty ⇒ this cell's F1 is not trustworthy as capability ---
+        "warnings": warnings,
     }

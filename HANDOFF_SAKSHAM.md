@@ -40,6 +40,8 @@ done
 ```
 The runner now prints a table with these columns. **Decision rule for the thesis: privilege transfers iff `roc_auc(priv) > roc_auc(nogt)` by a meaningful margin.** If the no-GT cell is just silent (`pred_error_rate≈0`, `error_recall≈0`), report that — the fix may be threshold calibration, not "privilege."
 
+> 🛟 **The eval now self-checks.** `run_processbench` prints a loud `⚠️ EVAL HEALTH WARNING` (to stderr) and writes a `warnings` field into the JSON whenever a cell collapses (predicts ~no errors, or one-class slice). If you see that banner, **don't report that cell's F1 as a result** — it's a calibration artifact; use `roc_auc`. No banner + `✓ eval health OK` means the cell is well-behaved.
+
 **3. Models need to change before we scale.**
 This run used the `gemma-2-9b-it` *fallback*, not the canonical teacher. For the scaled run, match the bake-off winner:
 - **Teacher:** **Gemma-4-26b** (bake-off winner, F1 0.91 — local id `gemma-4-26b-a4b-it`). Serve a 4-bit/AWQ build that fits 48 GB tensor-parallel across both 3090s. If a 26B-class checkpoint genuinely won't fit, document the exact fallback you used in the run JSON — don't silently drop back to 9B.

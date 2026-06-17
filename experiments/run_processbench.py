@@ -48,6 +48,23 @@ def main():
     with open(f"{args.results_dir}/processbench_results.json", "w") as f:
         json.dump(results, f, indent=2)
 
+    # Loud, immediate self-check — so an agent re-running this sees a broken cell
+    # the moment it finishes, rather than reading a near-zero F1 as a real result.
+    import sys
+    warnings = results.get("warnings") or []
+    if warnings:
+        print("\n" + "!" * 72, file=sys.stderr)
+        print("⚠️  EVAL HEALTH WARNING — this cell's F1 is NOT trustworthy as capability:",
+              file=sys.stderr)
+        for w in warnings:
+            print(f"  • {w}", file=sys.stderr)
+        print(f"  → roc_auc={results.get('roc_auc')}  pr_auc={results.get('pr_auc')}  "
+              f"pred_error_rate={results.get('pred_error_rate'):.3f}", file=sys.stderr)
+        print("!" * 72 + "\n", file=sys.stderr)
+    else:
+        print(f"✓ eval health OK — roc_auc={results.get('roc_auc')} "
+              f"pr_auc={results.get('pr_auc')} pred_error_rate={results.get('pred_error_rate'):.3f}")
+
 
 if __name__ == "__main__":
     main()
