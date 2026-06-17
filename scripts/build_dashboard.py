@@ -26,19 +26,21 @@ OVERVIEW = [
     ("Why it was revived",
      "The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <b>June 2026</b> with a shift to <b>step-level reasoning evaluation</b> over final-answer accuracy. Target: a publishable result for the <b>COLM workshop (~early July)</b> — flexible; quality over the date."),
     ("Where we are today",
-     "<b>Pipeline built end-to-end</b> (probe → student ablation → best-of-N verifier), all smoke-tested. Teacher/dataset/privilege locked; the privilege <b>sweet spot</b> is verified (helps on MATH, not GSM8K or OlympiadBench) and replicates cross-family. Next: run Phase 2/3 at scale on the GPU box for the headline numbers."),
+     "<b>First full GPU run is in</b> (Saksham — probe + student ablation + best-of-N, on the <code>gemma-2-9b-it</code> fallback). <b>Phase 1 probe replicates</b> (privilege gap holds). But the Phase 2 student headline is <b>on hold pending a metric fix</b>: the reported privilege-transfer gap (F1 0.037 → 0.197) turned out to be a <b>fixed-threshold artifact</b>, not capability — caught via the tell that <code>first_error_acc</code> was identical across cells. Eval is now <b>threshold-free (ROC/PR-AUC)</b>; we re-score the existing checkpoints, switch to the canonical teacher, <i>then</i> scale. Phase 3 prelim: PRM re-rank 32.0 vs majority-vote 32.5 — not a win yet."),
 ]
 
 RESEARCH_Q = ("The research question",
     "Does distilling a teacher's <b>step-level score + natural-language critique</b> — and its <b>privileged</b> (answer-aware) judgment — into a small answer-blind student make it better at catching reasoning-step errors? <b>Finding:</b> privilege has a <b>tractability sweet spot</b> — it helps only where the teacher both <i>needs</i> the reference (can't self-verify) and can <i>use</i> it; and only <b>rich</b> privilege works (a worked solution, not a bare answer).")
 
-PHASE = "Pipeline built & validated (probe → student → verifier); sweet-spot finding verified — next is the at-scale GPU run"
+PHASE = "First GPU run in; probe replicates. Reorienting: PRM eval made threshold-free (ROC/PR-AUC) — re-score checkpoints + switch to canonical teacher before scaling Phase 2/3"
 
 RUNS = [  # (label, state) state in {running, done, queued}
     ("Teacher bake-off (5 models, N=30)", "done"),
     ("Privilege × difficulty (GSM8K · MATH · OlympiadBench)", "done"),
     ("Cross-teacher replication (Qwen-27B · MATH N=150)", "done"),
-    ("Student ablation + best-of-N verifier @ scale (GPU)", "queued"),
+    ("First end-to-end GPU run (probe+ablation+BoN · gemma-2-9b fallback)", "done"),
+    ("Re-score checkpoints threshold-free (ROC/PR-AUC) — confirm transfer", "queued"),
+    ("Student ablation + best-of-N verifier @ scale (canonical teacher)", "queued"),
 ]
 
 DECISIONS = [
@@ -48,15 +50,19 @@ DECISIONS = [
      "GSM8K is saturated — the privilege gap is ≈0 there"),
     ("Privilege signal", "Full worked reference solution",
      "+0.05 F1 on MATH (N=400, 95% CI [0.01, 0.09], significant). A bare answer flips ZERO predictions — the teacher needs a reference reasoning trace, not a number."),
-    ("Core claim", "VALIDATED — privilege has a tractability sweet spot",
+    ("Core claim (teacher)", "VALIDATED — privilege has a tractability sweet spot",
      "gap_solution: GSM8K ≈0 · MATH +0.05 (95% CI [0.01, 0.09], significant) · OlympiadBench ≈0 (verified) — helps only mid-difficulty; bare answer inert everywhere."),
+    ("PRM eval metric", "Threshold-free (ROC-AUC / PR-AUC) — not F1 at a fixed cutoff",
+     "F1/first_error_acc move with score-head calibration: a silent cell collapses F1 to ~0 while banking the ~0.44 error-free base rate on first_error_acc. Compare cells on AUC + the split (error_recall / pred_error_rate)."),
+    ("Student transfer (Phase 2)", "PENDING — re-score before claiming",
+     "First run's 0.037→0.197 'privilege transfers' gap was a fixed-threshold artifact. Thesis holds iff ROC-AUC(priv) &gt; ROC-AUC(noGT) by a real margin once re-scored."),
 ]
 
 TASKS = [  # who, track, status (active|blocked|queued|done), next action
     ("Edward", "Trainer + analysis", "active",
-     "Build DONE — trainer fixed (LoRA + boundary score head) and the full ablation + best-of-N verifier pipeline merged & smoke-tested. While Saksham runs GPU: generate Henry's evidence pack (by-level + flip examples) + bootstrap CIs on the privilege gaps; then analyze the student-ablation results."),
+     "Caught the Phase 2 metric artifact + landed the threshold-free PRM eval (ROC/PR-AUC + split diagnostics) on branch <code>fix-prm-metric-threshold-free</code>. Next: review Saksham's re-scored AUCs and decide whether the privilege-transfer thesis holds before the at-scale run."),
     ("Saksham", "GPU pipeline", "active",
-     "UNBLOCKED — cross-teacher confirmed. Serve official Gemma (vLLM), then ./scripts/run_privilege_probe.sh on the GPU box. Full runbook: HANDOFF_SAKSHAM.md."),
+     "First end-to-end run done (gemma-2-9b fallback). NEXT: (1) commit/push run JSONs to a branch, (2) re-score the 3 saved checkpoints threshold-free (no retrain) → compare on ROC/PR-AUC, (3) switch teacher to canonical Gemma-4-26b, then scale. Runbook: HANDOFF_SAKSHAM.md (READ FIRST block)."),
     ("Henry", "Research / paper", "active",
     "✓ Related Work (PRM positioning) · ✓ Results narrative (GSM8K-vs-MATH) — both in paper/. ✓ by-level breakdown + flip examples (N=400) · ✓ significance test on solution gap (+0.05, 95% CI [0.01, 0.09]) · ✓ mechanism (rescue × tractability). ☐ fold sweet-spot + mechanism into the draft · ☐ assemble paper skeleton."),
 ]
@@ -72,6 +78,8 @@ BULLETPROOFING = [
     ("done", "Cross-teacher (Qwen-27B) confirms the pattern — solution gap +0.082, not a Gemma artifact."),
     ("done", "OlympiadBench (OE-only, verified) — privilege ≈0 there → sweet spot, NOT monotonic with difficulty."),
     ("done", "with_answer ≡ no_gt confirmed real (bare answer inert), not a wiring bug."),
+    ("done", "PRM eval made threshold-free (ROC/PR-AUC + error_recall/pred_error_rate split) — fixed-cutoff F1 hid a silent-collapse artifact in Phase 2."),
+    ("todo", "Re-score the 3 student checkpoints on AUC; confirm privilege transfers before scaling."),
     ("todo", "Bootstrap CIs / multiple seeds on the gaps; baselines (Math-Shepherd, self-critique)."),
     ("todo", "Use the OFFICIAL Gemma checkpoint for the reported labeling pass."),
     ("idea", "Does a stronger teacher extend the sweet spot upward on OlympiadBench?"),
@@ -80,16 +88,18 @@ BULLETPROOFING = [
 MILESTONES = [
     ("done", "Teacher/dataset/privilege locked; sweet spot verified (GSM8K·MATH·OlympiadBench)"),
     ("done", "Student pipeline built: trainer fixed + ablation + best-of-N verifier (smoke-tested)"),
-    ("now", "Run Phase 2/3 at scale on GPU — student ablation + verifier numbers"),
-    ("then", "CIs + baselines + paper draft (sweet spot + downstream verifier)"),
+    ("done", "First end-to-end GPU run; PRM eval made threshold-free after catching the Phase 2 artifact"),
+    ("now", "Re-score checkpoints on AUC + switch to canonical teacher — confirm privilege transfers"),
+    ("then", "Scale Phase 2/3 + CIs + baselines + paper draft (sweet spot + downstream verifier)"),
 ]
 
 # Path to submission — granular, owner-tagged, so everyone (esp. Saksham) has line of sight.
 PATH_TO_SUBMISSION = [
     ("done", "Team", "Teacher / dataset / privilege locked; sweet spot verified across 3 difficulty tiers + cross-family."),
     ("done", "Edward", "Full pipeline built &amp; smoke-tested (probe → student ablation → best-of-N verifier); runbooks written."),
-    ("now", "Saksham", "Phase 2 on GPU — serve official Gemma (vLLM), run <code>run_student_ablation.sh</code> → score-vs-critique &amp; privileged-vs-noGT tables. Runbook: HANDOFF_SAKSHAM.md."),
-    ("next", "Saksham", "Phase 3 on GPU — <code>bon_rerank.py</code> → does the PRM verifier beat majority vote (final-answer accuracy)?"),
+    ("now", "Saksham", "Re-score the 3 student checkpoints threshold-free (no retrain) → compare on ROC/PR-AUC; commit run JSONs to a branch. Then switch teacher to canonical Gemma-4-26b. Runbook: HANDOFF_SAKSHAM.md (READ FIRST)."),
+    ("next", "Edward", "Review re-scored AUCs; decide whether privilege transfers to the student before the at-scale run."),
+    ("next", "Saksham", "If transfer holds: scale Phase 2 (N=1000) + Phase 3 — <code>bon_rerank.py</code> with the symbolic MATH checker, larger N, CIs → does the PRM verifier beat majority vote?"),
     ("next", "Edward", "Bootstrap CIs / seeds on every gap; baselines (Math-Shepherd PRM, self-critique)."),
     ("next", "Henry", "Fold results + sweet-spot framing + the verifier section into the Overleaf draft."),
     ("then", "Team", "Submit — COLM (early July) / AAAI / workshop. Quality over the date."),
@@ -520,7 +530,7 @@ a:hover{text-decoration:underline}
       <span class="chip chip-green" title="Label→train→eval + best-of-N verifier all built &amp; smoke-tested; runbooks written.">Pipeline built · handoff-ready</span>
       <span class="chip chip-green" title="Privilege helps on MATH but not GSM8K (too easy) or OlympiadBench (too hard) — verified, incl. cross-family.">Sweet spot verified</span>
       <span class="chip chip-blue" title="Teacher chosen by bake-off (Gemma, F1 0.91); result replicates with a Qwen-27B teacher.">Gemma teacher · Qwen cross-family</span>
-      <span class="chip chip-yellow" title="Critical path: Saksham runs the student ablation + verifier on the 2×3090 box.">Next: GPU runs (Saksham)</span>
+      <span class="chip chip-yellow" title="Phase 2 headline (privilege transfers to student) was a fixed-threshold artifact; eval now ROC/PR-AUC — re-score checkpoints before scaling.">Reorienting: PRM eval → AUC</span>
       <span class="chip chip-gray">edward-lcl/feedback-distillation</span>
     </div>
   </div>
