@@ -1,6 +1,6 @@
 # Handoff — Saksham (GPU box, 2×3090 / 48 GB)
 
-**Status: UNBLOCKED (2026-06-16).** The cross-teacher gate passed (Qwen-27B confirms the pattern), so you're clear to run. Start at step 0 below.
+**Status: FIRST RUN IN — REORIENTING (2026-06-17).** Phase 1 (probe) replicates; Phases 2–3 ran end-to-end on the `gemma-2-9b-it` fallback, but the headline is **NOT validated** — the reported Phase 2 gap is a fixed-threshold metric artifact (see READ FIRST below). Raw metrics: [results/RESULTS.md](results/RESULTS.md). Don't report any phase as "done" until the threshold-free re-score confirms it.
 
 _Goal: reproduce the privilege × difficulty result with an **official** Gemma checkpoint at scale. Phase 1 (the probe) is below; Phase 2 (the full student run + ablations — the paper result) is at the bottom, now also ready._
 
@@ -98,7 +98,8 @@ From `results/teacher_eval_math_<model>/privilege_probe.json`:
 - Higher N for tighter CIs: `N=300 ./scripts/run_privilege_probe.sh`.
 - A second official family (e.g. a Qwen2.5/3 instruct) for an extra cross-family point.
 
-## Phase 2 — the full student run (READY — the paper result)
+## Phase 2 — the full student run [RAN — pending threshold-free re-score]
+*Context: the three student ablations trained and evaluated end-to-end (see [results/RESULTS.md](results/RESULTS.md) for the F1/FEA table). But the reported privilege-transfer gap is a fixed-threshold artifact (READ FIRST §2) — re-score on ROC/PR-AUC before treating it as a result.*
 The trainer is fixed (real LoRA + boundary-token score head), so the GT-free student pipeline is turnkey. One command runs both headline ablations:
 ```bash
 N_TRAIN=300 N_EVAL=400 EPOCHS=2 ./scripts/run_student_ablation.sh
@@ -109,7 +110,8 @@ It labels MATH train data twice (privileged solution + no-GT), trains the cells 
 
 Tiny local smoke first (no GPU teacher needed): `DEV=1 GEN_BACKEND=local N_TRAIN=4 N_EVAL=10 ./scripts/run_student_ablation.sh`
 
-## Phase 3 — use the PRM as a test-time verifier (the impact result)
+## Phase 3 — use the PRM as a test-time verifier [PRELIMINARY — did not beat majority vote]
+*Context: `bon_rerank.py` (now ThreadPool-parallel) ran downstream — but prm_rerank 32.0 came in **below** majority_vote 32.5, and a 3pp lift over pass@1 on N=200 is within noise. Needs the symbolic MATH checker + larger N + CIs before it's a result. See [results/RESULTS.md](results/RESULTS.md).*
 Once Phase 2 yields a student checkpoint, measure what the verifier is worth downstream:
 ```bash
 OMLX_MODEL=<generator> ./.venv/bin/python -m experiments.bon_rerank \

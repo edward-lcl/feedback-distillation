@@ -512,7 +512,7 @@ a:hover{text-decoration:underline}
     <a href="#tasks">Tasks</a>
     <a href="#path">Path</a>
     <a href="#next">Next</a>
-    <a href="https://github.com/edward-lcl/feedback-distillation/blob/main/paper/SLFD.pdf" target="_blank">Paper ↗</a>
+    <a href="https://github.com/edward-lcl/feedback-distillation/blob/main/paper/SLFD_draft.pdf" target="_blank">Paper ↗</a>
   </div>
   <div class="nav-right">
     <span class="nav-meta">updated {stamp}</span>

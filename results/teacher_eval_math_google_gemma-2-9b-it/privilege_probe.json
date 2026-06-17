@@ -1,0 +1,28 @@
+{
+  "no_gt": {
+    "f1": 0.1427,
+    "correct_acc": 0.9861,
+    "error_acc": 0.0769,
+    "n_correct_samples": 72,
+    "n_error_samples": 78,
+    "parse_failure_rate": 0.0
+  },
+  "with_answer": {
+    "f1": 0.3037,
+    "correct_acc": 0.7222,
+    "error_acc": 0.1923,
+    "n_correct_samples": 72,
+    "n_error_samples": 78,
+    "parse_failure_rate": 0.0
+  },
+  "with_solution": {
+    "f1": 0.4102,
+    "correct_acc": 0.8611,
+    "error_acc": 0.2692,
+    "n_correct_samples": 72,
+    "n_error_samples": 78,
+    "parse_failure_rate": 0.0
+  },
+  "gap_answer_f1": 0.161,
+  "gap_solution_f1": 0.2675
+}
