@@ -19,7 +19,10 @@ class OmlxClient:
         # Model must be a real id on multi-model servers ("default" 404s).
         # Resolution: explicit arg > OMLX_MODEL env > first model on the server.
         self.model = model or os.environ.get("OMLX_MODEL")
-        self.timeout = timeout
+        # Timeout: explicit arg > OMLX_TIMEOUT env > 300s. Long max-length
+        # generations under load (or a remote teacher over a tunnel) can exceed
+        # the old 120s default and trigger a silent retry-storm — see run notes.
+        self.timeout = timeout or int(os.environ.get("OMLX_TIMEOUT", "300"))
         # Long labeling runs hit transient server hiccups (streams dropped
         # mid-response → ChunkedEncodingError, model-load races → 5xx). Retry
         # those rather than lose a whole teacher to one flaky call.

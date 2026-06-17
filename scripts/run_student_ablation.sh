@@ -3,13 +3,21 @@
 #   (a) score-only vs score+critique  -> does distilling the NL critique help?
 #   (b) privileged vs no-GT labels     -> does the teacher's privilege transfer?
 #
-# Prereq: serve a teacher (vLLM) and export OMLX_URL / OMLX_MODEL / OMLX_API_KEY.
+# Two endpoints, by design (see HANDOFF_SAKSHAM.md "Teacher topology"):
+#   GENERATION (expensive, long outputs) -> a small vLLM model on YOUR GPU box.
+#       GEN_OMLX_URL / GEN_OMLX_MODEL  (default: fall back to OMLX_URL/OMLX_MODEL)
+#   LABELING (cheap, short outputs, NEEDS the privileged teacher) -> Edward's
+#       served MLX teacher over the tunnel.  OMLX_URL / OMLX_MODEL / OMLX_API_KEY
+# Single-endpoint mode still works: set only OMLX_URL/OMLX_MODEL and both use it.
 # Run:    ./scripts/run_student_ablation.sh
 # Tune:   N_TRAIN=300 N_EVAL=400 EPOCHS=2  (DEV=1 for a tiny local smoke)
 set -euo pipefail
 PY="$(command -v python || command -v python3)"
 N_TRAIN="${N_TRAIN:-300}"; N_EVAL="${N_EVAL:-400}"; EPOCHS="${EPOCHS:-2}"
-GEN_BACKEND="${GEN_BACKEND:-local}"
+GEN_BACKEND="${GEN_BACKEND:-omlx}"
+GEN_OMLX_URL="${GEN_OMLX_URL:-${OMLX_URL:-}}"      # generation endpoint (your box)
+GEN_OMLX_MODEL="${GEN_OMLX_MODEL:-${OMLX_MODEL:-}}"
+GEN_OMLX_API_KEY="${GEN_OMLX_API_KEY:-${OMLX_API_KEY:-}}"
 DEVFLAG=""; [ "${DEV:-0}" = "1" ] && DEVFLAG="--dev_mode"
 mkdir -p data/raw data/labeled checkpoints results/ablation
 
@@ -19,16 +27,18 @@ echo "== 1/4  Data: MATH train problems + ProcessBench MATH eval (shuffled) =="
 # "$PY" -m scripts.shuffle_jsonl --input data/processbench_math.jsonl \
 #     --output data/processbench_math_shuffled.jsonl --seed 0
 
-echo "== 2/4  Generate candidate solutions (mix of correct/incorrect) =="
+echo "== 2/4  Generate candidate solutions (mix of correct/incorrect) — via GEN endpoint =="
+OMLX_URL="$GEN_OMLX_URL" OMLX_MODEL="$GEN_OMLX_MODEL" \
 "$PY" -m scripts.generate_solutions --input data/raw/math_train.jsonl \
-    --output data/raw/math_sampled.jsonl --backend "$GEN_BACKEND" --k 4 $DEVFLAG
+    --output data/raw/math_sampled.jsonl --backend "$GEN_BACKEND" \
+    ${GEN_OMLX_URL:+--omlx_url "$GEN_OMLX_URL"} --k 4 $DEVFLAG
 
 export OMLX_LABEL_MAX_TOKENS=50
-echo "== 3/4  Label twice — privileged (solution) and no-GT =="
+echo "== 3/4  Label twice — privileged (solution) and no-GT — via TEACHER endpoint ($OMLX_URL) =="
 "$PY" -m data.label_pipeline --input data/raw/math_sampled.jsonl \
-    --output data/labeled/math_priv.jsonl --privilege solution
+    --output data/labeled/math_priv.jsonl --use_omlx --omlx_url "$OMLX_URL" --privilege solution
 "$PY" -m data.label_pipeline --input data/raw/math_sampled.jsonl \
-    --output data/labeled/math_nogt.jsonl --privilege none
+    --output data/labeled/math_nogt.jsonl --use_omlx --omlx_url "$OMLX_URL" --privilege none
 
 echo "== 4/4  Train + eval the ablation cells =="
 echo "Killing vLLM to free 44GB VRAM for student training..."

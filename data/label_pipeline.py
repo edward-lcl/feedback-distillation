@@ -169,8 +169,10 @@ if __name__ == "__main__":
     parser.add_argument("--dev_mode", action="store_true",
                         help="Use smaller models for local Apple Silicon development.")
     parser.add_argument("--use_omlx", action="store_true",
-                        help="Call oMLX server (localhost:8000) instead of loading teacher locally.")
-    parser.add_argument("--omlx_url", default="http://localhost:8000/v1")
+                        help="Call oMLX server (OMLX_URL) instead of loading teacher locally.")
+    # Respect OMLX_URL by default so a remote/tunneled teacher works without
+    # passing --omlx_url. (Previously hardcoded :8000 → 404 when served elsewhere.)
+    parser.add_argument("--omlx_url", default=os.environ.get("OMLX_URL", "http://localhost:8000/v1"))
     parser.add_argument("--privilege", choices=["solution", "answer", "none"], default="solution",
                         help="What the teacher sees while labeling (privileged vs no-GT comparison).")
     args = parser.parse_args()

@@ -42,15 +42,33 @@ The runner now prints a table with these columns. **Decision rule for the thesis
 
 > 🛟 **The eval now self-checks.** `run_processbench` prints a loud `⚠️ EVAL HEALTH WARNING` (to stderr) and writes a `warnings` field into the JSON whenever a cell collapses (predicts ~no errors, or one-class slice). If you see that banner, **don't report that cell's F1 as a result** — it's a calibration artifact; use `roc_auc`. No banner + `✓ eval health OK` means the cell is well-behaved.
 
-**3. Models need to change before we scale.**
-This run used the `gemma-2-9b-it` *fallback*, not the canonical teacher. For the scaled run, match the bake-off winner:
-- **Teacher:** **Gemma-4-26b** (bake-off winner, F1 0.91 — local id `gemma-4-26b-a4b-it`). Serve a 4-bit/AWQ build that fits 48 GB tensor-parallel across both 3090s. If a 26B-class checkpoint genuinely won't fit, document the exact fallback you used in the run JSON — don't silently drop back to 9B.
-- **Student:** `Qwen/Qwen2.5-1.5B-Instruct` (unchanged — this one's correct).
-- Set `OMLX_MODEL` to the served id exactly.
+**3. Teacher topology — STOP trying to run Gemma-4 on your box.**
+Gemma-4-26B-A4B has no working vLLM/CUDA path on 2×3090 right now (3D MoE experts vLLM can't tensor-parallel, custom GELU breaks Marlin, single 47 GB safetensors, on-the-fly bnb stripped). That's a real dead end — don't burn more time on it, and don't chase an "unquantized for validity" run (our headline came from a **4-bit** MLX teacher; 4-bit is fine). The id `gemma-4-26b-a4b-it` in the old handoff was an MLX-local alias, not a servable HF repo — our mistake.
 
-> 📎 **Source of truth for models/config before scaling:** README "Models" table + the bake-off results under `results/teacher_bakeoff/_WINNER_gemma_full/`. (Edward may drop an extra setup link in-channel; not a blocker.)
+Instead we **split the two teacher-dependent steps across two endpoints** (the code now supports this directly):
 
-**Sequencing:** (2) re-score current checkpoints threshold-free → confirm whether the gap survives → (3) switch to the correct models → only then scale to N=1000. Don't 10× a metric we haven't trusted yet.
+| Step | Endpoint | Runs on |
+|---|---|---|
+| **Generation** (expensive, 512-tok traces) | `GEN_OMLX_URL` / `GEN_OMLX_MODEL` | a **small vLLM model on YOUR 3090s** (e.g. `gemma-2-9b-it` or a 7B — well-supported, continuous batching) |
+| **Labeling** (cheap, short scores — needs the privileged teacher) | `OMLX_URL` / `OMLX_MODEL` / `OMLX_API_KEY` | **Edward's MLX Gemma-4**, served over a tunnel |
+| Student train + eval | — | your 3090s (trivial, 1.5B) |
+
+Labeling is **sequential** (one request at a time), so it won't overload the served teacher. Env to export on your box:
+```bash
+# expensive generation → your local small model (vLLM, OpenAI-compatible)
+export GEN_OMLX_URL=http://localhost:8000/v1
+export GEN_OMLX_MODEL=google/gemma-2-9b-it
+# cheap privileged labeling → Edward's served teacher (URL + key from Edward)
+export OMLX_URL=https://<edward-teacher-host>/v1
+export OMLX_MODEL=<exact served MLX model id>
+export OMLX_API_KEY=<key from Edward>
+export OMLX_TIMEOUT=600          # remote teacher; generous headroom
+N_TRAIN=1000 N_EVAL=400 EPOCHS=2 ./scripts/run_student_ablation.sh
+```
+- **Student:** `Qwen/Qwen2.5-1.5B-Instruct` (unchanged — correct).
+- Single-endpoint mode still works (set only `OMLX_URL`/`OMLX_MODEL` and both steps use it) — e.g. if you'd rather use `gemma-2-27b-it-bnb-4bit` as the teacher too. That's scientifically fine; cross-teacher (Qwen-27B +0.082) already showed the effect is teacher-agnostic. Just note which teacher made the labels.
+
+**Sequencing:** (2) re-score current checkpoints threshold-free → confirm whether the gap survives → (3) point labeling at Edward's served teacher (or `gemma-2-27b` locally) → only then scale to N=1000. Don't 10× a metric we haven't trusted yet.
 
 ---
 
