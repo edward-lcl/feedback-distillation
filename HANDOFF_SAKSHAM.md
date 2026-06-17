@@ -82,6 +82,8 @@ pip install vllm                          # the teacher server
 ```
 
 ## 1. Serve a teacher (OpenAI-compatible endpoint)
+> ⚠️ **Superseded by the READ FIRST topology.** You do **not** need to serve the privileged teacher anymore — point `OMLX_URL` at Edward's live teacher (`https://teacher.elcl.systems/v1`). The steps below are only for: (a) running a *local* small model for the **generation** step (`GEN_OMLX_URL`), or (b) the single-endpoint fallback if you'd rather use `gemma-2-27b-it-bnb-4bit` locally as the teacher too.
+
 The code talks to any OpenAI-compatible `/v1` endpoint, so vLLM drops in. On 48 GB, a full-precision 27B won't fit — use a **4-bit/AWQ 27B** (tensor-parallel across both GPUs) or fall back to `gemma-2-9b-it`:
 ```bash
 # example — pick a real checkpoint your box can fit:
