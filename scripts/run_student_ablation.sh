@@ -42,10 +42,14 @@ run_cell data/labeled/math_priv.jsonl score_only     priv_scoreonly    # privile
 run_cell data/labeled/math_nogt.jsonl score_critique nogt_critique     # no-GT + critique
 
 echo; echo "== RESULTS =="
+echo "NOTE: compare on roc_auc / pr_auc (threshold-free) + the split, NOT f1 alone."
+echo "      f1/first_error_acc move with the fixed logit<0 cutoff; pred_err≈0 ⇒ silent/degenerate cell."
+printf "%-16s %7s %7s %8s %8s %10s %9s %10s\n" cell f1 roc_auc pr_auc err_rec clean_spec pred_err first_acc
 for d in priv_critique priv_scoreonly nogt_critique; do
   f="results/ablation/$d/processbench_results.json"
-  [ -f "$f" ] && echo "$d: $("$PY" -c "import json;d=json.load(open('$f'));print('f1=%.3f first_error_acc=%.3f'%(d['f1'],d['first_error_acc']))")"
+  [ -f "$f" ] && "$PY" -c "import json;d=json.load(open('$f'));g=lambda k:(d.get(k) if d.get(k) is not None else float('nan'));print('%-16s %7.3f %7.3f %8.3f %8.3f %10.3f %9.3f %10.3f'%('$d',g('f1'),g('roc_auc'),g('pr_auc'),g('error_recall'),g('clean_specificity'),g('pred_error_rate'),g('first_error_acc')))"
 done
 echo
-echo "Ablation (a) critique helps?  priv_critique  vs  priv_scoreonly"
-echo "Ablation (b) privilege transfers?  priv_critique  vs  nogt_critique"
+echo "Ablation (a) critique helps?       priv_critique vs priv_scoreonly  -> compare roc_auc/pr_auc"
+echo "Ablation (b) privilege transfers?  priv_critique vs nogt_critique   -> compare roc_auc/pr_auc"
+echo "Sanity: if nogt_critique pred_err≈0 & err_rec≈0, its low f1 is a silent-collapse artifact, not capability."
