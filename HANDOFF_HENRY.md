@@ -31,7 +31,7 @@ The finding is a **tractability sweet spot**, not a monotonic difficulty effect:
 
 **B. Results narrative** — update to the **3-tier sweet spot** (GSM8K ≈0 → MATH +0.05 [CI 0.01, 0.09] → OlympiadBench ≈0) + the richness panel + cross-family. The sweet-spot contrast (not the monotonic claim) is the load-bearing figure.
 
-**C. Add the downstream-verifier section (new — §2.6).** The frontier/impact angle, not in the draft yet: the GT-free student PRM used as a test-time verifier (best-of-N re-rank) → final-answer accuracy vs majority vote. Numbers come from Saksham's Phase 3 (`bon_rerank.py`); a stub is fine for now.
+**C. Add the downstream-verifier section (new — §2.6).** The frontier/impact angle, not in the draft yet: the GT-free student PRM used as a test-time verifier (best-of-N re-rank) → final-answer accuracy vs majority vote. Numbers come from Saksham's Phase 3 (`bon_rerank.py`); a stub is fine for now. **⚠️ Don't write this as a positive result yet:** the first run had prm_rerank **32.0 < majority_vote 32.5** (N=200, within noise), AND the Phase 2 student PRM it relies on isn't validated — the reported "privilege transfers" F1 gap (0.197 vs 0.037) was a fixed-threshold artifact (nogt recall ≈2.6%; see HANDOFF_SAKSHAM.md "READ FIRST"). Both need the threshold-free re-score (ROC/PR-AUC) + symbolic checker + larger N before this section claims anything. Keep it a placeholder until then.
 
 **D. Interpret the evidence pack (DELIVERED — N=400, `results/evidence_pack_n400/` + `results/mechanism/`).** Defensible numbers, ready to drop into the paper:
 - **Overall MATH gap: +0.051, bootstrap 95% CI [0.010, 0.093]** (paired over problems) — significant. This is the headline.
