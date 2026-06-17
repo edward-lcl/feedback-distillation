@@ -58,10 +58,10 @@ Labeling is **sequential** (one request at a time), so it won't overload the ser
 # expensive generation → your local small model (vLLM, OpenAI-compatible)
 export GEN_OMLX_URL=http://localhost:8000/v1
 export GEN_OMLX_MODEL=google/gemma-2-9b-it
-# cheap privileged labeling → Edward's served teacher (URL + key from Edward)
-export OMLX_URL=https://<edward-teacher-host>/v1
-export OMLX_MODEL=<exact served MLX model id>
-export OMLX_API_KEY=<key from Edward>
+# cheap privileged labeling → Edward's served teacher (LIVE)
+export OMLX_URL=https://teacher.elcl.systems/v1
+export OMLX_MODEL=<exact served MLX model id — ask Edward>
+export OMLX_API_KEY=<key from Edward, out-of-band>
 export OMLX_TIMEOUT=600          # remote teacher; generous headroom
 N_TRAIN=1000 N_EVAL=400 EPOCHS=2 ./scripts/run_student_ablation.sh
 ```
