@@ -13,7 +13,7 @@ DEFAULT_URL = "http://localhost:8000/v1"
 
 
 class OmlxClient:
-    def __init__(self, api_url: str = None, model: str = None, timeout: int = 120,
+    def __init__(self, api_url: str = None, model: str = None, timeout: int = 600,
                  max_retries: int = 3, retry_backoff: float = 2.0):
         self.api_url = (api_url or os.environ.get("OMLX_URL") or DEFAULT_URL).rstrip("/")
         # Model must be a real id on multi-model servers ("default" 404s).

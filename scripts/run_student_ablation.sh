@@ -9,27 +9,31 @@
 set -euo pipefail
 PY="$(command -v python || command -v python3)"
 N_TRAIN="${N_TRAIN:-300}"; N_EVAL="${N_EVAL:-400}"; EPOCHS="${EPOCHS:-2}"
-GEN_BACKEND="${GEN_BACKEND:-omlx}"
+GEN_BACKEND="${GEN_BACKEND:-local}"
 DEVFLAG=""; [ "${DEV:-0}" = "1" ] && DEVFLAG="--dev_mode"
 mkdir -p data/raw data/labeled checkpoints results/ablation
 
 echo "== 1/4  Data: MATH train problems + ProcessBench MATH eval (shuffled) =="
-"$PY" -m scripts.download_data --train_source math --n "$N_TRAIN" --output data/raw/math_train.jsonl
-"$PY" -m scripts.download_data --processbench --config math --output data/processbench_math.jsonl
-"$PY" -m scripts.shuffle_jsonl --input data/processbench_math.jsonl \
-    --output data/processbench_math_shuffled.jsonl --seed 0
+# "$PY" -m scripts.download_data --train_source math --n "$N_TRAIN" --output data/raw/math_train.jsonl
+# "$PY" -m scripts.download_data --processbench --config math --output data/processbench_math.jsonl
+# "$PY" -m scripts.shuffle_jsonl --input data/processbench_math.jsonl \
+#     --output data/processbench_math_shuffled.jsonl --seed 0
 
 echo "== 2/4  Generate candidate solutions (mix of correct/incorrect) =="
 "$PY" -m scripts.generate_solutions --input data/raw/math_train.jsonl \
     --output data/raw/math_sampled.jsonl --backend "$GEN_BACKEND" --k 4 $DEVFLAG
 
+export OMLX_LABEL_MAX_TOKENS=50
 echo "== 3/4  Label twice — privileged (solution) and no-GT =="
 "$PY" -m data.label_pipeline --input data/raw/math_sampled.jsonl \
-    --output data/labeled/math_priv.jsonl --use_omlx --privilege solution
+    --output data/labeled/math_priv.jsonl --privilege solution
 "$PY" -m data.label_pipeline --input data/raw/math_sampled.jsonl \
-    --output data/labeled/math_nogt.jsonl --use_omlx --privilege none
+    --output data/labeled/math_nogt.jsonl --privilege none
 
 echo "== 4/4  Train + eval the ablation cells =="
+echo "Killing vLLM to free 44GB VRAM for student training..."
+pkill -f vllm.entrypoints.openai.api_server || true
+
 run_cell () {  # $1=labeled  $2=ablation  $3=tag
   "$PY" -m experiments.train_slfd --dataset "$1" --ablation "$2" --epochs "$EPOCHS" \
       --checkpoint "checkpoints/$3.pt" $DEVFLAG

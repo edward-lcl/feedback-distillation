@@ -109,42 +109,54 @@ def label_file(input_path: str, output_path: str, max_samples: int = None,
     else:
         teacher = TeacherModel(dev_mode=dev_mode)
 
+    def process_line(line):
+        sample = json.loads(line)
+        problem = sample.get("problem", sample.get("prompt", ""))
+        solution = sample.get("solution", sample.get("original_answer", ""))
+        gt_answer = sample.get("answer", sample.get("gt_answer", ""))
+        gt_solution = sample.get("gt_solution", "")
+
+        if privilege == "solution":
+            pa, ps = None, (gt_solution or None)
+        elif privilege == "answer":
+            pa, ps = (gt_answer or None), None
+        else:
+            pa, ps = None, None
+
+        steps = segment_steps(solution)
+        if use_omlx:
+            labels = label_solution_omlx(problem, steps, pa, gt_solution=ps, api_url=omlx_url)
+        else:
+            labels = teacher.label_solution(problem, steps, pa)
+
+        return {
+            "problem": problem,
+            "solution": solution,
+            "gt_answer": gt_answer,
+            "privilege": privilege,
+            "steps": [
+                {"text": step, **label}
+                for step, label in zip(steps, labels)
+            ],
+        }
+
     i = -1
-    with open(input_path) as fin, open(output_path, "w") as fout:
-        for i, line in enumerate(tqdm(fin)):
-            if max_samples and i >= max_samples:
-                break
-            sample = json.loads(line)
-            problem = sample.get("problem", sample.get("prompt", ""))
-            solution = sample.get("solution", sample.get("original_answer", ""))
-            gt_answer = sample.get("answer", sample.get("gt_answer", ""))
-            gt_solution = sample.get("gt_solution", "")
+    with open(input_path) as fin:
+        lines = fin.readlines()
+    if max_samples:
+        lines = lines[:max_samples]
 
-            # Pick the privileged signal passed to the teacher for this run.
-            if privilege == "solution":
-                pa, ps = None, (gt_solution or None)
-            elif privilege == "answer":
-                pa, ps = (gt_answer or None), None
-            else:  # none
-                pa, ps = None, None
-
-            steps = segment_steps(solution)
-            if use_omlx:
-                labels = label_solution_omlx(problem, steps, pa, gt_solution=ps, api_url=omlx_url)
-            else:
-                labels = teacher.label_solution(problem, steps, pa)  # local path: answer-only
-
-            record = {
-                "problem": problem,
-                "solution": solution,
-                "gt_answer": gt_answer,
-                "privilege": privilege,
-                "steps": [
-                    {"text": step, **label}
-                    for step, label in zip(steps, labels)
-                ],
-            }
-            fout.write(json.dumps(record) + "\n")
+    with open(output_path, "w") as fout:
+        if use_omlx:
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+            with ThreadPoolExecutor(max_workers=32) as executor:
+                futures = [executor.submit(process_line, line) for line in lines]
+                for future in tqdm(as_completed(futures), total=len(futures)):
+                    fout.write(json.dumps(future.result()) + "\n")
+            i = len(lines) - 1
+        else:
+            for i, line in enumerate(tqdm(lines)):
+                fout.write(json.dumps(process_line(line)) + "\n")
 
     print(f"Labeled {min(i+1, max_samples or i+1)} samples → {output_path}")
 
@@ -166,6 +178,7 @@ if __name__ == "__main__":
     mode = "oMLX API" if args.use_omlx else ("DEV (small models)" if args.dev_mode else "PROD")
     print(f"# label_pipeline starting — mode: {mode}, privilege: {args.privilege}")
 
+    omlx_url = os.environ.get("OMLX_URL") or args.omlx_url
     label_file(args.input, args.output, args.max_samples,
-               dev_mode=args.dev_mode, use_omlx=args.use_omlx, omlx_url=args.omlx_url,
+               dev_mode=args.dev_mode, use_omlx=args.use_omlx, omlx_url=omlx_url,
                privilege=args.privilege)

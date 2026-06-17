@@ -43,6 +43,13 @@ def extract_final_answer(text: str) -> str:
 
 def answers_match(a: str, b: str) -> bool:
     try:
+        from math_verify import parse, verify
+        if verify(parse(a), parse(b)):
+            return True
+    except Exception:
+        pass
+
+    try:
         return abs(float(a) - float(b)) < 1e-6
     except (ValueError, TypeError):
         return bool(a) and a.strip() == str(b).strip()
@@ -54,22 +61,26 @@ def make_generator(backend: str, omlx_url: str, dev_mode: bool, temperature: flo
         client = OmlxClient(api_url=omlx_url)
         print(f"oMLX models available: {client.list_models()}")
         return lambda prompt: client.chat(prompt, max_tokens=512, temperature=temperature)
-    # Local HF generator (dev student model) — for smoke tests without oMLX.
+    # Native Hugging Face generator — fully replacing vLLM
     import torch
-    from models.device import DEV_MODELS, PROD_MODELS, best_device
     from transformers import AutoTokenizer, AutoModelForCausalLM
-    name = (DEV_MODELS if dev_mode else PROD_MODELS)["student"]
-    device = best_device()
+    name = "google/gemma-4-26B-A4B-it"
     tok = AutoTokenizer.from_pretrained(name, trust_remote_code=True)
+    
+    print(f"Native HF fallback: Loading {name} with CPU offload...")
     model = AutoModelForCausalLM.from_pretrained(
-        name, torch_dtype=torch.float16, trust_remote_code=True).to(device)
+        name, 
+        torch_dtype=torch.bfloat16, 
+        device_map="auto",
+        max_memory={0: "22GB", 1: "22GB", "cpu": "200GB"},
+        trust_remote_code=True
+    )
     model.eval()
-    print(f"Local generator: {name} on {device}")
 
     def gen(prompt: str) -> str:
         messages = [{"role": "user", "content": prompt}]
         formatted = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        inputs = tok(formatted, return_tensors="pt", truncation=True, max_length=1024).to(device)
+        inputs = tok(formatted, return_tensors="pt", truncation=True, max_length=1024).to("cuda:0")
         with torch.no_grad():
             out = model.generate(**inputs, max_new_tokens=512, do_sample=True,
                                  temperature=temperature, top_p=0.95,
@@ -98,14 +109,14 @@ def main():
     with open(args.input) as f:
         problems = [json.loads(l) for l in f if l.strip()][: args.max_problems]
 
-    kept, n_correct, n_incorrect = [], 0, 0
-    for p in tqdm(problems, desc="problems"):
+    def process_problem(p):
         problem, gt = p["problem"], str(p.get("gt_answer", ""))
         gt_solution = p.get("gt_solution", "")
+        local_kept = []
         got_c, got_i = 0, 0
         for _ in range(args.k):
             if got_c >= args.need_correct and got_i >= args.need_incorrect:
-                break  # have both — stop sampling this problem
+                break
             text = generate(GEN_PROMPT.format(problem=problem)).strip()
             if not text:
                 continue
@@ -115,7 +126,7 @@ def main():
                 continue
             if not correct and got_i >= args.need_incorrect:
                 continue
-            kept.append({
+            local_kept.append({
                 "problem": problem,
                 "solution": text,
                 "gt_answer": gt,
@@ -125,8 +136,17 @@ def main():
             })
             got_c += correct
             got_i += (not correct)
-        n_correct += got_c
-        n_incorrect += got_i
+        return local_kept, got_c, got_i
+
+    kept, n_correct, n_incorrect = [], 0, 0
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    with ThreadPoolExecutor(max_workers=32 if args.backend == "omlx" else 1) as executor:
+        futures = [executor.submit(process_problem, p) for p in problems]
+        for future in tqdm(as_completed(futures), total=len(futures), desc="problems"):
+            local_kept, c, i = future.result()
+            kept.extend(local_kept)
+            n_correct += c
+            n_incorrect += i
 
     with open(args.output, "w") as f:
         for r in kept:

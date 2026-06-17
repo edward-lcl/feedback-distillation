@@ -18,7 +18,7 @@ DEV_MODELS = {
 # Teacher is Qwen2.5-Math-72B-Instruct for paper reproducibility—standard HF model,
 # math-specialized, same oracle family used by Math-Shepherd / VersaPRM.
 PROD_MODELS = {
-    "teacher": "Qwen/Qwen2.5-Math-72B-Instruct",
+    "teacher": "google/gemma-4-26B-A4B-it",
     "student": "Qwen/Qwen2.5-1.5B-Instruct",
 }
 
@@ -76,8 +76,13 @@ def load_model_for_device(model_name: str, dev_mode: bool = False):
     else:
         # CUDA full precision or CPU.
         from transformers import AutoModelForCausalLM
+        print(f"Native HF loader: Offloading {model_name} to CPU...")
         return AutoModelForCausalLM.from_pretrained(
-            model_name, torch_dtype=torch.float16, device_map="auto", trust_remote_code=True
+            model_name, 
+            torch_dtype=torch.bfloat16, 
+            device_map="auto", 
+            max_memory={0: "22GB", 1: "22GB", "cpu": "200GB"},
+            trust_remote_code=True
         )
 
 
