@@ -90,9 +90,15 @@ Teacher selected by bake-off (**Gemma-4-26b**, F1 0.91).
 Teacher labeling runs against any OpenAI-compatible endpoint (oMLX locally, vLLM on GPU):
 set `OMLX_URL` / `OMLX_MODEL` / `OMLX_API_KEY`.
 
+**Paper:** the 4-page draft is assembled and compiles — Related Work (§1.1–1.4) +
+3-tier sweet-spot results (Table 2) + a §2.7 downstream-verifier stub (an honest
+negative: prelim PRM re-rank 32.0 < majority vote 32.5, gated on the threshold-free
+re-score before it claims anything). Remaining: flip cases, OlympiadBench cell, §2.7
+real numbers. Compiled snapshot: [`paper/SLFD_draft.pdf`](paper/SLFD_draft.pdf).
+
 ### Runbooks
 - **Saksham (GPU):** [`HANDOFF_SAKSHAM.md`](HANDOFF_SAKSHAM.md) — serve Gemma, run Phases 1–3.
-- **Henry (paper):** [`HANDOFF_HENRY.md`](HANDOFF_HENRY.md) — sweet-spot framing, results, verifier section.
+- **Henry (paper):** [`HANDOFF_HENRY.md`](HANDOFF_HENRY.md) — sweet-spot framing, results, verifier section (draft assembled; see the 2026-06-17 sync block for remaining items).
 
 ---
 

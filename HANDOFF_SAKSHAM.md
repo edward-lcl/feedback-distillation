@@ -21,6 +21,7 @@ git push -u origin HEAD
 Then drop the branch name in the channel. (Skip the multi-GB `.pt` weights; the `results/ablation/*/processbench_results.json` files are what we need.)
 
 **2. Fix the metric before scaling — your Phase 2 gap is currently a threshold artifact, not capability.**
+> 🔗 **This re-score is now on the paper's critical path.** Henry's draft has a §2.7 downstream-verifier section held as an honest stub — it can't claim a real result until your threshold-free re-score (ROC/PR-AUC) confirms privilege transfers to the student. So this is the one item unblocking that section; please push the JSONs as soon as it's run.
 Charlotte's catch: `nogt_critique` F1 cratered to 0.037 but its `first_error_acc` (0.435) is identical to the privileged cells. That's not a contradiction — it's a metric artifact:
 - The decision rule is a **fixed cutoff** (`score_logit < 0` ⇒ "error"). The no-GT student's score head is shifted so it almost never crosses 0 → predicts "no error" everywhere → recall→0 → **F1 collapses**.
 - But `first_error_acc` counts a sequence correct when predicted-first == true-first, and "no error anywhere" (`pred_first=None`) **trivially matches every error-free sequence**. ProcessBench-MATH is ~43% error-free, so a silent model banks ~0.435 *for free*. All three cells sit at the base rate; only F1 sees the collapse.
