@@ -4,6 +4,24 @@ _Updated 2026-06-16. Async-friendly, no compute needed. Paper: https://www.overl
 
 Your Overleaf draft is already strong (Related Work, the position, and the GSM8K/MATH/cross-family results are in). This runbook covers what's **changed** since you drafted it, and what's left to land.
 
+## 2026-06-17 — status sync (your draft is in `main`)
+
+Your push (`61c0ec0`) is merged: the compiled 4-page draft (`paper/SLFD_draft.pdf`) now has **Related Work §1.1–1.4 + 3-tier sweet-spot Results (Table 2) + §2.7 downstream verifier**, and it compiles. Nicely done — and thank you for keeping **§2.7 honest** (prelim PRM re-rank 32.0 < majority 32.5, reported "only to fix the protocol," deferred pending Saksham's re-score). The §2.3 monotonic→sweet-spot FIX is in. So mission A/B are essentially done and C is correctly stubbed.
+
+**Two fixes in the Overleaf source before anyone cites it:**
+1. **§2.3 prose typo — `+0.5 F1` should be `+0.05`.** Table 2 is right ([0.01, 0.09]); the sentence reads 10× too big. This is the headline number, so it matters most.
+2. **Spelling typos** in §1.1–1.2: `whcih`, `wcih` (→ "which"), `close to uors` (→ "ours"), `expert-amateur literate` (→ "literature").
+
+**Remaining to land (from your own dashboard task row):**
+- ☐ paste 2–3 flip cases from `results/evidence_pack_n400/per_sample.jsonl` (the `flip`/`broke` rows) into the Results.
+- ☐ fill the OlympiadBench gap cell in Table 2 with the verified OE-only number (−0.03) rather than just "≈ 0 (n.s.)".
+- ☐ §2.7 real numbers — **gated on Saksham's threshold-free re-score** (ROC/PR-AUC) + symbolic checker + larger N. Keep it a stub until then; see HANDOFF_SAKSHAM.md "READ FIRST".
+- ☐ **Consolidate the tables** (Edward's call). The draft has 6 tables and for our venue level that reads as over-split — agents tend to over-engineer this. Fold the per-condition results into one consolidated table (esp. Tables 3+4 GSM8K/MATH → a single conditions table; consider merging the cross-family panel too). One readable table beats five small ones.
+
+**Green light to keep drafting now** — the preliminary results already paint the picture, so build out the full narrative and slot remaining numbers in as they land (per Edward). The Foerster guide above is the structure to follow.
+
+**Worth a read before the next drafting pass:** Jakob Foerster's "How to ML Paper" — https://www.jakobfoerster.com/how-to-ml-paper — a tight guide on structuring the narrative (claim → evidence → ablation) that maps well onto where the draft is now.
+
 ## The spine — now sharper (and one thing to FIX)
 
 The finding is a **tractability sweet spot**, not a monotonic difficulty effect:
@@ -27,11 +45,11 @@ The finding is a **tractability sweet spot**, not a monotonic difficulty effect:
 | Eval | ProcessBench-style first-error F1, GT-free at student test time |
 
 ## Your mission (in priority order)
-**A. Related work & positioning** — already drafted; keep. Novelty = (1) score+critique as a distillation target, (2) the privilege **sweet-spot** characterization (when privilege can be distilled at all).
+**A. Related work & positioning — ✅ DONE (§1.1–1.4).** Novelty = (1) score+critique as a distillation target, (2) the privilege **sweet-spot** characterization (when privilege can be distilled at all).
 
-**B. Results narrative** — update to the **3-tier sweet spot** (GSM8K ≈0 → MATH +0.05 [CI 0.01, 0.09] → OlympiadBench ≈0) + the richness panel + cross-family. The sweet-spot contrast (not the monotonic claim) is the load-bearing figure.
+**B. Results narrative — ✅ DONE (§2.3, Table 2).** Restructured to the **3-tier sweet spot** (GSM8K ≈0 → MATH +0.05 [CI 0.01, 0.09] → OlympiadBench ≈0) + the richness panel + cross-family. The sweet-spot contrast (not the monotonic claim) is the load-bearing figure. (Remaining: OlympiadBench cell number + flip cases — see sync block above.)
 
-**C. Add the downstream-verifier section (new — §2.6).** The frontier/impact angle, not in the draft yet: the GT-free student PRM used as a test-time verifier (best-of-N re-rank) → final-answer accuracy vs majority vote. Numbers come from Saksham's Phase 3 (`bon_rerank.py`); a stub is fine for now. **⚠️ Don't write this as a positive result yet:** the first run had prm_rerank **32.0 < majority_vote 32.5** (N=200, within noise), AND the Phase 2 student PRM it relies on isn't validated — the reported "privilege transfers" F1 gap (0.197 vs 0.037) was a fixed-threshold artifact (nogt recall ≈2.6%; see HANDOFF_SAKSHAM.md "READ FIRST"). Both need the threshold-free re-score (ROC/PR-AUC) + symbolic checker + larger N before this section claims anything. Keep it a placeholder until then.
+**C. Add the downstream-verifier section — ✅ STUBBED (now §2.7, not §2.6).** Honest negative as intended; real numbers gated on Saksham's re-score. The frontier/impact angle, not in the draft yet: the GT-free student PRM used as a test-time verifier (best-of-N re-rank) → final-answer accuracy vs majority vote. Numbers come from Saksham's Phase 3 (`bon_rerank.py`); a stub is fine for now. **⚠️ Don't write this as a positive result yet:** the first run had prm_rerank **32.0 < majority_vote 32.5** (N=200, within noise), AND the Phase 2 student PRM it relies on isn't validated — the reported "privilege transfers" F1 gap (0.197 vs 0.037) was a fixed-threshold artifact (nogt recall ≈2.6%; see HANDOFF_SAKSHAM.md "READ FIRST"). Both need the threshold-free re-score (ROC/PR-AUC) + symbolic checker + larger N before this section claims anything. Keep it a placeholder until then.
 
 **D. Interpret the evidence pack (DELIVERED — N=400, `results/evidence_pack_n400/` + `results/mechanism/`).** Defensible numbers, ready to drop into the paper:
 - **Overall MATH gap: +0.051, bootstrap 95% CI [0.010, 0.093]** (paired over problems) — significant. This is the headline.

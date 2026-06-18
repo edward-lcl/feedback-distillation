@@ -15,9 +15,28 @@ set -euo pipefail
 PY="$(command -v python || command -v python3)"
 N_TRAIN="${N_TRAIN:-300}"; N_EVAL="${N_EVAL:-400}"; EPOCHS="${EPOCHS:-2}"
 GEN_BACKEND="${GEN_BACKEND:-omlx}"
-GEN_OMLX_URL="${GEN_OMLX_URL:-${OMLX_URL:-}}"      # generation endpoint (your box)
-GEN_OMLX_MODEL="${GEN_OMLX_MODEL:-${OMLX_MODEL:-}}"
+# Generation (the EXPENSIVE step) must run on a LOCAL small model, never the
+# served teacher. Default the generator to gemma-2-9b-it; never inherit the
+# teacher's model. And REFUSE to route generation at a remote teacher host:
+# if OMLX_URL is remote but GEN_OMLX_URL is unset, that would silently send
+# thousands of long generations to the teacher (slow; hammers Edward's Mac).
+GEN_OMLX_MODEL="${GEN_OMLX_MODEL:-google/gemma-2-9b-it}"
+GEN_OMLX_URL="${GEN_OMLX_URL:-}"
 GEN_OMLX_API_KEY="${GEN_OMLX_API_KEY:-${OMLX_API_KEY:-}}"
+if [ -z "$GEN_OMLX_URL" ]; then
+  case "${OMLX_URL:-}" in
+    ""|*localhost*|*127.0.0.1*)
+      GEN_OMLX_URL="${OMLX_URL:-http://localhost:8000/v1}"   # single-box / local mode: fine
+      ;;
+    *)
+      echo "ERROR: OMLX_URL is a remote teacher ($OMLX_URL) but GEN_OMLX_URL is unset." >&2
+      echo "       Generation must run on YOUR local model, not the teacher host. Set e.g.:" >&2
+      echo "         export GEN_OMLX_URL=http://localhost:8000/v1" >&2
+      echo "         export GEN_OMLX_MODEL=google/gemma-2-9b-it" >&2
+      exit 1
+      ;;
+  esac
+fi
 DEVFLAG=""; [ "${DEV:-0}" = "1" ] && DEVFLAG="--dev_mode"
 mkdir -p data/raw data/labeled checkpoints results/ablation
 
