@@ -31,19 +31,22 @@
 - `EPOCHS` = 2
 
 ### Ablation Results (ProcessBench)
-| Condition | F1 Score | First Error Accuracy |
-| :--- | :--- | :--- |
-| `priv_critique` (Privileged + Critique) | **0.197** | 0.438 |
-| `priv_scoreonly` (Privileged, Score Only) | **0.177** | 0.455 |
-| `nogt_critique` (No-GT + Critique) | **0.037** | 0.435 |
+*Note: F1 scores below are heavily skewed by a fixed-threshold artifact (logit < 0 cutoff). The threshold-free `roc_auc` metric provides the true measure of ranking capability.*
+
+| Condition | F1 Score | ROC AUC | First Error Accuracy |
+| :--- | :--- | :--- | :--- |
+| `priv_critique` (Privileged + Critique) | **0.197** | 0.624 | 0.438 |
+| `priv_scoreonly` (Privileged, Score Only) | **0.177** | - | 0.455 |
+| `nogt_critique` (No-GT + Critique) | **0.037** | 0.651 | 0.435 |
 
 ### Research Takeaways
-1. **Critique Helps:** The presence of textual reasoning chains during training provides valuable learning signals to the student, boosting performance (`0.177` → `0.197`).
-2. **Privilege Transfers (Core Thesis):** The performance of the student is fundamentally bounded by the quality of the teacher's labels. The PRM trained under the privileged teacher (`0.197`) dramatically outperformed the PRM trained under the unprivileged teacher (`0.037`). The capability gap observed in Phase 1 successfully distills into the student model.
+1. **Critique Helps:** The presence of textual reasoning chains during training provides valuable learning signals to the student (`0.177` → `0.197` F1).
+2. **Privilege DOES NOT Transfer (Hypothesis Failed):** The apparent F1 gap (0.197 vs 0.037) was purely a calibration/threshold artifact. The `nogt` model score head is shifted such that it rarely crosses the default 0-cutoff, collapsing recall to ~0. When measured purely on ranking quality (threshold-free), the `nogt_critique` student (`roc_auc` = 0.651) actually **outperformed** the privileged student (`roc_auc` = 0.624). The teacher's privileged capability did *not* successfully distill into the student model.
 
 ---
 
 ## 4. Phase 3: Downstream Impact (Best-of-N Re-ranking)
+**⚠️ WARNING: These results are derived from the `priv_critique.pt` checkpoint, which we now know has inferior ranking capabilities (`roc_auc`=0.624) compared to the unprivileged baseline (`roc_auc`=0.651). Downstream results should be interpreted cautiously until the threshold calibration issue is fixed.**
 **Goal:** Evaluate the downstream utility of the trained student PRM (`priv_critique.pt`) as a test-time verifier to select the best candidate from a pool of generated solutions.
 
 ### Evaluation Setup
