@@ -28,7 +28,7 @@ echo "== 1/4  Data: MATH train problems + ProcessBench MATH eval (shuffled) =="
 #     --output data/processbench_math_shuffled.jsonl --seed 0
 
 echo "== 2/4  Generate candidate solutions (mix of correct/incorrect) — via GEN endpoint =="
-OMLX_URL="$GEN_OMLX_URL" OMLX_MODEL="$GEN_OMLX_MODEL" \
+OMLX_URL="$GEN_OMLX_URL" OMLX_MODEL="$GEN_OMLX_MODEL" OMLX_API_KEY="${GEN_OMLX_API_KEY:-${OMLX_API_KEY:-}}" \
 "$PY" -m scripts.generate_solutions --input data/raw/math_train.jsonl \
     --output data/raw/math_sampled.jsonl --backend "$GEN_BACKEND" \
     ${GEN_OMLX_URL:+--omlx_url "$GEN_OMLX_URL"} --k 4 $DEVFLAG
