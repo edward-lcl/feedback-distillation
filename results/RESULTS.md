@@ -1,66 +1,70 @@
 # Distilling Privileged Feedback into Ground-Truth-Free Process Reward Models
-**Session Results & Experimental Summary**
+**Experimental Summary — verified N=1000 run (updated 2026-06-18)**
 
-## 1. Experimental Setup & Hardware
-- **Hardware:** Local Compute (Dual NVIDIA GeForce RTX 3090, 24GB VRAM per GPU)
-- **Teacher Model:** `google/gemma-2-9b-it` (Unquantized, bf16/fp16)
-- **Student Model:** `Qwen/Qwen2.5-1.5B-Instruct`
-- **Serving Engine:** `vLLM` (v0.7.3) with dynamic tensor/pipeline parallelism mapping
+> Supersedes the earlier draft of this file (which reported a stale N=300 run with
+> a fixed-threshold F1 artifact). Numbers below are read directly from the committed
+> result JSONs.
 
----
+## 1. Experimental Setup
+- **Teacher (labeling):** `gemma-4-26b-a4b-it` (MLX 4-bit), served from Edward's box and
+  reached over a tunnel — **confirmed: ~32k labeling requests** hit the served teacher.
+- **Generator (candidate solutions):** `gemma-2-9b-it`, local vLLM on the 2×3090 box.
+- **Student PRM:** `Qwen/Qwen2.5-1.5B-Instruct`.
+- **Eval:** ProcessBench MATH, **threshold-free** (`roc_auc`/`pr_auc`) + split diagnostics.
 
-## 2. Phase 1: Privilege Probe
-**Goal:** Verify whether providing the teacher model with the ground-truth (GT) solution yields a measurable capability gap in step-level error detection compared to an unprivileged teacher.
+## 2. Phase 1 — Teacher-level privilege: VALIDATED (the spine)
+Giving the teacher the GT reference solution measurably improves step-error detection,
+**but only in a tractability sweet spot**:
+- GSM8K (easy) ≈ 0 · **MATH +0.05** (N=400, 95% CI [0.01, 0.09], significant) · OlympiadBench ≈ 0.
+- Richness matters: a bare answer is inert; only the full worked solution helps.
+- Cross-family confirmed (Qwen-27B teacher: +0.082 on MATH).
 
-### Results
-| Metric | Score | Description |
-| :--- | :--- | :--- |
-| `gap_solution_f1` | **0.2675** | Improvement in F1 when Teacher is given the GT solution |
-| `gap_answer_f1` | **0.1610** | Improvement in F1 when Teacher is given the GT final answer |
+This finding is unchanged and remains the paper's spine.
 
-**Conclusion:** The cross-teacher gate passed cleanly. A substantial capability gap exists, proving that the privileged teacher detects subtle reasoning errors far more accurately than its unprivileged counterpart. 
+## 3. Phase 2 — Student PRM ablations (does privilege TRANSFER to the student?)
+N_TRAIN=1000, N_EVAL=400, EPOCHS=2. **Compare on `roc_auc` (threshold-free), not F1** —
+F1 at a fixed `logit<0` cutoff moves with score-head calibration and is not a capability measure.
 
----
+| Condition | `roc_auc` | `pr_auc` | F1 | error_recall | pred_error_rate |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `priv_critique` (privileged + critique) | 0.631 | 0.130 | 0.170 | 0.357 | 0.280 |
+| `priv_scoreonly` (privileged, score only) | 0.624 | 0.135 | 0.184 | 0.427 | 0.319 |
+| `nogt_critique` (no-GT + critique) | **0.641** | 0.121 | 0.198 | 0.467 | 0.327 |
 
-## 3. Phase 2: Student PRM Ablations
-**Goal:** Distill the teacher's evaluation signals into a lightweight, ground-truth-free student PRM (1.5B parameters). We ablated across two axes: Privilege (did the teacher have GT access?) and Critique (did the teacher provide textual rationales alongside numerical scores?).
+**Takeaway — privilege does NOT transfer to the student.** The no-GT student is *highest* on
+`roc_auc` (0.641 vs 0.631) — and this run is non-degenerate (`pred_error_rate`≈0.3 across cells,
+no silent collapse), so it's a clean comparison. (The earlier "0.037 → 0.197 privilege transfers"
+headline was a fixed-threshold artifact from a degenerate prior run; it does not reproduce.)
 
-### Training Hyperparameters
-- `N_TRAIN` = 300
-- `N_EVAL` = 400
-- `EPOCHS` = 2
+## 4. Phase 3 — Downstream Best-of-N re-ranking (N=1000)
+Generator `gemma-2-9b-it`, N=8 candidates. Each student PRM used as a test-time verifier.
 
-### Ablation Results (ProcessBench)
-| Condition | F1 Score | First Error Accuracy |
-| :--- | :--- | :--- |
-| `priv_critique` (Privileged + Critique) | **0.197** | 0.438 |
-| `priv_scoreonly` (Privileged, Score Only) | **0.177** | 0.455 |
-| `nogt_critique` (No-GT + Critique) | **0.037** | 0.435 |
+| Verifier | pass@1 | `prm_rerank` | `majority_vote` | `oracle_pass@N` |
+| :--- | :--- | :--- | :--- | :--- |
+| **No-GT student** (`bon_nogt`) | 0.337 | **0.373** | 0.391 | 0.517 |
+| **Privileged student** (`bon_priv`) | 0.335 | 0.349 | 0.382 | 0.518 |
 
-### Research Takeaways
-1. **Critique Helps:** The presence of textual reasoning chains during training provides valuable learning signals to the student, boosting performance (`0.177` → `0.197`).
-2. **Privilege Transfers (Core Thesis):** The performance of the student is fundamentally bounded by the quality of the teacher's labels. The PRM trained under the privileged teacher (`0.197`) dramatically outperformed the PRM trained under the unprivileged teacher (`0.037`). The capability gap observed in Phase 1 successfully distills into the student model.
+(An earlier N=200 run is in `results/bon/`: pass@1 0.345, prm_rerank 0.335, majority 0.395.)
 
----
+**Takeaway:** the no-GT verifier reranks *better* (0.373 vs 0.349, +3.6 vs +1.4 over pass@1),
+and **neither verifier beats majority vote** (~0.39). Pools are matched in difficulty
+(pass@1 ≈0.336, oracle ≈0.517 both), so the comparison is fair — but they are *separate*
+candidate generations, not one shared pool (see open thread #2).
 
-## 4. Phase 3: Downstream Impact (Best-of-N Re-ranking)
-**Goal:** Evaluate the downstream utility of the trained student PRM (`priv_critique.pt`) as a test-time verifier to select the best candidate from a pool of generated solutions.
+## 5. Honest conclusion
+- **Teacher-level privilege: real and validated.** (Sweet spot, N=400 +0.05, cross-family.)
+- **Transfer into a 1.5B student PRM: NOT observed at this scale.** No-GT ≥ privileged on both
+  step-level `roc_auc` and downstream re-ranking; neither verifier beats majority vote.
 
-### Evaluation Setup
-- **Generator:** `gemma-2-9b-it`
-- **Candidates (N):** 8
-- **Dataset:** `ProcessBench` (200 problems evaluated)
-- *Note: Evaluation loop was optimized with parallel ThreadPool concurrency for maximal hardware utilization.*
+This is a clean, honest negative — and a more interesting contribution once we understand *why*.
 
-### Re-ranking Results
-| Metric | Accuracy | Description |
-| :--- | :--- | :--- |
-| `pass@1` | **29.0%** | Taking the first generated candidate (Baseline) |
-| `prm_rerank` | **32.0%** | Candidate selected by the distilled 1.5B Student PRM |
-| `majority_vote` | **32.5%** | Most common answer among the 8 candidates (Ensemble) |
-| `oracle_pass@N` | **40.5%** | Theoretical ceiling (correct answer exists in the 8 candidates) |
-
-### Research Takeaways
-The test-time verifier (`prm_rerank`) successfully boosts the baseline accuracy by a full 3 percentage points, nearly tying the computationally expensive `majority_vote` ensemble strategy. 
-
-Given that the student model is heavily constrained by parameter count (1.5B vs the generator's 9B) and was trained on a toy-scale dataset (`N_TRAIN` = 300), matching the performance of a 9B-parameter majority vote is a highly promising signal. Scaling the training dataset by an order of magnitude is the logical next step to definitively break the majority vote ceiling.
+## 6. Open threads (next experiments)
+1. **Gemma-4 privilege probe** — only the `gemma-2-9b` probe was saved; run the probe through the
+   served Gemma-4 teacher to confirm the privileged labels actually differ from no-GT at the
+   teacher level (the teacher-level gap is independently validated, but pin it for *this* teacher).
+2. **Same-pool paired Phase 3** — re-rank one shared candidate set with both verifiers; report
+   absolute accuracy + a paired (McNemar) significance test, not baseline-relative deltas.
+3. **Why no transfer?** candidate hypotheses to test:
+   - train/eval distribution shift (train on 9b-generated solutions, eval on ProcessBench's);
+   - 1.5B student capacity ceiling;
+   - label agreement: how often do priv vs no-GT teacher labels actually differ, and on which steps?

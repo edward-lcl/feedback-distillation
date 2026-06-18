@@ -15,7 +15,7 @@ Your push (`61c0ec0`) is merged: the compiled 4-page draft (`paper/SLFD_draft.pd
 **Remaining to land (from your own dashboard task row):**
 - ☐ paste 2–3 flip cases from `results/evidence_pack_n400/per_sample.jsonl` (the `flip`/`broke` rows) into the Results.
 - ☐ fill the OlympiadBench gap cell in Table 2 with the verified OE-only number (−0.03) rather than just "≈ 0 (n.s.)".
-- ☐ §2.7 real numbers — **gated on Saksham's threshold-free re-score** (ROC/PR-AUC) + symbolic checker + larger N. Keep it a stub until then; see HANDOFF_SAKSHAM.md "READ FIRST".
+- ☑ §2.7 numbers are **in** — the re-score + N=1000 run are done (see below). §2.7 is now a **verified honest negative**, not a stub.
 - ☐ **Consolidate the tables** (Edward's call). The draft has 6 tables and for our venue level that reads as over-split — agents tend to over-engineer this. Fold the per-condition results into one consolidated table (esp. Tables 3+4 GSM8K/MATH → a single conditions table; consider merging the cross-family panel too). One readable table beats five small ones.
 
 **Green light to keep drafting now** — the preliminary results already paint the picture, so build out the full narrative and slot remaining numbers in as they land (per Edward). The Foerster guide above is the structure to follow.
@@ -49,7 +49,16 @@ The finding is a **tractability sweet spot**, not a monotonic difficulty effect:
 
 **B. Results narrative — ✅ DONE (§2.3, Table 2).** Restructured to the **3-tier sweet spot** (GSM8K ≈0 → MATH +0.05 [CI 0.01, 0.09] → OlympiadBench ≈0) + the richness panel + cross-family. The sweet-spot contrast (not the monotonic claim) is the load-bearing figure. (Remaining: OlympiadBench cell number + flip cases — see sync block above.)
 
-**C. Add the downstream-verifier section — ✅ STUBBED (now §2.7, not §2.6).** Honest negative as intended; real numbers gated on Saksham's re-score. The frontier/impact angle, not in the draft yet: the GT-free student PRM used as a test-time verifier (best-of-N re-rank) → final-answer accuracy vs majority vote. Numbers come from Saksham's Phase 3 (`bon_rerank.py`); a stub is fine for now. **⚠️ Don't write this as a positive result yet:** the first run had prm_rerank **32.0 < majority_vote 32.5** (N=200, within noise), AND the Phase 2 student PRM it relies on isn't validated — the reported "privilege transfers" F1 gap (0.197 vs 0.037) was a fixed-threshold artifact (nogt recall ≈2.6%; see HANDOFF_SAKSHAM.md "READ FIRST"). Both need the threshold-free re-score (ROC/PR-AUC) + symbolic checker + larger N before this section claims anything. Keep it a placeholder until then.
+**C. Downstream-verifier section (§2.7) — ✅ VERIFIED NEGATIVE (2026-06-18). Write it as a clean null.** The N=1000 run is done and validated (labeling confirmed through the served Gemma-4 teacher). The result: **privilege does NOT transfer into the student PRM.**
+- **Step-level (`roc_auc`, the right metric):** no-GT **0.641** ≥ priv 0.631 ≥ priv_scoreonly 0.624. Non-degenerate run (no silent collapse), so it's a clean comparison.
+- **Downstream Best-of-N (N=1000):** no-GT verifier `prm_rerank` **0.373** ≥ priv 0.349; **neither beats majority vote** (~0.39).
+- The earlier "0.197 vs 0.037 privilege transfers" was a **fixed-threshold F1 artifact** and does **not** reproduce; do not cite it.
+
+**How to frame it:** the **teacher-level** privilege/sweet-spot result is the spine and stands. §2.7 reports the honest finding that this teacher advantage does **not** distill into a better small (1.5B) student PRM at this scale — no-GT is equal-or-better, and neither verifier beats majority vote. That's a legitimate, interesting negative. The live diagnosis threads (Option B) make it a contribution rather than a dead end:
+1. Gemma-4 privilege probe (confirm priv≠nogt labels for the labeling teacher);
+2. same-pool paired Phase 3 (one shared candidate set + paired significance — `bon_priv`/`bon_nogt` were separate generations);
+3. why no transfer — train/eval distribution shift, 1.5B capacity, or priv-vs-no-GT label agreement.
+Full numbers + the open threads: `results/RESULTS.md`. Keep §2.7 honest; don't oversell either direction.
 
 **D. Interpret the evidence pack (DELIVERED — N=400, `results/evidence_pack_n400/` + `results/mechanism/`).** Defensible numbers, ready to drop into the paper:
 - **Overall MATH gap: +0.051, bootstrap 95% CI [0.010, 0.093]** (paired over problems) — significant. This is the headline.

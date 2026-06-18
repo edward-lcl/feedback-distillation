@@ -1,6 +1,14 @@
 # Handoff — Saksham (GPU box, 2×3090 / 48 GB)
 
-**Status: FIRST RUN IN — REORIENTING (2026-06-17).** Phase 1 (probe) replicates; Phases 2–3 ran end-to-end on the `gemma-2-9b-it` fallback, but the headline is **NOT validated** — the reported Phase 2 gap is a fixed-threshold metric artifact (see READ FIRST below). Raw metrics: [results/RESULTS.md](results/RESULTS.md). Don't report any phase as "done" until the threshold-free re-score confirms it.
+**Status: N=1000 RUN COMPLETE & VERIFIED (2026-06-18) — privilege does NOT transfer to the student.** Labeling confirmed to run through the served **Gemma-4** teacher (~32k requests), generation on local `gemma-2-9b`, our threshold-free eval. Result: no-GT student ≥ privileged on `roc_auc` (0.641 vs 0.631) **and** downstream re-rank (0.373 vs 0.349); neither verifier beats majority vote. Teacher-level privilege is still validated — it just doesn't distill into the 1.5B student at this scale. Full numbers: [results/RESULTS.md](results/RESULTS.md). **This is an honest negative — do not report it as "privilege transfers."** Next = Option B diagnosis (below).
+
+## ✅ Where we are now & next steps (Option B — diagnose the negative)
+The metric reorientation is **done** (threshold-free eval landed, re-score complete, the F1 "0.037 vs 0.197" was confirmed a fixed-threshold artifact and does not reproduce). The result is a clean negative. Now we pull the thread:
+1. **Gemma-4 privilege probe** — only the `gemma-2-9b` probe was saved. Run the probe *through the served Gemma-4 teacher* (`OMLX_URL=https://teacher.elcl.systems/v1`) to confirm privileged labels actually differ from no-GT for the teacher we labeled with.
+2. **Same-pool paired Phase 3** — `bon_priv` and `bon_nogt` were *separate* generations. Re-rank **one shared candidate set** with both verifiers; report absolute accuracy + a paired (McNemar) test, not baseline-relative deltas.
+3. **Label-agreement analysis** — dump how often priv vs no-GT teacher labels differ, and on which steps. If they barely differ, that explains the null directly.
+
+(Historical context for steps 1–3 — the original reorientation — is retained below.)
 
 _Goal: reproduce the privilege × difficulty result with an **official** Gemma checkpoint at scale. Phase 1 (the probe) is below; Phase 2 (the full student run + ablations — the paper result) is at the bottom, now also ready._
 
