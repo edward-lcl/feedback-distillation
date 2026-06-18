@@ -630,7 +630,7 @@ a:hover{text-decoration:underline}
     <ul class="status-list">{runs_html}</ul>
   </div>
   <div class="card">
-    <div class="card-title" style="margin-bottom:14px">Roadmap</div>
+    <div class="card-title" style="margin-bottom:14px"><a href="https://github.com/edward-lcl/feedback-distillation/blob/main/RESEARCH_ROADMAP.md" target="_blank" style="color:inherit;text-decoration:none">Roadmap <span style="color:var(--accent)">↗</span></a></div>
     <div class="milestones">{miles_html}</div>
   </div>
 </div>
