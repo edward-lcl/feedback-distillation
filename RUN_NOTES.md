@@ -80,3 +80,8 @@ python3 -m vllm.entrypoints.openai.api_server \
 
 ## 12. Returning to Pre-Quantized Gemma 2
 *   **The Final Decision**: The hardware limits of 2x RTX 3090s combined with the architectural flaws of Gemma 4 make it impossible to run the unquantized model within a reasonable timeframe. We are formally abandoning `google/gemma-4-26B-A4B-it`. We are proposing a pivot back to `unsloth/gemma-2-27b-it-bnb-4bit`. This model is fully supported by `vLLM`, natively quantized to 4-bit, perfectly fits in VRAM, and will restore the continuous batching engine to complete Phase 2 in ~20 minutes.
+
+## 13. Phase 2 Metric Artifact & Privilege Inversion
+*   **The Issue**: After scaling the student ablations to N=1000, we observed a massive F1 gap between the Privileged student (0.197) and the No-GT student (0.037), which seemed to confirm the core thesis that privilege transfers. However, re-scoring the checkpoints threshold-free revealed that this was a calibration artifact. The No-GT model actually achieved a higher ranking quality (`roc_auc` = 0.651) than the Privileged model (`roc_auc` = 0.624). The core thesis failed under a threshold-free metric.
+*   **The Cause**: The No-GT model's raw score head is shifted such that its predictions rarely cross the default `logit < 0` cutoff. This collapses recall to near-zero, artificially tanking its F1 score despite having superior ranking capabilities.
+*   **The Fix**: We have halted downstream N=1000 best-of-N runs until we resolve this calibration issue. The immediate fix is to implement empirical thresholding on a validation set (or apply probability calibration) instead of relying on the fixed `logit < 0` decision rule.
