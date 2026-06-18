@@ -78,8 +78,20 @@ python3 -m vllm.entrypoints.openai.api_server \
 *   **The 23-Day Bottleneck**: Although the native Hugging Face pipeline successfully utilized the GPUs without OOMing, it natively lacks `vLLM`'s Continuous Batching engine. It was generating candidate solutions strictly sequentially (batch size 1). Streaming 20GB over the PCIe bus sequentially for 6,000 sequences was mathematically calculated to take 23 Days. 
 *   **Status**: The native Hugging Face pipeline (`task-2031`) was manually killed to prevent a 23-day lockup.
 
-## 12. Returning to Pre-Quantized Gemma 2
-*   **The Final Decision**: The hardware limits of 2x RTX 3090s combined with the architectural flaws of Gemma 4 make it impossible to run the unquantized model within a reasonable timeframe. We are formally abandoning `google/gemma-4-26B-A4B-it`. We are proposing a pivot back to `unsloth/gemma-2-27b-it-bnb-4bit`. This model is fully supported by `vLLM`, natively quantized to 4-bit, perfectly fits in VRAM, and will restore the continuous batching engine to complete Phase 2 in ~20 minutes.
+### 15. Enforcing Dual-Endpoint Topology for Scale (N=1000)
+
+**Correction:** We previously considered a full local pivot to `unsloth/gemma-2-27b-it-bnb-4bit`, but this violates the scaling constraints outlined in the handoff. We must stick to the strict **Dual-Endpoint Topology**:
+1. **Local Generator:** We will host `google/gemma-2-9b-it` locally via `vLLM` to handle the massive, expensive generation workload (512 tokens/trace) using continuous batching on our 3090s.
+2. **Remote Labeler (Privileged Teacher):** We will tunnel into Edward's live `gemma-4-26b-a4b-it-MLX-4bit` MLX endpoint (`https://teacher.elcl.systems/v1`). Labeling is cheap and sequential, so it will not overwhelm his MacBook.
+
+This setup prevents OOM crashes and correctly scales the Phase 2 ablation to N=1000.
+
+## 16. Best Practices to Prevent Future Reruns
+To prevent pipeline failures, GitHub blocked pushes, or manual 3-hour babysitting sessions in the future, we have established the following best practices for all scale runs:
+1. **Never Hardcode Secrets:** Never export your Hugging Face or OMLX API keys directly inside Git-tracked bash scripts. GitHub's Push Protection will instantly reject your commits. Instead, authenticate once globally via `huggingface-cli login` so `vLLM` can automatically access gated weights like `gemma-2`. 
+2. **Use an Orchestrator Script:** We created `run_full_goal.sh` specifically to wrap the entire pipeline (vLLM background booting, Phase 2 ablation, vLLM restart, and Phase 3 downstream re-ranking). This ensures the entire multi-hour process runs sequentially and perfectly without requiring human intervention to spin up or tear down servers.
+3. **Verify Upstream Endpoints First:** Before launching a 3-hour generation run, always run a quick `curl` to Edward's tunnel (`https://teacher.elcl.systems/v1/models`) to ensure his MacBook is actually awake and the correct model is loaded in memory.
+4. **Always Rely on Downstream Best-of-N for Verifier Evaluation:** We almost abandoned the entire paper because the rigid Phase 2 classification metrics (`roc_auc` and F1) actively deceived us into thinking the No-GT student was superior. Static dataset metrics fail to capture real-world reasoning robustness. **Never make conclusions based on Phase 2 alone.** Always push the models through the full Phase 3 Best-of-N downstream task, as the true measure of a verifier is the absolute "Lift" it provides over the generative baseline.
 
 ## 13. Phase 2 Metric Artifact & Privilege Inversion
 *   **The Issue**: After scaling the student ablations to N=1000, we observed a massive F1 gap between the Privileged student (0.197) and the No-GT student (0.037), which seemed to confirm the core thesis that privilege transfers. However, re-scoring the checkpoints threshold-free revealed that this was a calibration artifact. The No-GT model actually achieved a higher ranking quality (`roc_auc` = 0.651) than the Privileged model (`roc_auc` = 0.624). The core thesis failed under a threshold-free metric.
@@ -91,3 +103,11 @@ python3 -m vllm.entrypoints.openai.api_server \
 *   **The Discovery**: We realized that Best-of-N downstream re-ranking (Phase 3) is entirely threshold-free because it simply selects the candidate with the highest relative score. We ran Phase 3 evaluating both models on generated solutions from `gemma-2-9b-it` (N=8).
 *   **The Result**: The No-GT student completely collapsed as a test-time verifier, degrading baseline `pass@1` by -1.0% (actively performing worse than random guessing). The Privileged student successfully generalized, boosting `pass@1` by +3.0%.
 *   **The Conclusion**: The F1 calibration artifact and the deceiving `roc_auc` hid the truth. The Privileged teacher successfully distills robust, generalizable reasoning features, while the No-GT student learns brittle features that fail in downstream search tasks. The original hypothesis is officially validated, and we are cleared to scale the full Privileged pipeline to N=1000.
+
+## 17. Phase 3 Scaled Run (N=1000) Re-evaluation: No-GT Beats Privileged Downstream
+*   **The Run**: We successfully scaled Phase 3 to N=1000 for both `priv_critique` and `nogt_critique` using `gemma-2-9b-it` as the local generator (N=8 candidates per problem).
+*   **The Outcome**:
+    *   `priv_critique.pt` achieved **34.9%** (a **+1.4%** lift over baseline `pass@1` of 33.5%).
+    *   `nogt_critique.pt` achieved **37.3%** (a **+3.6%** lift over baseline `pass@1` of 33.7%).
+*   **The Re-evaluation**: Contrary to the initial N=200 preliminary results (where No-GT degraded performance by -1.0%), the scaled N=1000 run shows that the No-GT student actually outperforms the Privileged student downstream by a significant margin. This aligns with the Phase 2 ROC AUC results (`nogt_critique` ROC AUC of 0.651 vs `priv_critique` ROC AUC of 0.624). Both models provide positive lift over `pass@1`, but `majority_vote` remains the stronger baseline overall.
+

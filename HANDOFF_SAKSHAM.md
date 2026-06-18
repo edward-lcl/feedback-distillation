@@ -1,6 +1,6 @@
 # Handoff — Saksham (GPU box, 2×3090 / 48 GB)
 
-**Status: FIRST RUN IN — REORIENTING (2026-06-17).** Phase 1 (probe) replicates; Phases 2–3 ran end-to-end on the `gemma-2-9b-it` fallback, but the headline is **NOT validated** — the reported Phase 2 gap is a fixed-threshold metric artifact (see READ FIRST below). Raw metrics: [results/RESULTS.md](results/RESULTS.md). Don't report any phase as "done" until the threshold-free re-score confirms it.
+**Status: PHASE 3 COMPLETED AT SCALE (N=1000) (2026-06-18).** Phase 3 Best-of-N evaluation has finished successfully. Both `priv_critique.pt` and `nogt_critique.pt` were evaluated on 1,000 problems with 8 candidates each. Under scale, the Ground-Truth-Free student (`nogt_critique`) outperforms the privileged student downstream, achieving a +3.6% lift over the baseline (compared to +1.4% for the privileged student). See full results in [results/RESULTS.md](results/RESULTS.md).
 
 _Goal: reproduce the privilege × difficulty result with an **official** Gemma checkpoint at scale. Phase 1 (the probe) is below; Phase 2 (the full student run + ablations — the paper result) is at the bottom, now also ready._
 

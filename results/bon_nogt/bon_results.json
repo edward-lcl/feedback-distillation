@@ -1,0 +1,9 @@
+{
+  "n_problems": 1000,
+  "N": 8,
+  "agg": "min",
+  "pass@1": 0.337,
+  "majority_vote": 0.391,
+  "prm_rerank": 0.373,
+  "oracle_pass@N": 0.517
+}

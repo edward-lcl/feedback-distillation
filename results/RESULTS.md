@@ -51,17 +51,17 @@
 ### Evaluation Setup
 - **Generator:** `gemma-2-9b-it`
 - **Candidates (N):** 8
-- **Dataset:** `ProcessBench` (200 problems evaluated)
+- **Dataset:** `ProcessBench` (1000 problems evaluated)
 - *Note: Candidates are generated live, so base `pass@1` naturally varies slightly due to generation randomness.*
 
-### Re-ranking Results
+### Re-ranking Results (N=1000)
 
 | Checkpoint | `pass@1` (Baseline) | `prm_rerank` (Student) | Lift (PRM vs Baseline) | `majority_vote` | `oracle_pass@N` |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `priv_critique.pt` | 29.0% | **32.0%** | **+3.0%** | 32.5% | 40.5% |
-| `nogt_critique.pt` | 34.5% | **33.5%** | **-1.0%** | 39.5% | 51.0% |
+| `priv_critique.pt` | 33.5% | **34.9%** | **+1.4%** | 38.2% | 51.8% |
+| `nogt_critique.pt` | 33.7% | **37.3%** | **+3.6%** | 39.1% | 51.7% |
 
-### Final Research Takeaways: Privilege DOES Transfer
-1. **The Phase 2 `roc_auc` was deceiving:** While the No-GT student looked competent on the rigid step-level classification dataset (`roc_auc`=0.651), it completely breaks down when deployed as a downstream verifier. 
-2. **Privilege is required for robust verification:** The Privileged student successfully boosts the baseline accuracy by +3.0%. The No-GT student actually *degrades* performance by -1.0%, actively performing worse than a random guess! 
-3. **Conclusion:** The teacher's access to Ground-Truth during labeling is critical. The Privileged teacher distills robust, generalizable reasoning features into the student that are required for real-world test-time search/re-ranking. The original hypothesis is officially validated.
+### Final Research Takeaways: Re-evaluating the Privilege Hypothesis
+1. **The Phase 2 `roc_auc` matches downstream behavior at scale:** At N=1000, `nogt_critique` achieves `prm_rerank` of **37.3%** (a **+3.6%** lift over baseline), outperforming `priv_critique` which achieves **34.9%** (a **+1.4%** lift). This aligns with the Phase 2 ROC AUC where `nogt_critique` (0.651) scored higher than `priv_critique` (0.624).
+2. **Both models provide positive lift, but majority vote remains strong:** Both student models successfully improve upon the `pass@1` baseline. However, `majority_vote` (38.2% and 39.1% respectively) still outperforms the PRM re-ranking on this setup.
+3. **Conclusion:** Under a large-scale evaluation (N=1000), the Ground-Truth-Free student (`nogt_critique`) is highly capable and actually outperforms the Privileged student on downstream Best-of-N re-ranking, showing that privilege is not strictly required to train a beneficial test-time verifier.
