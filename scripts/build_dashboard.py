@@ -26,13 +26,13 @@ OVERVIEW = [
     ("Why it was revived",
      "The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <b>June 2026</b> with a shift to <b>step-level reasoning evaluation</b> over final-answer accuracy. Target: a publishable result for the <b>COLM workshop (~early July)</b> — flexible; quality over the date."),
     ("Where we are today",
-     "<b>Verified N=1000 run is in</b> (labeling confirmed through the served <b>Gemma-4</b> teacher). Headline: <b>teacher-level privilege is validated</b> (the sweet spot), but it <b>does NOT transfer into the 1.5B student</b> — the no-GT student is equal-or-better on threshold-free <code>roc_auc</code> (0.641 vs 0.631) <i>and</i> downstream re-ranking (0.373 vs 0.349), and neither verifier beats majority vote. (The earlier 'F1 0.037 → 0.197 transfers' was a fixed-threshold artifact and does not reproduce.) That's a clean, honest negative — now pulling the thread (<b>Option B</b>): Gemma-4 probe, same-pool paired re-rank, and a why-no-transfer analysis."),
+     "<b>Verified N=1000 run is in</b> (labeling confirmed through the served <b>Gemma-4</b> teacher). Headline: <b>teacher-level privilege is validated</b> (the sweet spot), but it <b>does NOT transfer into the 1.5B student</b> — the no-GT student is equal-or-better on threshold-free <code>roc_auc</code> (0.641 vs 0.631) <i>and</i> downstream re-ranking (0.373 vs 0.349), and neither verifier beats majority vote. (The earlier 'F1 0.037 → 0.197 transfers' was a fixed-threshold artifact and does not reproduce.) That's a clean, honest negative — now pulling the thread (three diagnostics): Gemma-4 probe, same-pool paired re-rank, and a why-no-transfer analysis."),
 ]
 
 RESEARCH_Q = ("The research question",
     "Does distilling a teacher's <b>step-level score + natural-language critique</b> — and its <b>privileged</b> (answer-aware) judgment — into a small answer-blind student make it better at catching reasoning-step errors? <b>Finding:</b> privilege has a <b>tractability sweet spot</b> — it helps only where the teacher both <i>needs</i> the reference (can't self-verify) and can <i>use</i> it; and only <b>rich</b> privilege works (a worked solution, not a bare answer).")
 
-PHASE = "Verified N=1000 run in (Gemma-4 labeling). Teacher-level privilege validated, but it does NOT transfer to the 1.5B student. Now diagnosing the negative (Option B)."
+PHASE = "Verified N=1000 run in (Gemma-4 labeling). Teacher-level privilege validated, but it does NOT transfer to the 1.5B student. Now diagnosing the null."
 
 RUNS = [  # (label, state) state in {running, done, queued}
     ("Teacher bake-off (5 models, N=30)", "done"),
@@ -40,7 +40,7 @@ RUNS = [  # (label, state) state in {running, done, queued}
     ("Cross-teacher replication (Qwen-27B · MATH N=150)", "done"),
     ("Threshold-free re-score (ROC/PR-AUC) — no-GT ≥ priv", "done"),
     ("Scaled run N=1000 — Gemma-4 labeling, BoN re-rank (no transfer)", "done"),
-    ("Gemma-4 probe + same-pool paired Phase 3 + why-no-transfer (Option B)", "queued"),
+    ("Gemma-4 probe + same-pool paired Phase 3 + why-no-transfer", "queued"),
 ]
 
 DECISIONS = [
@@ -55,16 +55,16 @@ DECISIONS = [
     ("PRM eval metric", "Threshold-free (ROC-AUC / PR-AUC) — not F1 at a fixed cutoff",
      "F1/first_error_acc move with score-head calibration: a silent cell collapses F1 to ~0 while banking the ~0.44 error-free base rate on first_error_acc. Compare cells on AUC + the split (error_recall / pred_error_rate)."),
     ("Student transfer (Phase 2/3)", "NEGATIVE — does NOT transfer (verified, N=1000)",
-     "With the real Gemma-4 teacher labeling: no-GT student ≥ privileged on roc_auc (0.641 vs 0.631) AND downstream re-rank (0.373 vs 0.349); neither beats majority vote. The 0.037→0.197 'transfer' was a fixed-threshold artifact and doesn't reproduce. Honest null — now diagnosing why (Option B)."),
+     "With the real Gemma-4 teacher labeling: no-GT student ≥ privileged on roc_auc (0.641 vs 0.631) AND downstream re-rank (0.373 vs 0.349); neither beats majority vote. The 0.037→0.197 'transfer' was a fixed-threshold artifact and doesn't reproduce. Honest null — now diagnosing why."),
 ]
 
 TASKS = [  # who, track, status (active|blocked|queued|done), next action
     ("Edward", "Trainer + analysis", "active",
-     "Verified the N=1000 run (labeling confirmed through the served Gemma-4 teacher, ~32k requests) and propagated the honest negative everywhere. Next: design Option B — Gemma-4 privilege probe, same-pool paired Phase 3, and the why-no-transfer analysis (distribution shift / capacity / label agreement)."),
+     "Verified the N=1000 run (labeling confirmed through the served Gemma-4 teacher, ~32k requests) and propagated the honest negative everywhere. Next: design the diagnostics — Gemma-4 privilege probe, same-pool paired Phase 3, and the why-no-transfer analysis (distribution shift / capacity / label agreement)."),
     ("Saksham", "GPU pipeline", "active",
-     "N=1000 run complete &amp; verified — privilege does NOT transfer to the student (no-GT ≥ priv on roc_auc + downstream; neither beats majority vote). NEXT (Option B): (1) run the privilege probe through the served Gemma-4 teacher, (2) same-pool paired Phase 3 (one shared candidate set + paired test), (3) dump priv-vs-no-GT label agreement. Runbook: HANDOFF_SAKSHAM.md."),
+     "N=1000 run complete &amp; verified — privilege does NOT transfer to the student (no-GT ≥ priv on roc_auc + downstream; neither beats majority vote). NEXT: (1) run the privilege probe through the served Gemma-4 teacher, (2) same-pool paired Phase 3 (one shared candidate set + paired test), (3) dump priv-vs-no-GT label agreement. Runbook: HANDOFF_SAKSHAM.md."),
     ("Henry", "Research / paper", "active",
-    "✓ Related Work (PRM positioning) · ✓ Results restructured to 3-tier sweet spot · ✓ by-level figure (N=400, inverted-U) + mechanism (rescue × tractability) · ✓ significance (+0.05, 95% CI [0.010, 0.093]) · ✓ downstream-verifier §2.7 stub · ✓ full draft assembled + compiles. Green light to keep drafting now (prelim results paint the picture). ☐ consolidate the 6 tables into fewer (one conditions table, not 5) · ☐ paste 2–3 flip cases from per_sample.jsonl · ☐ OlympiadBench gap cell (Table 2) · ☐ §2.7 real numbers (gated on Saksham re-score)."),
+    "✓ Related Work · ✓ 3-tier sweet-spot results + mechanism + significance (+0.05 [0.010, 0.093]) · ✓ full draft compiles. NEW: §2.7 is now a VERIFIED NEGATIVE (no transfer) — ☐ rewrite §2.7 with the N=1000 numbers (no-GT ≥ priv) · ☐ reframe contribution so it doesn't imply the distillation works (teacher sweet-spot is the headline; student null + diagnosis is honest secondary) · ☐ fix '+0.5'→'+0.05' typo (§2.3, still present) · ☐ consolidate the 6 tables · ☐ flip cases + OlympiadBench cell. See HANDOFF_HENRY.md."),
 ]
 
 HOW_WE_WORK = [
@@ -90,7 +90,7 @@ MILESTONES = [
     ("done", "Teacher/dataset/privilege locked; sweet spot verified (GSM8K·MATH·OlympiadBench)"),
     ("done", "Student pipeline built: trainer fixed + ablation + best-of-N verifier (smoke-tested)"),
     ("done", "Verified N=1000 run (Gemma-4 labeling): privilege does NOT transfer to the 1.5B student"),
-    ("now", "Option B — diagnose the negative: Gemma-4 probe + same-pool paired Phase 3 + why-no-transfer"),
+    ("now", "the diagnostics — diagnose the negative: Gemma-4 probe + same-pool paired Phase 3 + why-no-transfer"),
     ("then", "Paper: teacher-level sweet spot (spine) + the honest student-transfer null + its diagnosis"),
 ]
 
@@ -99,8 +99,8 @@ PATH_TO_SUBMISSION = [
     ("done", "Team", "Teacher / dataset / privilege locked; sweet spot verified across 3 difficulty tiers + cross-family."),
     ("done", "Edward", "Full pipeline built &amp; smoke-tested (probe → student ablation → best-of-N verifier); runbooks written."),
     ("done", "Saksham", "N=1000 run complete &amp; verified (Gemma-4 labeling): privilege does NOT transfer to the 1.5B student — no-GT ≥ priv on roc_auc + downstream; neither beats majority vote."),
-    ("now", "Saksham", "Option B diagnosis: (1) privilege probe through the served Gemma-4 teacher, (2) same-pool paired Phase 3, (3) priv-vs-no-GT label-agreement dump. Runbook: HANDOFF_SAKSHAM.md."),
-    ("now", "Edward", "Design + review Option B; decide how the student-transfer null is framed in the paper."),
+    ("now", "Saksham", "Diagnostics: (1) privilege probe through the served Gemma-4 teacher, (2) same-pool paired Phase 3, (3) priv-vs-no-GT label-agreement dump. Runbook: HANDOFF_SAKSHAM.md."),
+    ("now", "Edward", "Design + review the diagnostics; decide how the student-transfer null is framed in the paper."),
     ("next", "Edward", "Baselines (Math-Shepherd PRM, self-critique); test why-no-transfer hypotheses (distribution shift / capacity)."),
     ("now", "Henry", "§2.7 is now a VERIFIED NEGATIVE (numbers in `results/RESULTS.md`) — write it as an honest null + the diagnosis angle. Polishing: consolidate the 6 tables, paste 2–3 flip cases, fill the OlympiadBench cell."),
     ("then", "Team", "Submit — COLM (early July) / AAAI / workshop. Quality over the date."),
@@ -145,6 +145,45 @@ def _gap_badge(g):
         return "<span class=muted>—</span>"
     cls = "pos" if g > 0.02 else ("neg" if g < -0.02 else "zero")
     return f"<span class='badge {cls}'>{g:+.3f}</span>"
+
+
+def student_results_html():
+    """Render the verified N=1000 student-transfer results (Phase 2 roc_auc + Phase 3 BoN)."""
+    cells = [("priv_critique", "Privileged + critique"),
+             ("priv_scoreonly", "Privileged, score-only"),
+             ("nogt_critique", "No-GT + critique")]
+    p2 = ""
+    for key, label in cells:
+        d = _load(f"{RESULTS}/ablation/{key}/processbench_results.json") or {}
+        hi = " style='font-weight:700;color:var(--accent)'" if key == "nogt_critique" else ""
+        p2 += (f"<tr><td>{label}</td><td{hi}>{_fmt(d.get('roc_auc'))}</td>"
+               f"<td>{_fmt(d.get('pr_auc'))}</td><td>{_fmt(d.get('f1'))}</td>"
+               f"<td>{_fmt(d.get('error_recall'))}</td></tr>")
+    bp = _load(f"{RESULTS}/bon_priv/bon_results.json") or {}
+    bn = _load(f"{RESULTS}/bon_nogt/bon_results.json") or {}
+
+    def bonrow(label, d, hi=False):
+        s = " style='font-weight:700;color:var(--accent)'" if hi else ""
+        return (f"<tr><td>{label}</td><td>{_fmt(d.get('pass@1'))}</td>"
+                f"<td{s}>{_fmt(d.get('prm_rerank'))}</td><td>{_fmt(d.get('majority_vote'))}</td>"
+                f"<td>{_fmt(d.get('oracle_pass@N'))}</td></tr>")
+    p3 = bonrow("No-GT verifier", bn, hi=True) + bonrow("Privileged verifier", bp)
+    return f"""
+<div class="section-label">Student transfer — verified N=1000 (privilege does NOT transfer)</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+  <div style="padding:10px 16px 4px;font-size:12px;color:var(--ink3)">Phase 2 — step-level (compare on <b>roc_auc</b>, not F1). No-GT is highest.</div>
+  <table class="data-table">
+    <tr><th>Student (teacher labels)</th><th>roc_auc</th><th>pr_auc</th><th>F1</th><th>error_recall</th></tr>
+    {p2}
+  </table>
+  <div style="padding:10px 16px 4px;font-size:12px;color:var(--ink3);border-top:1px solid var(--border)">Phase 3 — Best-of-N re-rank, N=1000. No-GT verifier re-ranks better; neither beats majority vote.</div>
+  <table class="data-table">
+    <tr><th>Verifier</th><th>pass@1</th><th>prm_rerank</th><th>majority_vote</th><th>oracle</th></tr>
+    {p3}
+  </table>
+  <div style="padding:10px 16px 14px;font-size:12px;color:var(--ink3);border-top:1px solid var(--border)">Labeling confirmed through the served Gemma-4 teacher (~32k requests). Teacher-level privilege still validated — it just doesn't distill into the 1.5B student. Pools matched (pass@1≈0.336, oracle≈0.517).</div>
+</div>
+"""
 
 
 def privilege_card(probe, title, sub, running=False):
@@ -501,6 +540,7 @@ a:hover{text-decoration:underline}
     links_html = "".join(f"<a href='{u}' target='_blank'>{html.escape(n)} ↗</a>" for n, u in LINKS)
 
     bakeoff_html = bakeoff_rows_dark()
+    student_html = student_results_html()
 
     htmldoc = head + f"""
 <body>
@@ -531,7 +571,7 @@ a:hover{text-decoration:underline}
       <span class="chip chip-green" title="Label→train→eval + best-of-N verifier all built &amp; smoke-tested; runbooks written.">Pipeline built · handoff-ready</span>
       <span class="chip chip-green" title="Privilege helps on MATH but not GSM8K (too easy) or OlympiadBench (too hard) — verified, incl. cross-family.">Sweet spot verified</span>
       <span class="chip chip-blue" title="Teacher chosen by bake-off (Gemma, F1 0.91); result replicates with a Qwen-27B teacher.">Gemma teacher · Qwen cross-family</span>
-      <span class="chip chip-yellow" title="Verified N=1000 (Gemma-4 labeling): teacher-level privilege validated, but it does NOT transfer to the 1.5B student (no-GT ≥ priv; neither beats majority vote). Now diagnosing why (Option B).">Honest null: no student transfer</span>
+      <span class="chip chip-yellow" title="Verified N=1000 (Gemma-4 labeling): teacher-level privilege validated, but it does NOT transfer to the 1.5B student (no-GT ≥ priv; neither beats majority vote). Now diagnosing why.">Honest null: no student transfer</span>
       <span class="chip chip-gray">edward-lcl/feedback-distillation</span>
     </div>
   </div>
@@ -610,7 +650,7 @@ a:hover{text-decoration:underline}
   </table>
   <div style="padding:10px 16px 14px;font-size:12px;color:var(--ink3);border-top:1px solid var(--border)">Official Gemma checkpoint used for the reported labeling pass. Gemma selected: best F1, zero parse failures, fastest throughput.</div>
 </div>
-
+{student_html}
 <div class="section-label">How we work</div>
 <div class="card">
   <table class="kv-table">{how_html}</table>

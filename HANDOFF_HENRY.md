@@ -22,6 +22,23 @@ Your push (`61c0ec0`) is merged: the compiled 4-page draft (`paper/SLFD_draft.pd
 
 **Worth a read before the next drafting pass:** Jakob Foerster's "How to ML Paper" — https://www.jakobfoerster.com/how-to-ml-paper — a tight guide on structuring the narrative (claim → evidence → ablation) that maps well onto where the draft is now.
 
+## 2026-06-18 — paper now needs a reframe (verified student-transfer NULL)
+
+I read the committed `paper/SLFD_draft.pdf`. Concrete tasks, in priority order:
+
+1. **§2.7 — replace "we defer the result" with the verified negative.** The re-score + N=1000 run are done (numbers in `results/RESULTS.md`). Update Table 6 + prose to:
+   - step-level `roc_auc`: **no-GT 0.641 ≥ priv 0.631 ≥ priv_scoreonly 0.624** (non-degenerate run);
+   - downstream Best-of-N (N=1000): **no-GT re-rank 0.373 ≥ priv 0.349; neither beats majority vote (~0.39).**
+   Conclusion: privileged supervision does **not** transfer into the small student PRM at this scale.
+2. **Reframe the contribution (§1.4 / abstract / title framing).** As written, contribution #1 implies the student distillation *works*. It doesn't. Lead with the **teacher-level** privilege×difficulty×richness sweet spot (the validated result) as the headline; present the student-transfer **null + its diagnosis** (the diagnostic threads) as an honest secondary finding. Don't imply the distillation succeeds.
+3. **Fix the headline typo — STILL PRESENT.** §2.3 prose reads "**+0.5 F1**" — must be **+0.05** (Table 2 is right at [0.01, 0.09]). This is the headline number.
+4. **Spelling/grammar still in the draft:** `whcih`→which (§1.1), `uors`→ours + `priviledge`→privileged (§1.2), `literate`→literature + `GMS8K`→GSM8K (§1.4), `fails monotonically`→falls (§2.5), `is not longer usable`→no longer (§2.3), `challenge MATH`→challenging (§1.1).
+5. **Consolidate tables** (you flagged this; agents over-split): 6 tables is too many for our level — fold Tables 3+4 (GSM8K/MATH conditions) into one conditions table, consider merging Table 5 (cross-family) too.
+6. **Fill the OlympiadBench cell** in Table 2 with the verified OE-only number (−0.03), not just "≈ 0 (n.s.)".
+7. **Paste 2–3 flip cases** from `results/evidence_pack_n400/per_sample.jsonl`.
+
+(Note re submitting the 22nd workshop: the reframe in #1–2 is the gating item — the paper currently promises a transfer result it doesn't have.)
+
 ## The spine — now sharper (and one thing to FIX)
 
 The finding is a **tractability sweet spot**, not a monotonic difficulty effect:
@@ -54,7 +71,7 @@ The finding is a **tractability sweet spot**, not a monotonic difficulty effect:
 - **Downstream Best-of-N (N=1000):** no-GT verifier `prm_rerank` **0.373** ≥ priv 0.349; **neither beats majority vote** (~0.39).
 - The earlier "0.197 vs 0.037 privilege transfers" was a **fixed-threshold F1 artifact** and does **not** reproduce; do not cite it.
 
-**How to frame it:** the **teacher-level** privilege/sweet-spot result is the spine and stands. §2.7 reports the honest finding that this teacher advantage does **not** distill into a better small (1.5B) student PRM at this scale — no-GT is equal-or-better, and neither verifier beats majority vote. That's a legitimate, interesting negative. The live diagnosis threads (Option B) make it a contribution rather than a dead end:
+**How to frame it:** the **teacher-level** privilege/sweet-spot result is the spine and stands. §2.7 reports the honest finding that this teacher advantage does **not** distill into a better small (1.5B) student PRM at this scale — no-GT is equal-or-better, and neither verifier beats majority vote. That's a legitimate, interesting negative. The live diagnosis threads make it a contribution rather than a dead end:
 1. Gemma-4 privilege probe (confirm priv≠nogt labels for the labeling teacher);
 2. same-pool paired Phase 3 (one shared candidate set + paired significance — `bon_priv`/`bon_nogt` were separate generations);
 3. why no transfer — train/eval distribution shift, 1.5B capacity, or priv-vs-no-GT label agreement.
