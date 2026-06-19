@@ -1,0 +1,14 @@
+{
+  "n_problems": 200,
+  "N": 8,
+  "agg": "min",
+  "shared_pool": true,
+  "pass@1": 0.335,
+  "majority_vote": 0.39,
+  "oracle_pass@N": 0.475,
+  "prm_rerank_priv": 0.34,
+  "prm_rerank_nogt": 0.375,
+  "paired_discordant_priv_only": 5,
+  "paired_discordant_nogt_only": 12,
+  "mcnemar_p_two_sided": 0.1435
+}
