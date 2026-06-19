@@ -18,9 +18,8 @@ If prm_rerank > majority_vote, the distilled GT-free verifier adds value.
         --dataset data/processbench_math_shuffled.jsonl \
         --checkpoint checkpoints/priv_critique.pt --n 8 --max_samples 100
 
-NOTE: final-answer matching uses the simple numeric/string matcher from
-generate_solutions; for publication-grade MATH accuracy, swap in a symbolic
-checker (sympy / math_verify). Tracked as a TODO.
+NOTE: final-answer matching uses the `math_verify` symbolic checker natively 
+imported from `generate_solutions.py` (with a numeric/string fallback).
 """
 import os
 import json
