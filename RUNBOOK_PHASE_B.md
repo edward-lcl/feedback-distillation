@@ -89,7 +89,13 @@ Hypothesis: we distill the teacher's score via **MSE on a single scalar** — if
   ```bash
   ABLATION=soft N_TRAIN=<best> N_EVAL=1000 EPOCHS=2 ./scripts/run_student_ablation.sh
   ```
-- **B4a-online — true token-level logit-KL** ⚠️ *infra-bound, not runnable as-is.* The literal "KL against the teacher's distribution" needs **logits from the privileged teacher**, and the served Gemma-4 exposes **none** (`logprobs` unsupported) — and there's no local Gemma-4 path on the 3090s. The buildable version is **online KD with a LOCAL privileged Gemma-2 teacher** (cross-teacher robustness — Qwen-27B +0.082 — justifies a non-Gemma-4 teacher here) + a **Gemma-family student** so vocabs align. The loss already exists (`training/losses.py::compute_logit_standardization`); it needs a live teacher threaded into the train loop. Flag Edward to wire it when B4c/B4a-offline motivate it.
+- **B4a-online — true token-level logit-KL (BUILT, runnable on the GPU box).** Soft KL toward a LIVE teacher's distribution over its privileged critique — the soft counterpart of `score_critique`'s hard token-CE. The served Gemma-4 exposes no logprobs, so this loads a **LOCAL same-family teacher** for its logits (cross-family robustness — Qwen-27B +0.082 — justifies a non-Gemma-4 teacher) + a **Gemma-family student** so vocabs align:
+  ```bash
+  STUDENT_MODEL=google/gemma-2-2b-it KD_TEACHER=google/gemma-2-9b-it \
+    ABLATION=logit_kd N_TRAIN=<best> N_EVAL=1000 EPOCHS=2 BATCH_SIZE=2 \
+    ./scripts/run_student_ablation.sh
+  ```
+  The teacher is loaded only for logits (the privileged critique text is already in the labels). ⚠️ Use a SAME-FAMILY (teacher, student) pair — a vocab mismatch truncates to min-vocab and corrupts the signal (the runner/trainer warn). Smoke-tested on same-family Qwen DEV models. Then compare `roc_auc` + `transfer_ci` vs the `score_critique` baseline: does soft distribution-distillation transfer privilege where hard-CE didn't?
 - *(Held: contrastive/triplet distillation on priv-vs-nogt pairs — novel but speculative; revisit only if the above are inconclusive.)*
 
 ## Decision gates

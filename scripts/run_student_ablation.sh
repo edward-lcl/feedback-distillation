@@ -69,10 +69,18 @@ ABLATION_NOGT="${ABLATION:-score_critique}"
 SEED="${SEED:-}"
 SEED_ARG=""; SUF=""
 [ -n "$SEED" ] && { SEED_ARG="--seed $SEED"; SUF="_seed$SEED"; }
+# B4a-online: ABLATION=logit_kd needs a LOCAL same-family teacher for its logits.
+KD_TEACHER="${KD_TEACHER:-}"
+KD_ARG=""; [ -n "$KD_TEACHER" ] && KD_ARG="--kd_teacher $KD_TEACHER"
+if [ "$ABLATION_NOGT" = "logit_kd" ] && [ -z "$KD_TEACHER" ] && [ "${DEV:-0}" != "1" ]; then
+  echo "ERROR: ABLATION=logit_kd needs a local teacher. Set e.g.:" >&2
+  echo "  export KD_TEACHER=google/gemma-2-2b-it   # same family as STUDENT_MODEL" >&2
+  exit 1
+fi
 echo "== 4/4  Train + eval the ablation cells  (student=${STUDENT_MODEL:-Qwen2.5-1.5B default}${SEED:+, seed=$SEED}) =="
 run_cell () {  # $1=labeled  $2=ablation  $3=tag
   "$PY" -m experiments.train_slfd --dataset "$1" --ablation "$2" --epochs "$EPOCHS" \
-      --batch_size "$BATCH_SIZE" $SM_ARG $SEED_ARG --checkpoint "checkpoints/$3$SUF.pt" $DEVFLAG
+      --batch_size "$BATCH_SIZE" $SM_ARG $SEED_ARG $KD_ARG --checkpoint "checkpoints/$3$SUF.pt" $DEVFLAG
   "$PY" -m experiments.run_processbench --checkpoint "checkpoints/$3$SUF.pt" $SM_ARG \
       --dataset data/processbench_math_shuffled.jsonl --max_samples "$N_EVAL" \
       --results_dir "results/ablation/$3$SUF" $DEVFLAG

@@ -41,6 +41,10 @@ ABLATIONS = {
     "score_only":     ([False, False, True, False], "mse"),
     "verdict":        ([False, False, True, False], "verdict"),
     "soft":           ([False, False, True, False], "soft"),
+    # B4a-online: score MSE + soft KL toward a LIVE same-family teacher's critique
+    # distribution (needs --kd_teacher). The soft counterpart of score_critique's
+    # hard token-CE. The served Gemma-4 exposes no logits → use a LOCAL Gemma-2.
+    "logit_kd":       ([False, False, True, True], "mse"),
 }
 
 
@@ -87,6 +91,12 @@ def main():
     parser.add_argument("--seed", type=int, default=None,
                         help="Seed all RNGs for a reproducible run. Omit for the "
                              "original stochastic behavior; set per-run for D1 multi-seed.")
+    parser.add_argument("--kd_teacher", default=None,
+                        help="Local HF teacher for online logit-KD (ablation=logit_kd). "
+                             "Use a SAME-FAMILY model so vocabs align (e.g. a Gemma teacher "
+                             "for a Gemma student). In --dev_mode, defaults to the dev teacher.")
+    parser.add_argument("--kd_temperature", type=float, default=2.0,
+                        help="Softmax temperature for the logit-KD loss (Hinton KD).")
     args = parser.parse_args()
 
     if args.seed is not None:
@@ -109,10 +119,23 @@ def main():
         print("Training in float32 (numerically stable on MPS).")
     loss_flags, score_loss_mode = ABLATIONS[args.ablation]
     print(f"Ablation: {args.ablation}  (loss_flags={loss_flags}, score_loss_mode={score_loss_mode})")
-    # teacher=None: offline distillation, labels are already in the dataset.
-    trainer = SLFDTrainer(student, teacher=None, dataset=dataset,
+
+    # Online logit-KD needs a LIVE teacher for its logits (offline labels carry
+    # only the scalar + critique text, not a distribution). Everything else is
+    # offline distillation: teacher=None, labels already in the dataset.
+    teacher = None
+    if loss_flags[3]:
+        from models.teacher import TeacherModel
+        teacher = TeacherModel(args.kd_teacher, dev_mode=args.dev_mode)
+        sv = getattr(student.tokenizer, "vocab_size", None)
+        tv = getattr(teacher.tokenizer, "vocab_size", None)
+        if sv is not None and tv is not None and sv != tv:
+            print(f"⚠️  vocab mismatch (student {sv} vs teacher {tv}) — logit-KD truncates to "
+                  f"min-vocab, which corrupts the signal. Use a SAME-FAMILY teacher "
+                  f"(e.g. Gemma-2-2B for a Gemma student).")
+    trainer = SLFDTrainer(student, teacher=teacher, dataset=dataset,
                           loss_flags=loss_flags, score_loss_mode=score_loss_mode,
-                          dev_mode=args.dev_mode)
+                          kd_temperature=args.kd_temperature, dev_mode=args.dev_mode)
 
     summary = trainer.train(epochs=args.epochs, batch_size=args.batch_size, max_steps=args.max_steps)
     trainer.save_checkpoint(args.checkpoint)

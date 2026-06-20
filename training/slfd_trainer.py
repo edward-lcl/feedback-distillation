@@ -4,7 +4,7 @@ SLFD training loop — distills step-level feedback generation from teacher to s
 import random
 import torch
 from torch.optim import AdamW
-from .losses import compute_lm_loss, compute_hidden_loss, compute_scoring_loss
+from .losses import compute_lm_loss, compute_hidden_loss, compute_scoring_loss, compute_logit_kd_loss
 from .threshold_policy import AdaptiveWeightedKDPolicyEMA
 from .loss_config import LossConfig
 
@@ -16,7 +16,7 @@ class SLFDTrainer:
     """
 
     def __init__(self, student, teacher, dataset: list[dict], loss_flags=None,
-                 score_loss_mode="mse", device=None, dev_mode=False):
+                 score_loss_mode="mse", kd_temperature=2.0, device=None, dev_mode=False):
         import torch.nn as nn
         from models.device import is_dev_mode, best_device
         self.student = student
@@ -29,6 +29,7 @@ class SLFDTrainer:
         if score_loss_mode not in ("mse", "verdict", "soft"):
             raise ValueError(f"unknown score_loss_mode {score_loss_mode!r}")
         self.score_loss_mode = score_loss_mode
+        self.kd_temperature = kd_temperature
         self.dev_mode = is_dev_mode(dev_mode)
         if self.dev_mode:
             print("DEV MODE: reduced batch/steps for local Apple Silicon")
@@ -36,6 +37,10 @@ class SLFDTrainer:
         # student model is already placed there, so inputs must follow.
         self.device = device or best_device()
         self.loss_flags = loss_flags or [True, True, True, False]  # LM, hidden, score, logit
+        # Online logit-KD (loss_flags[3]) needs a live teacher for its logits.
+        if self.loss_flags[3] and self.teacher is None:
+            raise ValueError("logit-KD loss is enabled (loss_flags[3]) but no teacher was "
+                             "passed — load a local same-family teacher (--kd_teacher).")
         self.loss_config = LossConfig(self.loss_flags)
         self.threshold_policy = AdaptiveWeightedKDPolicyEMA(
             num_losses=self.loss_config.num_enabled,
@@ -79,7 +84,7 @@ class SLFDTrainer:
                 max_steps = 50
             print(f"DEV MODE: batch_size={batch_size}, max_steps={max_steps}")
         random.shuffle(self.dataset)
-        loss_history = {"lm_loss": [], "hidden_loss": [], "scoring_loss": []}
+        loss_history = {"lm_loss": [], "hidden_loss": [], "scoring_loss": [], "logit_loss": []}
         step = 0
 
         for epoch in range(epochs):
@@ -88,7 +93,7 @@ class SLFDTrainer:
                 if max_steps and step >= max_steps:
                     break
                 batch = self.dataset[batch_start: batch_start + batch_size]
-                batch_losses = {"lm_loss": [], "hidden_loss": [], "scoring_loss": []}
+                batch_losses = {"lm_loss": [], "hidden_loss": [], "scoring_loss": [], "logit_loss": []}
 
                 for sample in batch:
                     problem = sample.get("problem", "")
@@ -136,6 +141,17 @@ class SLFDTrainer:
                         target = torch.tensor([p], dtype=torch.float32, device=self.device)
                         s_loss = torch.nn.functional.binary_cross_entropy_with_logits(pred, target)
                     batch_losses["scoring_loss"].append(s_loss)
+
+                    # L_logit — online KD: soft KL toward the teacher's distribution
+                    # over its (privileged) critique. The soft counterpart of L_LM;
+                    # needs a live same-family teacher. Scaled down (see LossConfig).
+                    if self.loss_flags[3] and self.teacher is not None:
+                        kd = compute_logit_kd_loss(
+                            self.student, self.teacher, problem, solution_prefix,
+                            step_text, teacher_feedback, teacher_score,
+                            temperature=self.kd_temperature,
+                        )
+                        batch_losses["logit_loss"].append(kd * LossConfig.SCALES["logit_loss"])
 
                 aggregated = {k: torch.stack(v).mean() for k, v in batch_losses.items() if v}
                 if not aggregated:
