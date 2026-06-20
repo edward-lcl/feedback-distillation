@@ -33,7 +33,19 @@ Push `results/bon_paired/`. (A2 was N=200, p=0.14 — underpowered. N=1000 makes
 ## B0b — is the null statistically real? (do alongside B0, no retrain)
 The current "null" is `roc_auc` 0.641 vs 0.631 — **0.01 on one seed**. Before anyone says "validated," put numbers on it:
 - **Downstream gap:** the **paired McNemar p** that B0 already prints (same shared pool) *is* the significance test on priv−nogt for re-ranking. Report it. `p > 0.05` ⇒ the gap is not distinguishable from zero — that's the honest status, not "privilege doesn't transfer."
-- **Ranking gap (`roc_auc`):** a bootstrap CI on the priv−nogt `roc_auc` difference + a 3-seed retrain are **not yet wired** — that's a Phase D rigor task **owned by Edward** (don't fabricate a `--seed`/bootstrap flag; the eval scripts don't have one yet). Ping Edward to land it; until then, lead with the McNemar p above.
+- **Ranking gap (`roc_auc`) — now wired.** `run_processbench` writes a `per_step_scores.json` sidecar per cell; `experiments.transfer_ci` does a **clustered paired bootstrap** on the priv−nogt `roc_auc` gap (CI + one-sided p). After the cells exist:
+  ```bash
+  python -m experiments.transfer_ci \
+    --priv results/ablation/priv_critique/per_step_scores.json \
+    --nogt results/ablation/nogt_critique/per_step_scores.json \
+    --n_boot 10000 --out results/ablation/transfer_ci.json
+  ```
+  Report the gap + `ci95`: if it **includes 0**, the transfer null is not distinguishable from noise (the honest status). Push `transfer_ci.json`.
+- **Multi-seed** (does the gap survive re-training?): `train_slfd` now takes `--seed`, and the runner namespaces outputs by seed, so:
+  ```bash
+  for S in 0 1 2; do SEED=$S N_TRAIN=<best> N_EVAL=1000 ./scripts/run_student_ablation.sh; done
+  # then run transfer_ci per seed on results/ablation/priv_critique_seed$S vs nogt_critique_seed$S
+  ```
 
 ## B1 — scale training data (hold student = 1.5B)
 ```bash
@@ -67,18 +79,18 @@ OMLX_URL=<weak teacher, e.g. a 2B> OMLX_MODEL=<weak id> \
 **Expectation:** student-from-Gemma-4 > student-from-weak. If it does → the pipeline is sensitive, so the *privilege* null is real (not insensitivity). If even strong-vs-weak doesn't move the student → the student/eval is the bottleneck (stay in B1/B2).
 
 ## B4 — distillation method (the mechanism slot; run only if B1/B2 don't open the gap)
-Hypothesis: we distill via **MSE on a single scalar score** (+ optional NL-critique LM loss); the **logit/distribution loss is wired but disabled** (`loss_flags=[LM,hidden,score,logit]`, `logit=False` in both `--ablation` cells) because the **Qwen student and Gemma teacher have different vocabularies**. If privilege lives in the *shape* of the teacher's distribution, scalar-MSE throws it away and privilege can't transfer at any capacity/data. Two arms:
+Hypothesis: we distill the teacher's score via **MSE on a single scalar** — if privilege lives in the *shape/confidence* of the teacher's judgment rather than the point value, scalar-MSE throws it away and privilege can't transfer at any capacity/data. The score-loss method is now an `ABLATION=` knob on the runner. Run the same priv-vs-nogt comparison under each method and compare `roc_auc` + `transfer_ci`:
 
-- **B4a — distribution/logit distillation** ⚠️ *needs trainer code first (owner: Edward).* Enable the KL/logit loss against the teacher's token-level distribution. This **requires a same-family student so vocabs match** — switch the student to **Gemma-2-2B** against the Gemma-4 teacher:
+- **B4c — verdict (runnable now).** Drop the free-text critique entirely (a 1.5B can't reproduce a 26B's prose) and distill the teacher's **hard binary verdict** (correct iff score≥0) via BCE:
   ```bash
-  # available NOW: the student swap (set the family-matched student)
-  STUDENT_MODEL=google/gemma-2-2b-it N_TRAIN=<best> N_EVAL=1000 EPOCHS=2 ./scripts/run_student_ablation.sh
-  # NOT yet runnable: there is no --ablation distribution / logit-loss CLI path.
-  # train_slfd.py must expose the logit loss (loss_flags[3]) + teacher-logit plumbing first. Ping Edward.
+  ABLATION=verdict N_TRAIN=<best> N_EVAL=1000 EPOCHS=2 ./scripts/run_student_ablation.sh
   ```
-  This is the **only** mechanism for the null we currently have zero coverage of — highest-value *why* experiment.
-- **B4c — structured-verdict critique** (cheaper, preprocessing-level). Instead of training the 1.5B to *generate* the 26B teacher's free-text critique (capacity-hopeless), extract the teacher's **binary verdict + reason category** and train on those structured labels. Needs a labeling/preprocessing variant in the label step (not just an env knob) — scope with Edward before running.
-- *(Held: contrastive/triplet distillation on priv-vs-nogt pairs — novel but speculative; revisit only if B4a/B4c are inconclusive.)*
+- **B4a-offline — soft distribution (runnable now).** Keep the teacher's **confidence** as a soft Bernoulli target `p=(score+1)/2` (distribution, not point estimate), via BCE:
+  ```bash
+  ABLATION=soft N_TRAIN=<best> N_EVAL=1000 EPOCHS=2 ./scripts/run_student_ablation.sh
+  ```
+- **B4a-online — true token-level logit-KL** ⚠️ *infra-bound, not runnable as-is.* The literal "KL against the teacher's distribution" needs **logits from the privileged teacher**, and the served Gemma-4 exposes **none** (`logprobs` unsupported) — and there's no local Gemma-4 path on the 3090s. The buildable version is **online KD with a LOCAL privileged Gemma-2 teacher** (cross-teacher robustness — Qwen-27B +0.082 — justifies a non-Gemma-4 teacher here) + a **Gemma-family student** so vocabs align. The loss already exists (`training/losses.py::compute_logit_standardization`); it needs a live teacher threaded into the train loop. Flag Edward to wire it when B4c/B4a-offline motivate it.
+- *(Held: contrastive/triplet distillation on priv-vs-nogt pairs — novel but speculative; revisit only if the above are inconclusive.)*
 
 ## Decision gates
 - **Any (data × capacity) config clears `prm_rerank > majority_vote`** → competent student. **Then the headline experiment:** at that config, does priv beat nogt (paired McNemar at N=1000)? → "does privilege transfer into a *competent* verifier."

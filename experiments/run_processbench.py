@@ -43,10 +43,18 @@ def main():
             print(f"Loaded checkpoint (model only — no score head): {args.checkpoint}")
 
     results = evaluate_processbench(student, args.dataset, args.max_samples)
+
+    # Split the raw per-step arrays into a sidecar so processbench_results.json
+    # stays human-readable. The sidecar feeds experiments.transfer_ci (paired
+    # bootstrap CI on the priv−nogt roc_auc gap — D1 rigor).
+    per_step = results.pop("_per_step", None)
     print(json.dumps(results, indent=2))
 
     with open(f"{args.results_dir}/processbench_results.json", "w") as f:
         json.dump(results, f, indent=2)
+    if per_step:
+        with open(f"{args.results_dir}/per_step_scores.json", "w") as f:
+            json.dump(per_step, f)
 
     # Loud, immediate self-check — so an agent re-running this sees a broken cell
     # the moment it finishes, rather than reading a near-zero F1 as a real result.

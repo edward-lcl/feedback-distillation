@@ -26,6 +26,35 @@ from training.slfd_trainer import SLFDTrainer
 from data.flatten_labels import flatten_labeled_file, flatten_labeled_records
 
 
+# Ablation -> (loss_flags [LM, hidden, score, logit], score_loss_mode).
+# The score_loss_mode is the B4 distillation-method knob: how much of the
+# teacher's scalar we actually distill.
+#   score_critique / score_only — original: MSE on the exact scalar (point estimate)
+#   verdict — B4c: BCE on the hard binary verdict (correct iff score>=0); drops the
+#             free-text critique entirely (the 1.5B can't reproduce a 26B's prose)
+#   soft    — B4a-offline: BCE on the soft prob p=(score+1)/2 — keeps the teacher's
+#             CONFIDENCE as a distribution instead of collapsing it to a point.
+# (True token-level logit-KL from the teacher needs a LIVE teacher with logit
+#  access — the served teacher exposes none; see RUNBOOK_PHASE_B.md B4a.)
+ABLATIONS = {
+    "score_critique": ([True, False, True, False], "mse"),
+    "score_only":     ([False, False, True, False], "mse"),
+    "verdict":        ([False, False, True, False], "verdict"),
+    "soft":           ([False, False, True, False], "soft"),
+}
+
+
+def set_seed(seed: int):
+    """Seed every RNG so multi-seed retrains are reproducible (D1 rigor)."""
+    import random
+    import numpy as np
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
 def load_dataset(path: str) -> list[dict]:
     """Accept either per-solution labeled JSONL or already-flat per-step JSONL."""
     with open(path) as f:
@@ -49,11 +78,20 @@ def main():
     parser.add_argument("--train_dtype", choices=["auto", "fp32", "fp16"], default="auto",
                         help="Weight precision for training. 'auto' uses fp32 on MPS "
                              "(fp16 NaNs there) and the device default elsewhere.")
-    parser.add_argument("--ablation", choices=["score_critique", "score_only"],
+    parser.add_argument("--ablation", choices=list(ABLATIONS.keys()),
                         default="score_critique",
                         help="score_critique = scorer + NL critique (L_score+L_LM); "
-                             "score_only = scorer alone (the headline ablation).")
+                             "score_only = scorer alone; verdict = BCE on the hard "
+                             "binary verdict (B4c); soft = BCE on the soft prob "
+                             "p=(score+1)/2, a distribution target (B4a-offline).")
+    parser.add_argument("--seed", type=int, default=None,
+                        help="Seed all RNGs for a reproducible run. Omit for the "
+                             "original stochastic behavior; set per-run for D1 multi-seed.")
     args = parser.parse_args()
+
+    if args.seed is not None:
+        set_seed(args.seed)
+        print(f"Seeded all RNGs with {args.seed}")
 
     dataset = load_dataset(args.dataset)
     print(f"Loaded {len(dataset)} per-step training examples from {args.dataset}")
@@ -69,14 +107,12 @@ def main():
     if use_fp32 and student.model.dtype != torch.float32:
         student.model.float()
         print("Training in float32 (numerically stable on MPS).")
-    # Ablation -> loss_flags [LM, hidden, score, logit]. score_only drops the
-    # critique (LM) loss so we can isolate whether distilling the NL critique helps.
-    loss_flags = ([True, False, True, False] if args.ablation == "score_critique"
-                  else [False, False, True, False])
-    print(f"Ablation: {args.ablation}  (loss_flags={loss_flags})")
+    loss_flags, score_loss_mode = ABLATIONS[args.ablation]
+    print(f"Ablation: {args.ablation}  (loss_flags={loss_flags}, score_loss_mode={score_loss_mode})")
     # teacher=None: offline distillation, labels are already in the dataset.
     trainer = SLFDTrainer(student, teacher=None, dataset=dataset,
-                          loss_flags=loss_flags, dev_mode=args.dev_mode)
+                          loss_flags=loss_flags, score_loss_mode=score_loss_mode,
+                          dev_mode=args.dev_mode)
 
     summary = trainer.train(epochs=args.epochs, batch_size=args.batch_size, max_steps=args.max_steps)
     trainer.save_checkpoint(args.checkpoint)

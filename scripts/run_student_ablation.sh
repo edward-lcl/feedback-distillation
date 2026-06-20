@@ -61,24 +61,32 @@ echo "== 3/4  Label twice — privileged (solution) and no-GT — via TEACHER en
 STUDENT_MODEL="${STUDENT_MODEL:-}"   # e.g. Qwen/Qwen2.5-3B-Instruct, Qwen/Qwen2.5-7B-Instruct
 BATCH_SIZE="${BATCH_SIZE:-4}"
 SM_ARG=""; [ -n "$STUDENT_MODEL" ] && SM_ARG="--student_model $STUDENT_MODEL"
-echo "== 4/4  Train + eval the ablation cells  (student=${STUDENT_MODEL:-Qwen2.5-1.5B default}) =="
+# ABLATION lets you swap the score-loss method for the B4 distillation-method arm:
+#   score_critique (default pair) | score_only | verdict (B4c) | soft (B4a-offline).
+# SEED makes a run reproducible AND namespaces its outputs (…_seed$SEED) so a
+# multi-seed sweep (D1) doesn't overwrite — unset = original paths, unchanged.
+ABLATION_NOGT="${ABLATION:-score_critique}"
+SEED="${SEED:-}"
+SEED_ARG=""; SUF=""
+[ -n "$SEED" ] && { SEED_ARG="--seed $SEED"; SUF="_seed$SEED"; }
+echo "== 4/4  Train + eval the ablation cells  (student=${STUDENT_MODEL:-Qwen2.5-1.5B default}${SEED:+, seed=$SEED}) =="
 run_cell () {  # $1=labeled  $2=ablation  $3=tag
   "$PY" -m experiments.train_slfd --dataset "$1" --ablation "$2" --epochs "$EPOCHS" \
-      --batch_size "$BATCH_SIZE" $SM_ARG --checkpoint "checkpoints/$3.pt" $DEVFLAG
-  "$PY" -m experiments.run_processbench --checkpoint "checkpoints/$3.pt" $SM_ARG \
+      --batch_size "$BATCH_SIZE" $SM_ARG $SEED_ARG --checkpoint "checkpoints/$3$SUF.pt" $DEVFLAG
+  "$PY" -m experiments.run_processbench --checkpoint "checkpoints/$3$SUF.pt" $SM_ARG \
       --dataset data/processbench_math_shuffled.jsonl --max_samples "$N_EVAL" \
-      --results_dir "results/ablation/$3" $DEVFLAG
+      --results_dir "results/ablation/$3$SUF" $DEVFLAG
 }
-run_cell data/labeled/math_priv.jsonl score_critique priv_critique     # privileged + critique
-run_cell data/labeled/math_priv.jsonl score_only     priv_scoreonly    # privileged, score only
-run_cell data/labeled/math_nogt.jsonl score_critique nogt_critique     # no-GT + critique
+run_cell data/labeled/math_priv.jsonl "$ABLATION_NOGT" priv_critique    # privileged + critique
+run_cell data/labeled/math_priv.jsonl score_only       priv_scoreonly   # privileged, score only
+run_cell data/labeled/math_nogt.jsonl "$ABLATION_NOGT" nogt_critique    # no-GT + critique
 
 echo; echo "== RESULTS =="
 echo "NOTE: compare on roc_auc / pr_auc (threshold-free) + the split, NOT f1 alone."
 echo "      f1/first_error_acc move with the fixed logit<0 cutoff; pred_err≈0 ⇒ silent/degenerate cell."
 printf "%-16s %7s %7s %8s %8s %10s %9s %10s\n" cell f1 roc_auc pr_auc err_rec clean_spec pred_err first_acc
 for d in priv_critique priv_scoreonly nogt_critique; do
-  f="results/ablation/$d/processbench_results.json"
+  f="results/ablation/$d$SUF/processbench_results.json"
   [ -f "$f" ] && "$PY" -c "import json;d=json.load(open('$f'));g=lambda k:(d.get(k) if d.get(k) is not None else float('nan'));print('%-16s %7.3f %7.3f %8.3f %8.3f %10.3f %9.3f %10.3f'%('$d',g('f1'),g('roc_auc'),g('pr_auc'),g('error_recall'),g('clean_specificity'),g('pred_error_rate'),g('first_error_acc')))"
 done
 echo

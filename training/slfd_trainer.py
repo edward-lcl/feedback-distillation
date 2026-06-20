@@ -15,12 +15,20 @@ class SLFDTrainer:
     Teacher is frozen throughout. Student's score_head has gradients.
     """
 
-    def __init__(self, student, teacher, dataset: list[dict], loss_flags=None, device=None, dev_mode=False):
+    def __init__(self, student, teacher, dataset: list[dict], loss_flags=None,
+                 score_loss_mode="mse", device=None, dev_mode=False):
         import torch.nn as nn
         from models.device import is_dev_mode, best_device
         self.student = student
         self.teacher = teacher
         self.dataset = dataset
+        # How the score head is distilled (B4 distillation-method ablation):
+        #   "mse"     — regress the exact teacher scalar in [-1,1] (point estimate)
+        #   "verdict" — BCE on the hard binary verdict (correct iff score>=0)
+        #   "soft"    — BCE on the soft prob p=(score+1)/2 (distribution target)
+        if score_loss_mode not in ("mse", "verdict", "soft"):
+            raise ValueError(f"unknown score_loss_mode {score_loss_mode!r}")
+        self.score_loss_mode = score_loss_mode
         self.dev_mode = is_dev_mode(dev_mode)
         if self.dev_mode:
             print("DEV MODE: reduced batch/steps for local Apple Silicon")
@@ -110,11 +118,24 @@ class SLFDTrainer:
                         )
                         batch_losses["lm_loss"].append(lm_out.loss)
 
-                    # L_score
-                    target = torch.tensor([teacher_score], dtype=torch.float32, device=self.device)
-                    batch_losses["scoring_loss"].append(
-                        torch.nn.functional.mse_loss(student_score_logit.to(torch.float32), target)
-                    )
+                    # L_score — distillation target for the score head. The mode
+                    # is the B4 knob: how much of the teacher's scalar we keep.
+                    # The score head is sign-thresholded at eval (logit<0 ⇒ error)
+                    # and ranked by -logit, so BCE-on-logit modes stay eval-compatible.
+                    pred = student_score_logit.to(torch.float32).view(1)
+                    if self.score_loss_mode == "mse":
+                        target = torch.tensor([teacher_score], dtype=torch.float32, device=self.device)
+                        s_loss = torch.nn.functional.mse_loss(pred, target)
+                    elif self.score_loss_mode == "verdict":
+                        # hard binary verdict: 1 = correct (score>=0), 0 = error
+                        target = torch.tensor([1.0 if teacher_score >= 0 else 0.0],
+                                              dtype=torch.float32, device=self.device)
+                        s_loss = torch.nn.functional.binary_cross_entropy_with_logits(pred, target)
+                    else:  # "soft" — keep the teacher's confidence as a distribution
+                        p = (float(teacher_score) + 1.0) / 2.0   # [-1,1] -> [0,1]
+                        target = torch.tensor([p], dtype=torch.float32, device=self.device)
+                        s_loss = torch.nn.functional.binary_cross_entropy_with_logits(pred, target)
+                    batch_losses["scoring_loss"].append(s_loss)
 
                 aggregated = {k: torch.stack(v).mean() for k, v in batch_losses.items() if v}
                 if not aggregated:
