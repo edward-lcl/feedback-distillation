@@ -57,11 +57,15 @@ echo "== 3/4  Label twice — privileged (solution) and no-GT — via TEACHER en
 "$PY" -m data.label_pipeline --input data/raw/math_sampled.jsonl \
     --output data/labeled/math_nogt.jsonl --use_omlx --omlx_url "$OMLX_URL" --privilege none
 
-echo "== 4/4  Train + eval the ablation cells =="
+# Phase B knobs: STUDENT_MODEL (capacity sweep) + BATCH_SIZE. Default = Qwen2.5-1.5B.
+STUDENT_MODEL="${STUDENT_MODEL:-}"   # e.g. Qwen/Qwen2.5-3B-Instruct, Qwen/Qwen2.5-7B-Instruct
+BATCH_SIZE="${BATCH_SIZE:-4}"
+SM_ARG=""; [ -n "$STUDENT_MODEL" ] && SM_ARG="--student_model $STUDENT_MODEL"
+echo "== 4/4  Train + eval the ablation cells  (student=${STUDENT_MODEL:-Qwen2.5-1.5B default}) =="
 run_cell () {  # $1=labeled  $2=ablation  $3=tag
   "$PY" -m experiments.train_slfd --dataset "$1" --ablation "$2" --epochs "$EPOCHS" \
-      --checkpoint "checkpoints/$3.pt" $DEVFLAG
-  "$PY" -m experiments.run_processbench --checkpoint "checkpoints/$3.pt" \
+      --batch_size "$BATCH_SIZE" $SM_ARG --checkpoint "checkpoints/$3.pt" $DEVFLAG
+  "$PY" -m experiments.run_processbench --checkpoint "checkpoints/$3.pt" $SM_ARG \
       --dataset data/processbench_math_shuffled.jsonl --max_samples "$N_EVAL" \
       --results_dir "results/ablation/$3" $DEVFLAG
 }

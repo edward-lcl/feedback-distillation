@@ -52,6 +52,8 @@ def main():
     ap.add_argument("--dataset", required=True, help="JSONL with problem + gt_answer.")
     ap.add_argument("--checkpoint", default=None,
                     help="Student PRM checkpoint; untrained PRM if omitted (smoke only).")
+    ap.add_argument("--student_model", default=None,
+                    help="Student base model (must match the checkpoint's base, e.g. for the capacity sweep).")
     ap.add_argument("--n", type=int, default=8, help="Candidates sampled per problem.")
     ap.add_argument("--agg", choices=["min", "mean"], default="min")
     ap.add_argument("--backend", choices=["omlx", "local"], default="omlx")
@@ -63,7 +65,7 @@ def main():
     args = ap.parse_args()
 
     generate = make_generator(args.backend, args.omlx_url, args.dev_mode, args.temperature)
-    student = StudentModel(dev_mode=args.dev_mode)
+    student = StudentModel(args.student_model, dev_mode=args.dev_mode)
     if args.checkpoint:
         c = torch.load(args.checkpoint, map_location="cpu")
         student.model.load_state_dict(c["model"], strict=False)

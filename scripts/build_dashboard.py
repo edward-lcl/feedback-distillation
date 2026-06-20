@@ -114,6 +114,7 @@ OVERLEAF_URL = "https://www.overleaf.com/2555239245xpdcmsxkrzgx"
 LINKS = [
     ("Paper (Overleaf)", OVERLEAF_URL),
     ("Research roadmap", "https://github.com/edward-lcl/feedback-distillation/blob/main/RESEARCH_ROADMAP.md"),
+    ("Phase B runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/RUNBOOK_PHASE_B.md"),
     ("Saksham runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_SAKSHAM.md"),
     ("Henry runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_HENRY.md"),
     ("Repo", "https://github.com/edward-lcl/feedback-distillation"),

@@ -31,8 +31,8 @@ from experiments.bon_rerank import solution_score
 from models.student import StudentModel
 
 
-def _load_student(checkpoint, dev_mode):
-    s = StudentModel(dev_mode=dev_mode)
+def _load_student(checkpoint, dev_mode, model_name=None):
+    s = StudentModel(model_name, dev_mode=dev_mode)
     c = torch.load(checkpoint, map_location="cpu")
     s.model.load_state_dict(c["model"], strict=False)
     s.score_head.load_state_dict(c["score_head"])
@@ -54,6 +54,8 @@ def main():
     ap.add_argument("--dataset", required=True)
     ap.add_argument("--priv", required=True, help="Privileged student PRM checkpoint.")
     ap.add_argument("--nogt", required=True, help="No-GT student PRM checkpoint.")
+    ap.add_argument("--student_model", default=None,
+                    help="Student base model (must match both checkpoints' base — for the capacity sweep).")
     ap.add_argument("--n", type=int, default=8)
     ap.add_argument("--agg", choices=["min", "mean"], default="min")
     ap.add_argument("--backend", choices=["omlx", "local"], default="omlx")
@@ -65,8 +67,8 @@ def main():
     args = ap.parse_args()
 
     generate = make_generator(args.backend, args.omlx_url, args.dev_mode, args.temperature)
-    priv = _load_student(args.priv, args.dev_mode)
-    nogt = _load_student(args.nogt, args.dev_mode)
+    priv = _load_student(args.priv, args.dev_mode, args.student_model)
+    nogt = _load_student(args.nogt, args.dev_mode, args.student_model)
     print(f"Loaded both PRMs: priv={args.priv}  nogt={args.nogt}")
 
     rows = [json.loads(l) for l in open(args.dataset) if l.strip()]
