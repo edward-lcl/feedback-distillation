@@ -61,9 +61,9 @@ DECISIONS = [
 
 TASKS = [  # who, track, status (active|blocked|queued|done), next action
     ("Edward", "Trainer + analysis", "active",
-     "Diagnostics done &amp; verified: the null is mechanistic (real +0.07 teacher gap, diffuse/symmetric label churn, indistinguishable students). Propagated everywhere. Next: design Phase B (get the student to beat majority vote — data scale + bigger base) and the capacity/boundary sweep + strong-vs-weak-teacher positive control."),
+     "Diagnostics done &amp; verified: the null is mechanistic (real +0.07 teacher gap, diffuse/symmetric label churn, indistinguishable students). Propagated everywhere. Next, two code tasks that unblock the plan: (1) D1 rigor — bootstrap CI on the priv−nogt roc_auc gap + multi-seed retrain (no --seed flag exists yet; the N=1000 null is NOT 'validated' until this + the student beats MV); (2) wire the disabled logit/KL distillation loss + a Gemma-family student (Gemma-2-2B) for the B4a distribution-distillation arm. Plus design the capacity/boundary sweep + positive control."),
     ("Saksham", "GPU pipeline", "active",
-     "Phase A diagnostics complete (label agreement, paired BoN, Gemma-4 probe; math_verify wired in — nice). NEXT: (1) re-run the paired BoN at N=1000 (the N=200 run is underpowered, p=0.14), (2) Phase B — scale training data + try a larger student base so the PRM beats majority vote. Runbook: HANDOFF_SAKSHAM.md · roadmap: RESEARCH_ROADMAP.md."),
+     "Phase A diagnostics complete (label agreement, paired BoN, Gemma-4 probe; math_verify wired in — nice). NEXT (cheap-first, no new labeling): (1) re-run paired BoN @ N=1000 + report the McNemar p (B0/B0b), (2) strong-vs-weak-teacher positive control (B3) — is the pipeline even sensitive to teacher quality? THEN spend compute: scale data + capacity sweep so the PRM beats majority vote (B1/B2). Distillation-method ablation (B4) is the mechanism slot if those don't open the gap. Runbook: RUNBOOK_PHASE_B.md · roadmap: RESEARCH_ROADMAP.md."),
     ("Henry", "Research / paper", "active",
     "✓ Related Work · ✓ 3-tier sweet-spot results + mechanism + significance (+0.05 [0.010, 0.093]) · ✓ full draft compiles. NEW: §2.7 is now a VERIFIED NEGATIVE (no transfer) — ☐ rewrite §2.7 with the N=1000 numbers (no-GT ≥ priv) · ☐ reframe contribution so it doesn't imply the distillation works (teacher sweet-spot is the headline; student null + diagnosis is honest secondary) · ☐ fix '+0.5'→'+0.05' typo (§2.3, still present) · ☐ consolidate the 6 tables · ☐ flip cases + OlympiadBench cell. See HANDOFF_HENRY.md."),
 ]
@@ -86,6 +86,8 @@ BULLETPROOFING = [
     ("done", "Same-pool paired BoN: students statistically indistinguishable (McNemar p=0.14) — but N=200 is underpowered; re-run @ N=1000."),
     ("todo", "Phase B: scale data + larger student base so the PRM beats majority vote (gating for impact)."),
     ("todo", "Boundary: capacity (0.5/1.5/7B) + data-scale sweep + strong-vs-weak-teacher positive control + seeds/CIs."),
+    ("todo", "Distillation method (B4): logit/KL loss is wired-but-disabled (vocab mismatch) — try distribution distillation w/ a Gemma-family student + structured-verdict critique. Mechanism slot if capacity/data don't open the gap."),
+    ("todo", "Statistical rigor: the N=1000 null is 0.641 vs 0.631 roc_auc on ONE seed — not 'validated' until a bootstrap CI + multi-seed retrain, and the student clears MV."),
     ("idea", "Does a stronger teacher extend the sweet spot upward on OlympiadBench?"),
 ]
 
@@ -103,8 +105,8 @@ PATH_TO_SUBMISSION = [
     ("done", "Edward", "Full pipeline built &amp; smoke-tested (probe → student ablation → best-of-N verifier); runbooks written."),
     ("done", "Saksham", "N=1000 run complete &amp; verified (Gemma-4 labeling): privilege does NOT transfer to the 1.5B student — no-GT ≥ priv on roc_auc + downstream; neither beats majority vote."),
     ("done", "Saksham", "Phase A diagnostics: Gemma-4 probe (+0.07) · label agreement (~31% churn, symmetric) · paired BoN (p=0.14, n.s.). math_verify wired into answer-matching."),
-    ("now", "Saksham", "Re-run paired BoN @ N=1000 (N=200 underpowered) + Phase B: scale training data + larger student base so the PRM beats majority vote. Roadmap: RESEARCH_ROADMAP.md."),
-    ("now", "Edward", "Design Phase B + the capacity/data boundary sweep and the strong-vs-weak-teacher positive control (confirms the pipeline can detect transfer when it exists)."),
+    ("now", "Saksham", "Cheap-first: paired BoN @ N=1000 + McNemar p (B0/B0b) and the strong-vs-weak-teacher positive control (B3); THEN data + capacity sweep to beat majority vote (B1/B2); B4 distillation-method is the mechanism slot. Runbook: RUNBOOK_PHASE_B.md."),
+    ("now", "Edward", "Code tasks: D1 bootstrap-CI + multi-seed on the transfer gap (no --seed flag yet), and wire the disabled logit/KL loss + Gemma-family student for B4a. Plus design the capacity/data sweep + positive control."),
     ("next", "Edward", "Baselines (Math-Shepherd PRM, self-critique); distribution-matched eval; seeds/CIs on teacher gap + transfer null."),
     ("now", "Henry", "§2.7 = VERIFIED NEGATIVE + now a mechanism: real +0.07 teacher gap is diffuse (~31% symmetric label churn) → indistinguishable students (p=0.14). Write it as an honest, mechanistic null. ✓ flip cases in; ☐ consolidate 6 tables · ☐ '+0.5'→'+0.05' typo · ☐ contribution reframe. See HANDOFF_HENRY.md / RESULTS.md."),
     ("then", "Team", "Submit — COLM (early July) / AAAI / workshop. Quality over the date."),
