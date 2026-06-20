@@ -95,4 +95,4 @@ Hypothesis: we distill via **MSE on a single scalar score** (+ optional NL-criti
 2. A cell is a "win" only if `prm_rerank > majority_vote`. Below MV is **not** a result.
 3. If eval prints `⚠️ EVAL HEALTH WARNING`, that cell is degenerate — don't report its F1.
 4. **One variable at a time** (data OR capacity), so effects are attributable.
-5. Labeling 10k via the served teacher is the slow part (sequential, ~hours) — ping Edward if `teacher.elcl.systems` 502s (means his Mac slept).
+5. Labeling 10k via the served teacher is the slow part (sequential, ~hours). The teacher now **auto-restarts on crash/reboot** (launchd), but it can't serve while Edward's Mac is **asleep** — a `502`/`530` (Cloudflare `1033`) from `teacher.elcl.systems` almost always means the Mac slept. **Text Edward** (number's in Slack) to wake it; resume the run once you get HTTP 200 from `/v1/models`.

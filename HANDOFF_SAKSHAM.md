@@ -6,8 +6,8 @@
 Phase A diagnostics are **done** and the null is mechanistic: real +0.07 teacher gap, but it's **diffuse** (~31% of labels churn symmetrically) so it doesn't distill — the two students are statistically indistinguishable (paired McNemar p=0.14).
 
 **Two things gate the paper now, both in `RUNBOOK_PHASE_B.md` (command-first, agent-ready):**
-1. **Re-run the paired BoN at N=1000** — A2 was N=200 (p=0.14, underpowered).
-2. **Phase B — make the student beat majority vote** (it currently loses, 0.34/0.375 < 0.39): scale training data (5k/10k), then a capacity sweep (1.5B → 3B → 7B via `STUDENT_MODEL=`), plus a strong-vs-weak-teacher positive control. Then re-ask: does privilege transfer into a *competent* verifier?
+1. **Cheap-first, no new labeling:** re-run the paired BoN at N=1000 (A2 was N=200, p=0.14) **and** the strong-vs-weak-teacher **positive control** — these gate whether we even have a paper. (The N=1000 null is 0.641 vs 0.631 roc_auc on one seed — *not* "validated" until it has a CI and the student beats MV. Lead with the McNemar p.)
+2. **Then Phase B — make the student beat majority vote** (it currently loses, 0.34/0.375 < 0.39): scale training data (5k/10k) + capacity sweep (1.5B → 3B → 7B via `STUDENT_MODEL=`). If those don't open the gap, the **distillation-method ablation (B4)** is the mechanism slot. Then re-ask: does privilege transfer into a *competent* verifier?
 
 👉 **Go to `RUNBOOK_PHASE_B.md` and start at B0.** Push raw JSONs to a branch; don't hand-edit conclusions.
 
