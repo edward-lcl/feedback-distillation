@@ -86,6 +86,29 @@ def compute_scoring_loss(
     return F.mse_loss(pred, target)
 
 
+def compute_score_loss(student_score_logit, teacher_score, mode, device):
+    """Score-head distillation loss under the B4 distillation-method mode.
+
+      mse     — regress the exact teacher scalar in [-1,1] (point estimate)
+      verdict — BCE on the hard binary verdict (correct iff score>=0); the head
+                output is read as a logit (eval thresholds sign, so consistent)
+      soft    — BCE on the soft prob p=(score+1)/2 (keeps the teacher's confidence
+                as a distribution instead of a point)
+    """
+    pred = student_score_logit.to(torch.float32).view(1)
+    if mode == "mse":
+        target = torch.tensor([teacher_score], dtype=torch.float32, device=device)
+        return F.mse_loss(pred, target)
+    if mode == "verdict":
+        target = torch.tensor([1.0 if teacher_score >= 0 else 0.0], dtype=torch.float32, device=device)
+        return F.binary_cross_entropy_with_logits(pred, target)
+    if mode == "soft":
+        p = (float(teacher_score) + 1.0) / 2.0   # [-1,1] -> [0,1]
+        target = torch.tensor([p], dtype=torch.float32, device=device)
+        return F.binary_cross_entropy_with_logits(pred, target)
+    raise ValueError(f"unknown score_loss_mode {mode!r}")
+
+
 # ---------------------------------------------------------------------------
 # Logit standardisation loss (disabled when tokenizers differ)
 # ---------------------------------------------------------------------------

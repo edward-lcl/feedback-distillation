@@ -42,6 +42,59 @@ def _auc(y_true, y_score):
     return roc_auc_score(y_true, y_score)
 
 
+def paired_bootstrap(y_true, ys_p, ys_n, seq, n_boot=10000, seed=0):
+    """Clustered paired bootstrap on the priv−nogt roc_auc gap.
+
+    Resamples whole sequences (steps within a problem are correlated) using ONE
+    shared resample per iteration for both cells, so the gap CI accounts for the
+    correlation between the two verifiers. Returns the result dict. Inputs must
+    be aligned per-step arrays (same eval set, same order).
+    """
+    y_true = np.asarray(y_true, int); ys_p = np.asarray(ys_p, float)
+    ys_n = np.asarray(ys_n, float); seq = np.asarray(seq, int)
+
+    auc_priv, auc_nogt = _auc(y_true, ys_p), _auc(y_true, ys_n)
+    if auc_priv is None or auc_nogt is None:
+        raise ValueError("roc_auc undefined (single-class eval) — cannot bootstrap.")
+    gap = auc_priv - auc_nogt
+
+    seqs = np.unique(seq)
+    by_seq = {s: np.where(seq == s)[0] for s in seqs}
+    rng = np.random.default_rng(seed)
+
+    gaps, aucs_p, aucs_n, skipped = [], [], [], 0
+    for _ in range(n_boot):
+        chosen = rng.choice(seqs, size=len(seqs), replace=True)
+        idx = np.concatenate([by_seq[s] for s in chosen])
+        ap_ = _auc(y_true[idx], ys_p[idx])
+        an_ = _auc(y_true[idx], ys_n[idx])
+        if ap_ is None or an_ is None:
+            skipped += 1
+            continue
+        gaps.append(ap_ - an_); aucs_p.append(ap_); aucs_n.append(an_)
+    gaps = np.asarray(gaps)
+
+    lo, hi = np.percentile(gaps, [2.5, 97.5])
+    # one-sided bootstrap p-value for H0: gap <= 0 (priv does NOT beat nogt)
+    p_one_sided = float(np.mean(gaps <= 0))
+    return {
+        "auc_priv": round(float(auc_priv), 4),
+        "auc_nogt": round(float(auc_nogt), 4),
+        "gap_priv_minus_nogt": round(float(gap), 4),
+        "ci95": [round(float(lo), 4), round(float(hi), 4)],
+        "p_one_sided_priv_le_nogt": round(p_one_sided, 4),
+        "auc_priv_ci95": [round(float(np.percentile(aucs_p, 2.5)), 4),
+                          round(float(np.percentile(aucs_p, 97.5)), 4)],
+        "auc_nogt_ci95": [round(float(np.percentile(aucs_n, 2.5)), 4),
+                          round(float(np.percentile(aucs_n, 97.5)), 4)],
+        "n_seqs": int(len(seqs)),
+        "n_steps": int(len(y_true)),
+        "n_boot": n_boot,
+        "n_boot_skipped_single_class": skipped,
+        "significant_at_95": bool(lo > 0 or hi < 0),
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--priv", required=True, help="per_step_scores.json for the privileged cell")
@@ -59,51 +112,9 @@ def main():
         raise SystemExit(
             "priv and nogt per-step arrays are not aligned (different eval set/order). "
             "Re-run both cells on the same --dataset/--max_samples before computing the CI.")
-    y_true, seq = yt_p, seq_p
 
-    auc_priv = _auc(y_true, ys_p)
-    auc_nogt = _auc(y_true, ys_n)
-    if auc_priv is None or auc_nogt is None:
-        raise SystemExit("roc_auc undefined (single-class eval) — cannot bootstrap.")
-    gap = auc_priv - auc_nogt
-
-    # clustered paired bootstrap: resample whole sequences, shared between cells
-    seqs = np.unique(seq)
-    by_seq = {s: np.where(seq == s)[0] for s in seqs}
-    rng = np.random.default_rng(args.seed)
-
-    gaps, aucs_p, aucs_n, skipped = [], [], [], 0
-    for _ in range(args.n_boot):
-        chosen = rng.choice(seqs, size=len(seqs), replace=True)
-        idx = np.concatenate([by_seq[s] for s in chosen])
-        ap_ = _auc(y_true[idx], ys_p[idx])
-        an_ = _auc(y_true[idx], ys_n[idx])
-        if ap_ is None or an_ is None:
-            skipped += 1
-            continue
-        gaps.append(ap_ - an_); aucs_p.append(ap_); aucs_n.append(an_)
-    gaps = np.asarray(gaps)
-
-    lo, hi = np.percentile(gaps, [2.5, 97.5])
-    # one-sided bootstrap p-value for H0: gap <= 0 (priv does NOT beat nogt)
-    p_one_sided = float(np.mean(gaps <= 0))
-
-    result = {
-        "auc_priv": round(float(auc_priv), 4),
-        "auc_nogt": round(float(auc_nogt), 4),
-        "gap_priv_minus_nogt": round(float(gap), 4),
-        "ci95": [round(float(lo), 4), round(float(hi), 4)],
-        "p_one_sided_priv_le_nogt": round(p_one_sided, 4),
-        "auc_priv_ci95": [round(float(np.percentile(aucs_p, 2.5)), 4),
-                          round(float(np.percentile(aucs_p, 97.5)), 4)],
-        "auc_nogt_ci95": [round(float(np.percentile(aucs_n, 2.5)), 4),
-                          round(float(np.percentile(aucs_n, 97.5)), 4)],
-        "n_seqs": int(len(seqs)),
-        "n_steps": int(len(y_true)),
-        "n_boot": args.n_boot,
-        "n_boot_skipped_single_class": skipped,
-        "significant_at_95": bool(lo > 0 or hi < 0),
-    }
+    result = paired_bootstrap(yt_p, ys_p, ys_n, seq_p, n_boot=args.n_boot, seed=args.seed)
+    lo, hi = result["ci95"]
     print(json.dumps(result, indent=2))
     verdict = ("priv > nogt (gap CI excludes 0)" if lo > 0 else
                "nogt > priv (gap CI excludes 0)" if hi < 0 else

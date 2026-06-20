@@ -4,7 +4,8 @@ SLFD training loop — distills step-level feedback generation from teacher to s
 import random
 import torch
 from torch.optim import AdamW
-from .losses import compute_lm_loss, compute_hidden_loss, compute_scoring_loss, compute_logit_kd_loss
+from .losses import (compute_lm_loss, compute_hidden_loss, compute_scoring_loss,
+                     compute_score_loss, compute_logit_kd_loss)
 from .threshold_policy import AdaptiveWeightedKDPolicyEMA
 from .loss_config import LossConfig
 
@@ -124,23 +125,12 @@ class SLFDTrainer:
                         batch_losses["lm_loss"].append(lm_out.loss)
 
                     # L_score — distillation target for the score head. The mode
-                    # is the B4 knob: how much of the teacher's scalar we keep.
-                    # The score head is sign-thresholded at eval (logit<0 ⇒ error)
-                    # and ranked by -logit, so BCE-on-logit modes stay eval-compatible.
-                    pred = student_score_logit.to(torch.float32).view(1)
-                    if self.score_loss_mode == "mse":
-                        target = torch.tensor([teacher_score], dtype=torch.float32, device=self.device)
-                        s_loss = torch.nn.functional.mse_loss(pred, target)
-                    elif self.score_loss_mode == "verdict":
-                        # hard binary verdict: 1 = correct (score>=0), 0 = error
-                        target = torch.tensor([1.0 if teacher_score >= 0 else 0.0],
-                                              dtype=torch.float32, device=self.device)
-                        s_loss = torch.nn.functional.binary_cross_entropy_with_logits(pred, target)
-                    else:  # "soft" — keep the teacher's confidence as a distribution
-                        p = (float(teacher_score) + 1.0) / 2.0   # [-1,1] -> [0,1]
-                        target = torch.tensor([p], dtype=torch.float32, device=self.device)
-                        s_loss = torch.nn.functional.binary_cross_entropy_with_logits(pred, target)
-                    batch_losses["scoring_loss"].append(s_loss)
+                    # is the B4 knob (see compute_score_loss): how much of the
+                    # teacher's scalar we keep. The score head is sign-thresholded
+                    # at eval, so the BCE-on-logit modes stay eval-compatible.
+                    batch_losses["scoring_loss"].append(
+                        compute_score_loss(student_score_logit, teacher_score,
+                                           self.score_loss_mode, self.device))
 
                     # L_logit — online KD: soft KL toward the teacher's distribution
                     # over its (privileged) critique. The soft counterpart of L_LM;
