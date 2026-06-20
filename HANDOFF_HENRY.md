@@ -5,6 +5,7 @@ _Updated 2026-06-16. Async-friendly, no compute needed. Paper: https://www.overl
 Your Overleaf draft is already strong (Related Work, the position, and the GSM8K/MATH/cross-family results are in). This runbook covers what's **changed** since you drafted it, and what's left to land.
 
 ## 2026-06-17 — status sync (your draft is in `main`)
+> ⏩ **Superseded — see the `2026-06-18` block below.** §2.7 is no longer a deferred stub: the re-score is done and it's a **verified negative** (no transfer). Treat the `2026-06-18` block + mission C as current; this block is kept as history.
 
 Your push (`61c0ec0`) is merged: the compiled 4-page draft (`paper/SLFD_draft.pdf`) now has **Related Work §1.1–1.4 + 3-tier sweet-spot Results (Table 2) + §2.7 downstream verifier**, and it compiles. Nicely done — and thank you for keeping **§2.7 honest** (prelim PRM re-rank 32.0 < majority 32.5, reported "only to fix the protocol," deferred pending Saksham's re-score). The §2.3 monotonic→sweet-spot FIX is in. So mission A/B are essentially done and C is correctly stubbed.
 
