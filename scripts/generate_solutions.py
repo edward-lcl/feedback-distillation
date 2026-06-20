@@ -42,6 +42,13 @@ def extract_final_answer(text: str) -> str:
 
 
 def answers_match(a: str, b: str) -> bool:
+    # Symbolic MATH equivalence first (math_verify); fall back to numeric/string.
+    try:
+        from math_verify import parse, verify
+        if verify(parse(a), parse(b)):
+            return True
+    except Exception:
+        pass
     try:
         return abs(float(a) - float(b)) < 1e-6
     except (ValueError, TypeError):

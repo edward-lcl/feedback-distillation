@@ -20,3 +20,4 @@ requests>=2.32.4
 huggingface_hub>=0.21.0
 peft>=0.10.0
 evaluate>=0.4.0
+math-verify

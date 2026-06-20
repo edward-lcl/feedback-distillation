@@ -14,8 +14,8 @@ candidate with both verifiers, and report:
         --priv checkpoints/priv_critique.pt --nogt checkpoints/nogt_critique.pt \
         --n 8 --max_samples 1000
 
-NOTE: final-answer matching uses the simple matcher from generate_solutions;
-swap in a symbolic MATH checker for publication-grade accuracy (shared TODO).
+NOTE: final-answer matching uses `math_verify` (symbolic) via answers_match,
+with a numeric/string fallback.
 """
 import os
 import json

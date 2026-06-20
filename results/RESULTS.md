@@ -51,20 +51,38 @@ and **neither verifier beats majority vote** (~0.39). Pools are matched in diffi
 (pass@1 ≈0.336, oracle ≈0.517 both), so the comparison is fair — but they are *separate*
 candidate generations, not one shared pool (see open thread #2).
 
-## 5. Honest conclusion
-- **Teacher-level privilege: real and validated.** (Sweet spot, N=400 +0.05, cross-family.)
-- **Transfer into a 1.5B student PRM: NOT observed at this scale.** No-GT ≥ privileged on both
-  step-level `roc_auc` and downstream re-ranking; neither verifier beats majority vote.
+## 5. Diagnostics (Phase A) — why the null
+Three diagnostics, all run; they make the null *mechanistic* rather than mysterious.
 
-This is a clean, honest negative — and a more interesting contribution once we understand *why*.
+**A3 — Gemma-4 teacher privilege probe (N=150 MATH).** `gap_solution_f1 = +0.07`
+(no-GT F1 0.716 → +solution 0.786; error recall 0.577 → 0.654; answer gap 0.0). The teacher that
+*actually labeled the training data* genuinely produces better, different labels. So the null is **not**
+"the labels were identical."
 
-## 6. Open threads (next experiments)
-1. **Gemma-4 privilege probe** — only the `gemma-2-9b` probe was saved; run the probe through the
-   served Gemma-4 teacher to confirm the privileged labels actually differ from no-GT at the
-   teacher level (the teacher-level gap is independently validated, but pin it for *this* teacher).
-2. **Same-pool paired Phase 3** — re-rank one shared candidate set with both verifiers; report
-   absolute accuracy + a paired (McNemar) significance test, not baseline-relative deltas.
-3. **Why no transfer?** candidate hypotheses to test:
-   - train/eval distribution shift (train on 9b-generated solutions, eval on ProcessBench's);
-   - 1.5B student capacity ceiling;
-   - label agreement: how often do priv vs no-GT teacher labels actually differ, and on which steps?
+**A1 — label agreement (6,340 steps).** priv vs no-GT labels agree on only **69%** of steps — they
+differ a lot (~31%) — but **nearly symmetrically**: priv-flags-error-only **1001** vs
+nogt-flags-error-only **956** (mean abs score gap 0.62). Privilege churns many labels in *both*
+directions; its net quality gain (the +0.07) is small and **diffuse**, not a clean directional signal.
+
+**A2 — same-pool paired Best-of-N (N=200, `math_verify`).** prm_rerank no-GT **0.375** ≥ priv **0.340**,
+but **McNemar p = 0.14 (not significant**, 17 discordant pairs); both still below majority vote (0.39).
+The two students are **statistically indistinguishable** as verifiers.
+
+## 6. Honest conclusion
+- **Teacher-level privilege: real and validated** (sweet spot, N=400 +0.05, cross-family; +0.07 for the
+  actual Gemma-4 labeler).
+- **Transfer into a 1.5B student PRM: NOT observed.** The teacher's advantage is real but **diffuse**
+  (~⅓ of labels perturbed, roughly symmetric, small net gain); distilled into a 1.5B student it yields
+  verifiers that are statistically indistinguishable, neither beating majority vote.
+
+A clean, mechanistic, honest null: *a real teacher-quality gap does not distill because it is diffuse.*
+
+## 7. What's next (forward-looking)
+1. **Re-run the paired BoN at N=1000+** — A2 at N=200 is underpowered (p=0.14, 17 discordant pairs);
+   it can't separate a small real effect from zero. The clean null needs N=1000.
+2. **Phase B (the gating priority): make the student a competent verifier** — both students lose to
+   majority vote (0.34/0.375 < 0.39). Until the student beats the baseline, the null is "doesn't distill
+   into a *weak* verifier." Scale training data, stronger/larger base. See `RESEARCH_ROADMAP.md`.
+3. **Map the boundary** — capacity sweep (0.5/1.5/7B) + data-scale sweep + the strong-vs-weak-teacher
+   **positive control** (confirms the pipeline *can* detect transfer when it exists). This is what turns
+   a flat null into a publishable boundary result.

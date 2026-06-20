@@ -1,0 +1,13 @@
+{
+  "n_solutions": 1154,
+  "n_steps_scored": 6340,
+  "parse_failures_skipped": 0,
+  "step_agreement_rate": 0.6913,
+  "disagree_priv_flags_error_only": 1001,
+  "disagree_nogt_flags_error_only": 956,
+  "both_flag_error": 367,
+  "neither_flags_error": 4016,
+  "mean_abs_score_gap": 0.6188,
+  "solutions_with_any_disagreement": 750,
+  "frac_solutions_with_disagreement": 0.6499
+}
