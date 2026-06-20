@@ -23,6 +23,13 @@ export OMLX_MODEL=gemma-4-26b-a4b-it-MLX-4bit
 export OMLX_API_KEY=<from Edward>   ;  export OMLX_TIMEOUT=600
 ```
 
+## B-smoke — sanity-check your install first (optional, ~minutes)
+Before the real runs, confirm the whole Phase-B toolkit works on your box:
+```bash
+./scripts/smoke_phase_b.sh   # small real models on the existing labeled data
+```
+It trains+evals all four score-loss ablations (score_critique/verdict/soft/logit_kd, incl. online KD with a live same-family teacher), writes the `per_step_scores.json` sidecars, and runs `transfer_ci` — printing `SMOKE: ALL CELLS PASSED`. The numbers are meaningless (tiny student, few steps); it only proves the pipeline runs end-to-end. (Verified on this repo: all cells pass, transfer_ci emits valid CIs.)
+
 ## B0 — close the underpowered paired test (no retrain, do first)
 ```bash
 python -m experiments.bon_paired --dataset data/processbench_math_shuffled.jsonl \
