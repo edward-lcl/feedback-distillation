@@ -18,6 +18,7 @@ _Goal: reproduce the privilege × difficulty result with an **official** Gemma c
 ---
 
 ## ⚠️ READ FIRST — reorientation (2026-06-17, after your first end-to-end run)
+> ⏩ **HISTORY — superseded.** This reorientation is complete: the metric was fixed, the re-score ran, and the diagnostics are done (the result is a verified null). **Current marching orders are the Phase B section at the top of this file → `RUNBOOK_PHASE_B.md`.** Kept below as the record of how we got here.
 
 Great first pass — Phase 1 (probe) replicates and the pipeline runs end-to-end. Before we scale, three things, **in this order**:
 
