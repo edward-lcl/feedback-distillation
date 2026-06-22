@@ -5,8 +5,8 @@
 set -euo pipefail
 PY="./.venv/bin/python"
 
-# Define our weak teacher (e.g. 2B model) to prove sensitivity
-WEAK_TEACHER="google/gemma-2-2b-it"
+# Define our weak teacher (e.g. 3B model) to prove sensitivity
+WEAK_TEACHER="Qwen/Qwen2.5-3B-Instruct"
 
 mkdir -p data/raw data/labeled checkpoints results/positive_control
 
