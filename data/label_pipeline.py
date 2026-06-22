@@ -96,7 +96,7 @@ def label_solution_omlx(problem, steps, gt_answer, gt_solution=None,
 
 def label_file(input_path: str, output_path: str, max_samples: int = None,
                dev_mode: bool = False, use_omlx: bool = False,
-               omlx_url: str = "http://localhost:8000/v1", privilege: str = "solution"):
+               omlx_url: str = "http://localhost:8000/v1", privilege: str = "solution", local_model: str = None):
     """privilege controls what the teacher sees while labeling — the core
     'privileged vs no-GT' distillation comparison:
       solution -> full worked reference solution (richest privilege)
@@ -107,7 +107,7 @@ def label_file(input_path: str, output_path: str, max_samples: int = None,
         print(f"# Labeling via oMLX at {omlx_url} (privilege={privilege})")
         teacher = None
     else:
-        teacher = TeacherModel(dev_mode=dev_mode)
+        teacher = TeacherModel(model_name=local_model, dev_mode=dev_mode)
 
     def process_line(line):
         sample = json.loads(line)
@@ -175,6 +175,8 @@ if __name__ == "__main__":
     parser.add_argument("--omlx_url", default=os.environ.get("OMLX_URL", "http://localhost:8000/v1"))
     parser.add_argument("--privilege", choices=["solution", "answer", "none"], default="solution",
                         help="What the teacher sees while labeling (privileged vs no-GT comparison).")
+    parser.add_argument("--local_model", default=None,
+                        help="Override the default teacher model name (e.g. google/gemma-2-2b-it)")
     args = parser.parse_args()
 
     mode = "oMLX API" if args.use_omlx else ("DEV (small models)" if args.dev_mode else "PROD")
@@ -183,4 +185,4 @@ if __name__ == "__main__":
     omlx_url = os.environ.get("OMLX_URL") or args.omlx_url
     label_file(args.input, args.output, args.max_samples,
                dev_mode=args.dev_mode, use_omlx=args.use_omlx, omlx_url=omlx_url,
-               privilege=args.privilege)
+               privilege=args.privilege, local_model=args.local_model)
