@@ -21,12 +21,11 @@ explaining what is wrong — and we distill that step-level feedback behavior
 into a small student that runs **without any ground-truth access at test
 time**.
 
-The student learns two coupled abilities:
+The student learns to act as a **Generative PRM**:
 
-1. **Step scoring** — predict a per-step correctness score (a lightweight
-   scoring head on the step-boundary token).
-2. **Step critique** — generate the natural-language feedback that explains
+1. **Step critique** — generate natural-language feedback that explains
    *why* a step is wrong.
+2. **Step scoring** — output a final text verdict (`Verdict: Correct` or `Verdict: Incorrect`). The continuous step score is derived threshold-free directly from the language model's probability distribution over the verdict tokens.
 
 ### The gap we target
 
@@ -144,10 +143,9 @@ cell — see [`HANDOFF_HENRY.md`](HANDOFF_HENRY.md). Compiled snapshot: [`paper/
                     DISTILLATION (student, GT-free)
   ┌──────────────────────────────────────────────────────────────┐
   │   StudentModel.evaluate_step()    ← Qwen2.5-1.5B + LoRA        │
-  │     │            │                  + score head              │
-  │     │            └──► score_logit (grad) ─► L_score (MSE)      │
-  │     └──► feedback tokens          ─► L_feedback_LM (CE)        │
-  │                hidden states      ─► L_hidden (cosine)         │
+  │     │                                                          │
+  │     └──► feedback + verdict tokens ─► L_feedback_LM (CE)       │
+  │                hidden states       ─► L_hidden (cosine)        │
   │            │                                                   │
   │            ▼                                                   │
   │   SLFDTrainer                  ← training/slfd_trainer.py      │
@@ -181,8 +179,8 @@ preceding steps alone.
 > Qwen2.5-7B teacher — superseded.
 
 The teacher is loaded once for offline labeling and never updated. The student
-is the only trained component: its base weights (via LoRA), a linear scoring
-head, and a hidden-state alignment projection.
+is the only trained component: its base weights (via LoRA), and an optional 
+hidden-state alignment projection.
 
 Defaults run on Apple Silicon (MPS), CUDA, or CPU with no access gates.
 
@@ -253,7 +251,7 @@ python -m experiments.train_slfd \
 
 The labeled JSONL already carries the teacher's per-step score and critique, so
 training runs **fully locally on the student alone** — the teacher is not
-reloaded. The checkpoint bundles the base model, the trained score head, and the
+reloaded. The checkpoint bundles the base model and the
 alignment layer. (`train_slfd` flattens per-solution records into per-step
 examples automatically; `data/flatten_labels.py` exposes this standalone.)
 
@@ -283,7 +281,7 @@ accuracy**.
 feedback-distillation/
 ├── models/
 │   ├── teacher.py              # TeacherModel — frozen 7B, privileged labeler
-│   ├── student.py              # StudentModel — 1.5B + LoRA + score head, GT-free
+│   ├── student.py              # StudentModel — 1.5B + LoRA Generative PRM, GT-free
 │   ├── expert_feedback.py      # (legacy) ExpertFeedbackModel
 │   ├── amateur_feedback.py     # (legacy) AmateurFeedbackModel
 │   └── parsing.py              # answer extraction
