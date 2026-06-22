@@ -11,6 +11,29 @@ Phase A diagnostics are **done** and the null is mechanistic: real +0.07 teacher
 
 👉 **Go to `RUNBOOK_PHASE_B.md` and start at B0.** Push raw JSONs to a branch; don't hand-edit conclusions.
 
+### 🖥️ No GPU? Train on Edward's Mac (remote, scoped)
+While your GPU box is down, run the **1.5B cheap-first** cells on Edward's Mac. You'll SSH in (via the link Edward sends) as a **restricted `slfd` user** — no sudo, no access to his files — into a self-contained working copy. **The capacity sweep (3B/7B, B2) is NOT possible on the Mac (won't fit 48 GB) — that waits for your GPUs.**
+
+```bash
+# once connected (cloudflared/ssh details from Edward):
+cd /Users/Shared/slfd/feedback-distillation
+export HF_HOME=/Users/Shared/slfd/hf_cache HF_HUB_OFFLINE=1   # models are pre-cached; no download/network
+git pull                                                       # get latest main
+tmux new -s slfd                                               # so the run survives disconnects
+
+# cheap-first: NO oMLX, NO teacher load — pure train/eval on the existing labels:
+REUSE_LABELS=1 ABLATION=soft    N_EVAL=1000 EPOCHS=2 ./scripts/run_student_ablation.sh
+REUSE_LABELS=1 ABLATION=verdict N_EVAL=1000 EPOCHS=2 ./scripts/run_student_ablation.sh
+# logit_kd uses a local same-family teacher (also cached): add KD_TEACHER=Qwen/Qwen2.5-0.5B-Instruct
+python -m experiments.transfer_ci \
+  --priv results/ablation/priv_critique/per_step_scores.json \
+  --nogt results/ablation/nogt_critique/per_step_scores.json --n_boot 10000
+
+# push raw JSONs to a branch (this copy is yours; don't touch Edward's repo):
+git checkout -b saksham/macrun-$(date +%m%d); git add results/ && git commit -m "..."; git push -u origin HEAD
+```
+Notes: this copy already has the real `data/labeled/math_{priv,nogt}.jsonl` + eval set, the venv, and the Qwen models cached — so cheap-first needs **no network and no oMLX**. Only *fresh-data* generation needs the oMLX key (`./scripts/run_single_box.sh`, key from Edward); prefer `REUSE_LABELS` to avoid loading the teacher.
+
 (Historical context — the original reorientation + diagnostics — is retained below.)
 
 _Goal: reproduce the privilege × difficulty result with an **official** Gemma checkpoint at scale. Phase 1 (the probe) is below; Phase 2 (the full student run + ablations — the paper result) is at the bottom, now also ready._
