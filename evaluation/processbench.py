@@ -132,4 +132,7 @@ def evaluate_processbench(student, dataset_path: str, max_samples: int = None) -
         "n_error_steps": n_pos,
         # --- self-check: non-empty ⇒ this cell's F1 is not trustworthy as capability ---
         "warnings": warnings,
+        # --- raw scores for bootstrapping ---
+        "raw_y_true": y_true,
+        "raw_y_score": y_score,
     }

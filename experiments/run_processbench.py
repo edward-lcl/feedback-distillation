@@ -43,10 +43,18 @@ def main():
             print(f"Loaded checkpoint (model only — no score head): {args.checkpoint}")
 
     results = evaluate_processbench(student, args.dataset, args.max_samples)
+    
+    # Extract raw scores for bootstrap CI
+    raw_y_true = results.pop("raw_y_true", [])
+    raw_y_score = results.pop("raw_y_score", [])
+    
     print(json.dumps(results, indent=2))
 
     with open(f"{args.results_dir}/processbench_results.json", "w") as f:
         json.dump(results, f, indent=2)
+        
+    with open(f"{args.results_dir}/per_step_scores.json", "w") as f:
+        json.dump({"y_true": raw_y_true, "y_score": raw_y_score}, f, indent=2)
 
     # Loud, immediate self-check — so an agent re-running this sees a broken cell
     # the moment it finishes, rather than reading a near-zero F1 as a real result.
