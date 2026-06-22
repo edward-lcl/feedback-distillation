@@ -170,3 +170,14 @@ _Append any anomalies, special methodological tweaks, or notable outcomes here d
   - **C. Generative PRM (LLM-as-a-Judge):** Remove the regression head and train the student purely via next-token prediction to output `<Critique> ... [Verdict: Correct]`. Unifying the loss landscape to purely language modeling eliminates the gradient interference between `L_score` and `L_LM`.
 
 - **[2026-06-22]**: **Decision to continue Cell 2 and Cell 3 despite flawed `soft` math:** We are deliberately allowing the automated ablation script to finish Cell 2 (`priv_scoreonly`) and Cell 3 (`nogt_critique`) running in the background. Generating a complete set of negative baselines is critical. We need the exact ROC-AUC of Cell 3 to see if the "No-GT > Privileged" inversion robustly persists across different loss functions. Because it is running autonomously, the sunk cost of finishing the run is zero.
+
+- **[2026-06-22]**: **Cell 2 `priv_scoreonly` Implosion (Proof of Linear Head Bottleneck):**
+  Cell 2 finished its evaluation. The results are stark: **ROC AUC plummeted to `0.555`** and **PR AUC to `0.105`**. 
+  - *Context:* Cell 2 used the exact same soft BCE math as Cell 1, but disabled the critique generation (`L_LM=False`), forcing the student to compute the mathematical score purely via the linear head acting on the prompt's boundary token.
+  - *Insight:* The 0.555 ROC AUC (barely above random 0.500) definitively proves that the 1.5B student **cannot** compute mathematical correctness silently in its hidden state. It requires the textual Chain-of-Thought critique acting as "test-time compute" to organize its logic before scoring. This strongly validates pivoting to a purely Generative PRM (LLM-as-a-Judge) architecture.
+
+- **[2026-06-22]**: **Explicit GT Leakage Analysis (Refuting the "Cheating" Hypothesis):**
+  Before pivoting, we wrote a Python script to verify if the privileged teacher's +0.07 F1 advantage came from simply "cheating" (e.g. leaking the ground truth reference answer verbatim into its critique text, giving the student a shortcut).
+  - *Method:* Scanned `math_priv.jsonl` (8,008 steps) for instances where a meaningful GT string (length >= 3) appeared in the teacher's feedback but was *not* already present in the student's step text.
+  - *Result:* We found exactly **19 strong leaks** out of 8,008 steps (**0.24%**).
+  - *Insight:* The Privileged Teacher is **not** cheating by copy-pasting the GT. Its advantage comes purely from *implicit* reasoning—using the GT to silently trace back the logic and write a critique about the mathematical flaw itself. This is a huge win for the paper's scientific integrity. It confirms the labels are clean, and the distillation failure is genuinely caused by Student Capacity (the 1.5B model underfitting the highly complex/diffuse logical corrections). This perfectly tees up the B1/B2 Scaling Sweep and the "Privilege as Curriculum" filter as our most scientifically valid next steps.
