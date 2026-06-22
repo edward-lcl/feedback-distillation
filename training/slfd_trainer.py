@@ -12,24 +12,18 @@ from .loss_config import LossConfig
 
 class SLFDTrainer:
     """
-    Trains the student to generate step-level feedback and scores.
-    Teacher is frozen throughout. Student's score_head has gradients.
+    Trains the student to generate step-level feedback and correctness verdicts.
+    Teacher is frozen throughout.
     """
 
     def __init__(self, student, teacher, dataset: list[dict], loss_flags=None,
-                 score_loss_mode="mse", kd_temperature=2.0, device=None, dev_mode=False):
+                 kd_temperature=2.0, device=None, dev_mode=False):
         import torch.nn as nn
         from models.device import is_dev_mode, best_device
         self.student = student
         self.teacher = teacher
         self.dataset = dataset
-        # How the score head is distilled (B4 distillation-method ablation):
-        #   "mse"     — regress the exact teacher scalar in [-1,1] (point estimate)
-        #   "verdict" — BCE on the hard binary verdict (correct iff score>=0)
-        #   "soft"    — BCE on the soft prob p=(score+1)/2 (distribution target)
-        if score_loss_mode not in ("mse", "verdict", "soft"):
-            raise ValueError(f"unknown score_loss_mode {score_loss_mode!r}")
-        self.score_loss_mode = score_loss_mode
+
         self.kd_temperature = kd_temperature
         self.dev_mode = is_dev_mode(dev_mode)
         if self.dev_mode:
@@ -74,7 +68,6 @@ class SLFDTrainer:
         trainable_model_params = [p for p in self.student.model.parameters() if p.requires_grad]
         self.optimizer = AdamW([
             {"params": trainable_model_params, "lr": 1e-4, "weight_decay": 0.01},
-            {"params": self.student.score_head.parameters(), "lr": 5e-5, "weight_decay": 0.01},
             {"params": self.align_hidden.parameters(), "lr": 1e-6, "weight_decay": 0.01},
         ], betas=(0.9, 0.999), eps=1e-8)
 
@@ -94,7 +87,7 @@ class SLFDTrainer:
                 if max_steps and step >= max_steps:
                     break
                 batch = self.dataset[batch_start: batch_start + batch_size]
-                batch_losses = {"lm_loss": [], "hidden_loss": [], "scoring_loss": [], "logit_loss": []}
+                batch_losses = {"lm_loss": [], "hidden_loss": [], "logit_loss": []}
 
                 for sample in batch:
                     problem = sample.get("problem", "")
@@ -105,13 +98,7 @@ class SLFDTrainer:
                     if not problem or not step_text:
                         continue
 
-                    # Student forward — score_logit has gradient (boundary-token
-                    # read, no generation).
-                    student_score_logit = self.student.score_step(problem, solution_prefix, step_text)
-
-                    # L_feedback_LM — natural-language critique loss. Gated by the
-                    # LM flag so the score-only ablation trains the scorer alone
-                    # (score+critique = LM on; score-only = LM off).
+                    # L_feedback_LM — natural-language critique loss.
                     if self.loss_flags[0]:
                         input_ids, labels, attn_mask = self.student.prepare_step_inputs_and_labels(
                             problem, solution_prefix, step_text, teacher_feedback, teacher_score
@@ -123,14 +110,6 @@ class SLFDTrainer:
                             return_dict=True,
                         )
                         batch_losses["lm_loss"].append(lm_out.loss)
-
-                    # L_score — distillation target for the score head. The mode
-                    # is the B4 knob (see compute_score_loss): how much of the
-                    # teacher's scalar we keep. The score head is sign-thresholded
-                    # at eval, so the BCE-on-logit modes stay eval-compatible.
-                    batch_losses["scoring_loss"].append(
-                        compute_score_loss(student_score_logit, teacher_score,
-                                           self.score_loss_mode, self.device))
 
                     # L_logit — online KD: soft KL toward the teacher's distribution
                     # over its (privileged) critique. The soft counterpart of L_LM;
@@ -157,7 +136,6 @@ class SLFDTrainer:
                 self.optimizer.zero_grad()
                 total_loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.student.model.parameters(), max_norm=1.0)
-                torch.nn.utils.clip_grad_norm_(self.student.score_head.parameters(), max_norm=1.0)
                 self.optimizer.step()
 
                 for k, v in aggregated.items():
@@ -180,7 +158,6 @@ class SLFDTrainer:
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         torch.save({
             "model": self.student.model.state_dict(),
-            "score_head": self.student.score_head.state_dict(),
             "align_hidden": self.align_hidden.state_dict(),
         }, path)
         print(f"Saved checkpoint → {path}")

@@ -122,7 +122,7 @@ def main():
         student.model.float()
         print("Training in float32.")
     loss_flags, score_loss_mode = ABLATIONS[args.ablation]
-    print(f"Ablation: {args.ablation}  (loss_flags={loss_flags}, score_loss_mode={score_loss_mode})")
+    print(f"Ablation: {args.ablation}  (loss_flags={loss_flags})")
 
     # Online logit-KD needs a LIVE teacher for its logits (offline labels carry
     # only the scalar + critique text, not a distribution). Everything else is
@@ -138,7 +138,7 @@ def main():
                   f"min-vocab, which corrupts the signal. Use a SAME-FAMILY teacher "
                   f"(e.g. Gemma-2-2B for a Gemma student).")
     trainer = SLFDTrainer(student, teacher=teacher, dataset=dataset,
-                          loss_flags=loss_flags, score_loss_mode=score_loss_mode,
+                          loss_flags=loss_flags,
                           kd_temperature=args.kd_temperature, dev_mode=args.dev_mode)
 
     summary = trainer.train(epochs=args.epochs, batch_size=args.batch_size, max_steps=args.max_steps)

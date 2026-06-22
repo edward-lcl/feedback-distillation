@@ -55,19 +55,16 @@ def evaluate_processbench(student, dataset_path: str, max_samples: int = None) -
             prefix = ""
             pred_labels = []
             for step in steps:
-                # Use the SAME representation training optimizes — the score head
-                # on the prompt's step-boundary token (score_step) — not the
-                # generated response. no_grad: eval needs no graph (and avoids a
-                # per-step grad-graph memory leak).
-                with torch.no_grad():
-                    score_logit = student.score_step(problem, prefix, step["text"])
-                logit = float(score_logit.item())
-                pred_is_error = logit < 0.0
+                # Use the generated output to evaluate the step correctness
+                # and read the P(Correct) continuous probability.
+                _, score_val, _ = student.evaluate_step(problem, prefix, step["text"])
+                
+                pred_is_error = score_val < 0.5
                 pred_labels.append(int(pred_is_error))
                 y_true.append(int(step.get("is_error", False)))
                 y_pred.append(int(pred_is_error))
-                # error-ness score for ranking metrics: more negative logit = more error-like
-                y_score.append(-logit)
+                # error-ness score for ranking metrics: lower P(Correct) = more error-like
+                y_score.append(0.5 - score_val)
                 y_seq.append(i)   # sequence id → enables a clustered paired bootstrap
                 prefix += step["text"] + "\n"
 

@@ -20,12 +20,7 @@ from .device import (
 )
 
 
-def _parse_score(response: str) -> float:
-    m = re.search(r'Score:\s*([-\d.]+)', response)
-    try:
-        return float(m.group(1)) if m else -1.0
-    except (ValueError, AttributeError):
-        return -1.0
+
 
 
 class StudentModel:
@@ -37,12 +32,12 @@ class StudentModel:
     """
 
     STEP_EVAL_PROMPT = (
-        "Evaluate this reasoning step. Score -1.0 (wrong) to 1.0 (correct).\n"
-        "If wrong, explain precisely what the error is (1-2 sentences).\n\n"
+        "Evaluate this reasoning step. If wrong, explain precisely what the error is.\n"
+        "End your explanation with 'Verdict: Correct' or 'Verdict: Incorrect'.\n\n"
         "Problem: {problem}\n"
         "Steps so far:\n{solution_prefix}\n"
         "Current step: {step_text}\n\n"
-        "Score: "
+        "Feedback:"
     )
 
     def __init__(self, model_name: str = None, use_bf16: bool = True, dev_mode: bool = False,
@@ -73,7 +68,6 @@ class StudentModel:
             self.model = get_peft_model(self.model, lora_cfg)
             self.model.print_trainable_parameters()
 
-        self.score_head = nn.Linear(hidden_dim, 1).to(self.device).to(torch.float32)
         self.student_frozen = False
         print(f"StudentModel loaded: {model_name} on {self.device} (LoRA={'on' if use_lora else 'off'})")
 
@@ -92,24 +86,6 @@ class StudentModel:
             )
         return self.tokenizer.decode(out[0], skip_special_tokens=True)
 
-    def score_step(self, problem: str, solution_prefix: str, step_text: str) -> torch.Tensor:
-        """Training-time step score: a single forward over the prompt, read the
-        hidden state at the step-boundary token (the last token, after "Score: "),
-        apply the score head. Returns score_logit with grad. No generation — the
-        old path generated ~150 tokens per training step, which was slow and made
-        L_score depend on sampled text rather than the boundary representation.
-        """
-        prompt = self.STEP_EVAL_PROMPT.format(
-            problem=problem, solution_prefix=solution_prefix, step_text=step_text,
-        )
-        ml = MPS_SAFE_MAX_LENGTH if is_mps() else 1024
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-        if inputs["input_ids"].shape[1] > ml:
-            inputs = {k: v[:, -ml:] for k, v in inputs.items()}
-        out = self.model(**inputs, output_hidden_states=True, return_dict=True)
-        last_hidden = out.hidden_states[-1][:, -1, :].to(torch.float32)
-        return self.score_head(last_hidden).squeeze(-1)
-
     def evaluate_step(
         self,
         problem: str,
@@ -117,8 +93,8 @@ class StudentModel:
         step_text: str,
     ) -> tuple[str, float, torch.Tensor]:
         """
-        Returns (feedback_text, scalar_score, score_logit_tensor).
-        score_logit has grad — used in L_score during training.
+        Returns (feedback_text, scalar_score, None).
+        scalar_score is derived from P(Correct) / (P(Correct) + P(Incorrect)).
         """
         prompt = self.STEP_EVAL_PROMPT.format(
             problem=problem,
@@ -126,22 +102,32 @@ class StudentModel:
             step_text=step_text,
         )
         response = self._generate(prompt)
-        score_val = _parse_score(response)
 
-        parts = response.split("Feedback:", 1)
-        feedback = parts[1].strip().split("\n")[0].strip() if len(parts) > 1 else ""
+        feedback = response.strip()
 
-        # Score head forward — OUTSIDE no_grad so gradients flow.
-        # Cast hidden states (float16 on MPS) to float32 before the float32 score head.
-        sh_max_length = MPS_SAFE_MAX_LENGTH if is_mps() else 1024
-        inputs = self.tokenizer(response, return_tensors="pt").to(self.device)
-        if inputs["input_ids"].shape[1] > sh_max_length:
-            inputs = {k: v[:, -sh_max_length:] for k, v in inputs.items()}
-        out = self.model(**inputs, output_hidden_states=True, return_dict=True)
-        last_hidden = out.hidden_states[-1][:, -1, :].to(torch.float32)
-        score_logit = self.score_head(last_hidden).squeeze(-1)  # grad flows here
+        # To get the continuous probability, we need the logits right BEFORE the model
+        # generated 'Correct' or 'Incorrect'.
+        prefix_response = response
+        if prefix_response.endswith("Correct"):
+            prefix_response = prefix_response[:-7]
+        elif prefix_response.endswith("Incorrect"):
+            prefix_response = prefix_response[:-9]
+            
+        inputs = self.tokenizer(prompt + prefix_response, return_tensors="pt").to(self.device)
+        with torch.no_grad():
+            out = self.model(**inputs)
+            # The logits of the very last token in the prefix (predicting the next word)
+            logits = out.logits[0, -1, :]
 
-        return feedback, score_val, score_logit
+        # " Correct" vs " Incorrect" token extraction
+        correct_id = self.tokenizer.encode(" Correct", add_special_tokens=False)[-1]
+        incorrect_id = self.tokenizer.encode(" Incorrect", add_special_tokens=False)[-1]
+
+        pc = logits[correct_id]
+        pi = logits[incorrect_id]
+        score_val = float(torch.softmax(torch.tensor([pi, pc], dtype=torch.float32), dim=0)[1].item())
+
+        return feedback, score_val, None
 
     def prepare_step_inputs_and_labels(
         self,
@@ -149,26 +135,31 @@ class StudentModel:
         solution_prefix: str,
         step_text: str,
         teacher_feedback: str,
-        teacher_score: float,   # actual score, not hardcoded
+        teacher_score: float,   # actual score
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Build (input_ids, labels, attention_mask) for L_feedback_LM loss."""
+        """Build (input_ids, labels, attention_mask) for Generative PRM training."""
+        verdict = "Correct" if teacher_score > 0 else "Incorrect"
         full_text = (
+            f"Evaluate this reasoning step. If wrong, explain precisely what the error is.\n"
+            f"End your explanation with 'Verdict: Correct' or 'Verdict: Incorrect'.\n\n"
             f"Problem: {problem}\n"
             f"Steps so far:\n{solution_prefix}\n"
             f"Current step: {step_text}\n\n"
-            f"Score: {teacher_score:.2f}\nFeedback: {teacher_feedback}"
+            f"Feedback: {teacher_feedback}\nVerdict: {verdict}"
         )
         ml = MPS_SAFE_MAX_LENGTH if is_mps() else 512
         enc = self.tokenizer(full_text, return_tensors="pt", padding=True, truncation=True, max_length=ml)
         input_ids = enc["input_ids"]
         attention_mask = enc["attention_mask"]
 
-        # Only supervise on feedback token span
+        # Only supervise on feedback + verdict span
         prefix_text = (
+            f"Evaluate this reasoning step. If wrong, explain precisely what the error is.\n"
+            f"End your explanation with 'Verdict: Correct' or 'Verdict: Incorrect'.\n\n"
             f"Problem: {problem}\n"
             f"Steps so far:\n{solution_prefix}\n"
             f"Current step: {step_text}\n\n"
-            f"Score: {teacher_score:.2f}\nFeedback: "
+            f"Feedback:"
         )
         prefix_ids = self.tokenizer(prefix_text, return_tensors="pt")["input_ids"]
         prefix_len = prefix_ids.shape[1]
