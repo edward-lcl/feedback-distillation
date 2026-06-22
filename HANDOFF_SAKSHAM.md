@@ -12,10 +12,21 @@ Phase A diagnostics are **done** and the null is mechanistic: real +0.07 teacher
 👉 **Go to `RUNBOOK_PHASE_B.md` and start at B0.** Push raw JSONs to a branch; don't hand-edit conclusions.
 
 ### 🖥️ No GPU? Train on Edward's Mac (remote, scoped)
-While your GPU box is down, run the **1.5B cheap-first** cells on Edward's Mac. You'll SSH in (via the link Edward sends) as a **restricted `slfd` user** — no sudo, no access to his files — into a self-contained working copy. **The capacity sweep (3B/7B, B2) is NOT possible on the Mac (won't fit 48 GB) — that waits for your GPUs.**
+While your GPU box is down, run the **1.5B cheap-first** cells on Edward's Mac. You SSH in as a **restricted `slfd` user** — no sudo, no access to his files — into a self-contained working copy. **The capacity sweep (3B/7B, B2) is NOT possible on the Mac (won't fit 48 GB) — that waits for your GPUs.**
+
+**Connect (one-time setup):**
+1. Send Edward your SSH **public** key (`cat ~/.ssh/id_ed25519.pub`) so he can add it to the `slfd` account.
+2. `brew install cloudflared`, then add to your `~/.ssh/config`:
+   ```
+   Host edmac
+     HostName ssh.elcl.systems
+     User slfd
+     ProxyCommand cloudflared access ssh --hostname %h
+   ```
+3. `ssh edmac` → a browser opens for Cloudflare Access; authenticate with your **terpmail email** (the only one allowed). You land in the restricted `slfd` account.
 
 ```bash
-# once connected (cloudflared/ssh details from Edward):
+# once connected:
 cd /Users/Shared/slfd/feedback-distillation
 export HF_HOME=/Users/Shared/slfd/hf_cache HF_HUB_OFFLINE=1   # models are pre-cached; no download/network
 git pull                                                       # get latest main
