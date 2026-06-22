@@ -181,3 +181,9 @@ _Append any anomalies, special methodological tweaks, or notable outcomes here d
   - *Method:* Scanned `math_priv.jsonl` (8,008 steps) for instances where a meaningful GT string (length >= 3) appeared in the teacher's feedback but was *not* already present in the student's step text.
   - *Result:* We found exactly **19 strong leaks** out of 8,008 steps (**0.24%**).
   - *Insight:* The Privileged Teacher is **not** cheating by copy-pasting the GT. Its advantage comes purely from *implicit* reasoning—using the GT to silently trace back the logic and write a critique about the mathematical flaw itself. This is a huge win for the paper's scientific integrity. It confirms the labels are clean, and the distillation failure is genuinely caused by Student Capacity (the 1.5B model underfitting the highly complex/diffuse logical corrections). This perfectly tees up the B1/B2 Scaling Sweep and the "Privilege as Curriculum" filter as our most scientifically valid next steps.
+
+- **[2026-06-22]**: **Cell 3 `nogt_critique` Evaluation Complete (The Verified Negative):**
+  Cell 3 finished its training and evaluated on ProcessBench. The final results:
+  - `nogt_critique`: **0.652** ROC AUC
+  - `priv_critique` (Cell 1): **0.620** ROC AUC
+  - *Insight:* The No-GT teacher definitively beat the Privileged teacher when distilled into the 1.5B student. This perfectly confirms the "verified negative" finding currently in the README: the privileged signal is too diffuse and confusing for the small student to latch onto, actually making it *worse* than standard PRM training. This officially closes out the negative baseline matrix. We are now clear to kill the old script and launch the Generative PRM architecture smoke test!
