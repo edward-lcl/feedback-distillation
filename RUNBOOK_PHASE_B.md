@@ -143,3 +143,28 @@ Hypothesis: we distill the teacher's score via **MSE on a single scalar** — if
 3. If eval prints `⚠️ EVAL HEALTH WARNING`, that cell is degenerate — don't report its F1.
 4. **One variable at a time** (data OR capacity), so effects are attributable.
 5. Labeling 10k via the served teacher is the slow part (sequential, ~hours). The teacher now **auto-restarts on crash/reboot** (launchd), but it can't serve while Edward's Mac is **asleep** — a `502`/`530` (Cloudflare `1033`) from `teacher.elcl.systems` almost always means the Mac slept. **Text Edward** (number's in Slack) to wake it; resume the run once you get HTTP 200 from `/v1/models`.
+
+## Phase B Quirks & Outcomes Tracker
+_Append any anomalies, special methodological tweaks, or notable outcomes here during execution._
+
+- **[YYYY-MM-DD]**: (Placeholder) No anomalies recorded yet.
+
+- **[2026-06-21]**: Fixed a pathing bug in smoke_phase_b.sh where the $PY variable was unquoted. Since Saksham's Windows user folder (Saksham Kapoor) contains a space, the unquoted $PY path split in Bash and immediately crashed the training scripts. Quoted the variables to resolve.
+
+- **[2026-06-21]**: Hardware shift due to GPU Server outage: The 1.5B cheap-first runs (B0, B0b, B3, B4) are being offloaded to Edward's Mac (via SSH). B1/B2 scaling experiments are strictly ON HOLD until the real GPU box returns, because 3B/7B capacity sweeps will not fit on the Mac's 48GB unified memory.
+
+- **[2026-06-21]**: Bypassed offline cache bugs on Edward's Mac during B4 (soft ablation) run: (1) un_student_ablation.sh defaulted to the base model Qwen/Qwen2.5-1.5B which wasn't cached, requiring an explicit STUDENT_MODEL=Qwen/Qwen2.5-1.5B-Instruct override. (2) HuggingFace's 	rust_remote_code=True crashed in strict offline mode (HF_HUB_OFFLINE=1) due to hash validation failures. Removing the offline flag allowed it to load the model smoothly from the local cache.
+
+- **[2026-06-21]**: **CRITICAL OOM/Swapping bug on Mac:** The B4 `soft` ablation run hung completely on Edward's Mac. The default `BATCH_SIZE=4` on long MATH solutions caused the 1.5B PyTorch training to allocate ~40GB of memory for activations, because the script forced `float32` precision on MPS (due to fp16 NaNs). This exceeded the 48GB unified memory limit, forcing the Mac to heavily swap to SSD. **Resolution:** Modified `experiments/train_slfd.py` to support and default to `bfloat16` (`bf16`) on MPS instead of `fp32`. This slashes the memory footprint in half and is natively supported by M-series chips without NaNs. Restarted the job with `BATCH_SIZE=2` successfully.
+
+- **[2026-06-21]**: **Cell 1 `soft` ablation (priv_critique) Evaluation Complete:** The first cell finished training its 8,000 steps and successfully evaluated on `processbench_math_shuffled.jsonl`. The resulting `roc_auc` was **0.620** and `pr_auc` was **0.121**. The script has now automatically moved on to training Cell 2 (`priv_scoreonly`).
+
+- **[2026-06-21]**: **Deep Diagnostic of the `soft` Ablation Failure & New Strategic Directions:**
+  The `soft` BCE ablation (0.620 roc_auc) performed worse than the original hard MSE baseline (0.631). Deep investigation of the codebase and data revealed **two critical flaws in our core assumptions**:
+  1. **The `soft` ablation is mathematically vacuous:** We verified that 98.7% of the teacher's scores in `math_priv.jsonl` are hard binary {-1.0, +1.0}. Using `p=(score+1)/2` for "soft distribution" BCE is functionally identical to the `verdict` ablation because `p` is almost always exactly 1.0 or 0.0. This explains why BCE underperformed: the extreme logit gradients at p=0/1 destabilized the 1.5B scorer without providing any new "soft confidence" signal.
+  2. **The "Linear Head Representation" Bottleneck:** The current architecture extracts a single hidden state at the final `Score: ` token and forces a `nn.Linear` head to deduce the correctness. A 1.5B model likely cannot compress complex multi-step math verification into a single dense vector.
+  
+  **Three "Unorthodox" Candidates to break the snag:**
+  - **A. Privilege as Curriculum (Data Filter):** The privilege gap (+0.07 F1) is real but diffuse (31% label churn). Instead of using privileged labels directly, filter the training set to **only** include steps where the privileged and no-GT teachers disagreed. Train the student on the no-GT labels for these hard steps, effectively using the privileged teacher to curate a curriculum of "ambiguous" edge cases, forcing the student to learn stronger reasoning rather than banking the base rate.
+  - **B. Contrastive Step Discrimination (DPO for PRMs):** Reject the linear score head entirely. Pair a correct step and an incorrect step for the same prefix. Train the student using Direct Preference Optimization (DPO) to rank the correct step higher. This avoids absolute score calibration and is much more sample-efficient.
+  - **C. Generative PRM (LLM-as-a-Judge):** Remove the regression head and train the student purely via next-token prediction to output `<Critique> ... [Verdict: Correct]`. Unifying the loss landscape to purely language modeling eliminates the gradient interference between `L_score` and `L_LM`.
