@@ -32,13 +32,13 @@ mkdir -p "$OUT"; PASS=1
 
 cell () {  # $1=labeled $2=ablation $3=tag  [$4=extra train args]
   echo "### TRAIN $3 (ablation=$2)"
-  $PY -m experiments.train_slfd --dataset "$1" --ablation "$2" --student_model "$STUDENT" \
+  "$PY" -m experiments.train_slfd --dataset "$1" --ablation "$2" --student_model "$STUDENT" \
       --seed 0 --max_steps "$MAX_STEPS" --epochs 1 --checkpoint "$OUT/$3.pt" ${4:-} \
       > "$OUT/$3.train.log" 2>&1 || { echo "  TRAIN FAILED $3"; tail -5 "$OUT/$3.train.log"; PASS=0; return; }
-  $PY -m experiments.run_processbench --checkpoint "$OUT/$3.pt" --student_model "$STUDENT" \
+  "$PY" -m experiments.run_processbench --checkpoint "$OUT/$3.pt" --student_model "$STUDENT" \
       --dataset "$EVAL" --max_samples "$N_EVAL" --results_dir "$OUT/$3" \
       > "$OUT/$3.eval.log" 2>&1 || { echo "  EVAL FAILED $3"; tail -5 "$OUT/$3.eval.log"; PASS=0; return; }
-  $PY -c "import json;d=json.load(open('$OUT/$3/processbench_results.json'));print('  %-14s roc_auc=%.3f f1=%.3f pred_err=%.3f'%('$3',d['roc_auc'],d['f1'],d['pred_error_rate']))"
+  "$PY" -c "import json;d=json.load(open('$OUT/$3/processbench_results.json'));print('  %-14s roc_auc=%.3f f1=%.3f pred_err=%.3f'%('$3',d['roc_auc'],d['f1'],d['pred_error_rate']))"
   [ -f "$OUT/$3/per_step_scores.json" ] && echo "  sidecar OK" || { echo "  sidecar MISSING"; PASS=0; }
 }
 
@@ -50,10 +50,10 @@ cell "$PRIV" logit_kd       priv_logitkd  "--kd_teacher $KD_TEACHER"
 cell "$NOGT" logit_kd       nogt_logitkd  "--kd_teacher $KD_TEACHER"
 
 echo "### TRANSFER_CI (score_critique priv vs nogt)"
-$PY -m experiments.transfer_ci --priv "$OUT/priv_critique/per_step_scores.json" \
+"$PY" -m experiments.transfer_ci --priv "$OUT/priv_critique/per_step_scores.json" \
     --nogt "$OUT/nogt_critique/per_step_scores.json" --n_boot 2000 || PASS=0
 echo "### TRANSFER_CI (logit_kd priv vs nogt)"
-$PY -m experiments.transfer_ci --priv "$OUT/priv_logitkd/per_step_scores.json" \
+"$PY" -m experiments.transfer_ci --priv "$OUT/priv_logitkd/per_step_scores.json" \
     --nogt "$OUT/nogt_logitkd/per_step_scores.json" --n_boot 2000 || PASS=0
 
 echo "=================================================="

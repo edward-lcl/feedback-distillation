@@ -79,8 +79,8 @@ def main():
     parser.add_argument("--max_steps", type=int, default=None)
     parser.add_argument("--dev_mode", action="store_true",
                         help="Use smaller models for local Apple Silicon development.")
-    parser.add_argument("--train_dtype", choices=["auto", "fp32", "fp16"], default="auto",
-                        help="Weight precision for training. 'auto' uses fp32 on MPS "
+    parser.add_argument("--train_dtype", choices=["auto", "fp32", "fp16", "bf16"], default="auto",
+                        help="Weight precision for training. 'auto' uses bf16 on MPS "
                              "(fp16 NaNs there) and the device default elsewhere.")
     parser.add_argument("--ablation", choices=list(ABLATIONS.keys()),
                         default="score_critique",
@@ -113,10 +113,14 @@ def main():
     # Stabilize training precision. fp16 on MPS overflows to NaN; AdamW has no
     # fp32 master copy here, so we train the weights themselves in fp32.
     from models.device import is_mps
-    use_fp32 = args.train_dtype == "fp32" or (args.train_dtype == "auto" and is_mps())
-    if use_fp32 and student.model.dtype != torch.float32:
+    use_bf16 = args.train_dtype == "bf16" or (args.train_dtype == "auto" and is_mps())
+    use_fp32 = args.train_dtype == "fp32"
+    if use_bf16 and student.model.dtype != torch.bfloat16:
+        student.model.to(torch.bfloat16)
+        print("Training in bfloat16 (numerically stable and memory efficient on MPS).")
+    elif use_fp32 and student.model.dtype != torch.float32:
         student.model.float()
-        print("Training in float32 (numerically stable on MPS).")
+        print("Training in float32.")
     loss_flags, score_loss_mode = ABLATIONS[args.ablation]
     print(f"Ablation: {args.ablation}  (loss_flags={loss_flags}, score_loss_mode={score_loss_mode})")
 
