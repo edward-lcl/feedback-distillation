@@ -3,7 +3,7 @@
 # Validates whether the student can actually learn to differentiate between good and bad targets.
 
 set -euo pipefail
-PY="$(command -v python || command -v python3)"
+PY="./.venv/bin/python"
 
 # Define our weak teacher (e.g. 2B model) to prove sensitivity
 WEAK_TEACHER="google/gemma-2-2b-it"
@@ -11,8 +11,8 @@ WEAK_TEACHER="google/gemma-2-2b-it"
 mkdir -p data/raw data/labeled checkpoints results/positive_control
 
 echo "== 1/3 Generate candidate solutions =="
-# (Using existing generated math_sampled.jsonl to save compute)
-cp data/raw/math_sampled.jsonl data/raw/math_sampled_control.jsonl || true
+# (Using existing generated math_priv.jsonl to save compute)
+cp data/labeled/math_priv.jsonl data/raw/math_sampled_control.jsonl || true
 
 echo "== 2/3 Label with WEAK teacher =="
 # In this experiment, we run the label pipeline locally with the weak teacher
