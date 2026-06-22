@@ -75,12 +75,20 @@ BATCH_SIZE="${BATCH_SIZE:-4}"
 SM_ARG=""; [ -n "$STUDENT_MODEL" ] && SM_ARG="--student_model $STUDENT_MODEL"
 # ABLATION lets you swap the score-loss method for the B4 distillation-method arm:
 #   score_critique (default pair) | score_only | verdict (B4c) | soft (B4a-offline).
-# SEED makes a run reproducible AND namespaces its outputs (…_seed$SEED) so a
+# SEED (int) makes a run reproducible AND namespaces its outputs (…_seed$SEED) so a
 # multi-seed sweep (D1) doesn't overwrite — unset = original paths, unchanged.
+# TAG namespaces outputs by an arbitrary label (…_$TAG), ORTHOGONAL to the RNG seed.
+# Use it to compare distillation METHODS at a FIXED seed without checkpoint
+# collisions: TAG=verdict and TAG=soft both at SEED=0 land in separate folders, so
+# the method delta isn't confounded with seed noise. Do NOT overload SEED for this
+# — train_slfd's --seed is int-typed, so a string namespace crashes the run AND
+# changes the seed per method.
 ABLATION_NOGT="${ABLATION:-score_critique}"
 SEED="${SEED:-}"
 SEED_ARG=""; SUF=""
 [ -n "$SEED" ] && { SEED_ARG="--seed $SEED"; SUF="_seed$SEED"; }
+TAG="${TAG:-}"
+[ -n "$TAG" ] && SUF="${SUF}_$TAG"
 # B4a-online: ABLATION=logit_kd needs a LOCAL same-family teacher for its logits.
 KD_TEACHER="${KD_TEACHER:-}"
 KD_ARG=""; [ -n "$KD_TEACHER" ] && KD_ARG="--kd_teacher $KD_TEACHER"
