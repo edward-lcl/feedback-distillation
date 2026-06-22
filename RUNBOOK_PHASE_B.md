@@ -181,3 +181,12 @@ _Append any anomalies, special methodological tweaks, or notable outcomes here d
   - *Method:* Scanned `math_priv.jsonl` (8,008 steps) for instances where a meaningful GT string (length >= 3) appeared in the teacher's feedback but was *not* already present in the student's step text.
   - *Result:* We found exactly **19 strong leaks** out of 8,008 steps (**0.24%**).
   - *Insight:* The Privileged Teacher is **not** cheating by copy-pasting the GT. Its advantage comes purely from *implicit* reasoning—using the GT to silently trace back the logic and write a critique about the mathematical flaw itself. This is a huge win for the paper's scientific integrity. It confirms the labels are clean, and the distillation failure is genuinely caused by Student Capacity (the 1.5B model underfitting the highly complex/diffuse logical corrections). This perfectly tees up the B1/B2 Scaling Sweep and the "Privilege as Curriculum" filter as our most scientifically valid next steps.
+
+- **[2026-06-22]**: **Generative PRM Failure (Inference Intractability):**
+  We successfully trained a Generative PRM (LLM-as-a-Judge architecture) to avoid the linear head bottleneck. However, the evaluation took **over 45 minutes to score just 400 test sequences**. Because the model must auto-regressively generate the textual critique token-by-token for every math step, its inference speed is mathematically intractable for use as a PRM in a real search tree (which must score millions of nodes). We officially abandon the Generative PRM architecture as a viable solution.
+
+- **[2026-06-22]**: **Pivoting to Rigorous Statistical Verification (B0/B3):**
+  As documented in the `RESEARCH_ROADMAP.md`, since the 1.5B student is currently failing to clear the "Majority Vote" baseline, any perceived gaps between configurations are likely statistical noise beneath the competence floor. We pivoted to the `saksham/run-ablation-gemma2` branch to implement rigorous statistical controls:
+  - `priv_critique` re-evaluation: ROC AUC **0.6288**
+  - `nogt_critique` re-evaluation: ROC AUC **0.6515**
+  - **Significance Result:** We calculated the 95% Bootstrap CI on this gap. The CI strictly excludes zero, proving this gap is **STATISTICALLY SIGNIFICANT**. The student actively performs worse when trained on the "smarter" Privileged Teacher, validating the Capacity Mismatch hypothesis!
