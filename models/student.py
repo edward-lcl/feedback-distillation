@@ -71,6 +71,8 @@ class StudentModel:
                 target_modules="all-linear", task_type="CAUSAL_LM",
             )
             self.model = get_peft_model(self.model, lora_cfg)
+            if hasattr(self.model, "gradient_checkpointing_enable"):
+                self.model.gradient_checkpointing_enable()
             self.model.print_trainable_parameters()
 
         self.score_head = nn.Linear(hidden_dim, 1).to(self.device).to(torch.float32)
