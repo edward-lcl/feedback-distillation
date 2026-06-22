@@ -17,10 +17,31 @@ $PY -m experiments.train_slfd --dataset data/labeled/math_priv_prelim.jsonl \
     --ablation score_critique --epochs 2 --batch_size 4 \
     --checkpoint checkpoints/priv_control_prelim.pt
 
-echo "== 2/4 Labeling with WEAK Teacher =="
+echo "== 2/4 Labeling with WEAK Teacher (vLLM Accelerated on 2x GPUs) =="
+# Start vLLM in the background, utilizing both 24GB GPUs
+# We set gpu_memory_utilization to 0.8 to ensure we don't completely lock out the system
+$PY -m vllm.entrypoints.openai.api_server \
+    --model "$WEAK_TEACHER" \
+    --tensor-parallel-size 2 \
+    --gpu-memory-utilization 0.8 \
+    --port 8000 > vllm_server.log 2>&1 &
+VLLM_PID=$!
+
+echo "Waiting for vLLM server to boot up..."
+while ! curl -s http://localhost:8000/v1/models > /dev/null; do
+    sleep 5
+done
+echo "vLLM server is online!"
+
+export OMLX_API_KEY="dummy"
+export OMLX_MODEL="$WEAK_TEACHER"
 $PY -m data.label_pipeline --input data/labeled/math_priv_prelim.jsonl \
     --output data/labeled/math_weak_prelim.jsonl \
-    --local_model "$WEAK_TEACHER" --privilege solution
+    --use_omlx --omlx_url "http://localhost:8000/v1" --privilege solution
+
+echo "Shutting down vLLM server to free VRAM for PyTorch student training..."
+kill $VLLM_PID
+wait $VLLM_PID || true
 
 echo "== 3/4 Distilling Weak Labels into Student =="
 $PY -m experiments.train_slfd --dataset data/labeled/math_weak_prelim.jsonl \
