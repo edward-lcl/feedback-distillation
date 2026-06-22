@@ -23,6 +23,28 @@ export OMLX_MODEL=gemma-4-26b-a4b-it-MLX-4bit
 export OMLX_API_KEY=<from Edward>   ;  export OMLX_TIMEOUT=600
 ```
 
+## No GPU? Run everything on the oMLX host (single box)
+oMLX is **inference-only** — it serves generation + labeling, but it does **not**
+train. So "use oMLX for everything" means: SSH into the oMLX host and run the
+*inference* through localhost oMLX while *train/eval* run on that machine's torch
+(MPS). Two modes:
+
+- **Cheap-first (no oMLX needed):** the verdict/soft/logit_kd cells + `transfer_ci`
+  reuse the **existing** labels — no generation, no teacher load, zero memory
+  contention. Strongly prefer this on one box:
+  ```bash
+  REUSE_LABELS=1 ABLATION=soft N_EVAL=1000 EPOCHS=2 ./scripts/run_student_ablation.sh
+  ```
+- **Fresh data (needs oMLX):** generation + labeling via the local server:
+  ```bash
+  export OMLX_API_KEY=...            # your key (NOT stored in the repo)
+  N_TRAIN=1000 ABLATION=score_critique ./scripts/run_single_box.sh
+  ```
+  ⚠️ Labeling loads the ~15 GB teacher into Metal; training then competes for the
+  same 48 GB unified memory (Metal cap ~37 GB). For headroom either reuse labels
+  (above) or free the teacher before the train phase (oMLX GUI → unload, or let it
+  idle-unload after 20 min). Big-N generation on one Mac is slow — keep N modest.
+
 ## B-smoke — sanity-check your install first (optional, ~minutes)
 Before the real runs, confirm the whole Phase-B toolkit works on your box:
 ```bash

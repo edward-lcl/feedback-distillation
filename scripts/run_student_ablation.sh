@@ -39,6 +39,17 @@ fi
 DEVFLAG=""; [ "${DEV:-0}" = "1" ] && DEVFLAG="--dev_mode"
 mkdir -p data/raw data/labeled checkpoints results/ablation
 
+# REUSE_LABELS=1 skips data download / generation / labeling and trains on the
+# EXISTING data/labeled/*.jsonl. This needs NO oMLX and NO generation — pure
+# train/eval — so it's the zero-contention path for a no-GPU single box (run the
+# cheap-first verdict/soft/logit_kd cells without re-hammering the teacher).
+if [ "${REUSE_LABELS:-0}" = "1" ]; then
+  echo "== REUSE_LABELS=1 — skipping data/generation/labeling; using existing labels =="
+  for f in data/labeled/math_priv.jsonl data/labeled/math_nogt.jsonl data/processbench_math_shuffled.jsonl; do
+    [ -f "$f" ] || { echo "ERROR: REUSE_LABELS=1 but $f is missing — do one full pass first." >&2; exit 1; }
+    echo "   using $f ($(wc -l < "$f") lines)"
+  done
+else
 echo "== 1/4  Data: MATH train problems + ProcessBench MATH eval (shuffled) =="
 "$PY" -m scripts.download_data --train_source math --n "$N_TRAIN" --output data/raw/math_train.jsonl
 "$PY" -m scripts.download_data --processbench --config math --output data/processbench_math.jsonl
@@ -56,6 +67,7 @@ echo "== 3/4  Label twice — privileged (solution) and no-GT — via TEACHER en
     --output data/labeled/math_priv.jsonl --use_omlx --omlx_url "$OMLX_URL" --privilege solution
 "$PY" -m data.label_pipeline --input data/raw/math_sampled.jsonl \
     --output data/labeled/math_nogt.jsonl --use_omlx --omlx_url "$OMLX_URL" --privilege none
+fi
 
 # Phase B knobs: STUDENT_MODEL (capacity sweep) + BATCH_SIZE. Default = Qwen2.5-1.5B.
 STUDENT_MODEL="${STUDENT_MODEL:-}"   # e.g. Qwen/Qwen2.5-3B-Instruct, Qwen/Qwen2.5-7B-Instruct
