@@ -87,6 +87,36 @@ class SLFDTrainer:
         random.shuffle(self.dataset)
         loss_history = {"lm_loss": [], "hidden_loss": [], "scoring_loss": [], "logit_loss": []}
         step = 0
+        # On Apple Silicon, MPS allocations live in unified GPU memory (invisible
+        # in process RSS) and the caching allocator holds freed blocks, so a long
+        # run drains system memory to an OOM SIGKILL even though the python RSS
+        # stays <1GB. Hand the cached pool back frequently so the working set stays
+        # bounded. Cadence is env-tunable (MPS_EMPTY_CACHE_EVERY, default 5 steps);
+        # lower = tighter memory, slightly slower. No effect on the math; MPS-only.
+        import gc, os
+        on_mps = str(self.device).startswith("mps")
+        empty_every = max(1, int(os.environ.get("MPS_EMPTY_CACHE_EVERY", "5")))
+        # The LM-loss forward materializes a [seq_len x vocab(~152k)] logit tensor
+        # plus its fp32 cross-entropy backward, so a single long sample is a one-shot
+        # multi-GB MPS spike that empty_cache/gc CANNOT absorb (it's not cache, it's a
+        # live allocation). The default 2048 truncation is too high for this head on
+        # MPS — one 1764-tok outlier reliably OOM-kills the run. Skip the rare long
+        # tail on MPS so a deterministic outlier can't kill an unattended sweep. Cap
+        # is env-tunable (TRAIN_MAX_TOKENS, default 1024); applied identically to every
+        # cell, so it doesn't bias the priv-vs-nogt comparison. Eval is untouched.
+        if on_mps:
+            cap = int(os.environ.get("TRAIN_MAX_TOKENS", "1024"))
+            tok = self.student.tokenizer
+            def _ntok(s):
+                txt = (f"Problem: {s.get('problem','')}\nSteps so far:\n"
+                       f"{s.get('solution_prefix','')}\nCurrent step: {s.get('step_text','')}\n\n"
+                       f"Score: {float(s.get('score',0.0)):.2f}\nFeedback: {s.get('feedback','')}")
+                return len(tok(txt)["input_ids"])
+            before = len(self.dataset)
+            self.dataset = [s for s in self.dataset if _ntok(s) <= cap]
+            dropped = before - len(self.dataset)
+            print(f"MPS length filter: dropped {dropped}/{before} samples over {cap} tokens "
+                  f"({100*dropped/max(before,1):.2f}%); {len(self.dataset)} remain.")
 
         for epoch in range(epochs):
             print(f"\n--- Epoch {epoch+1}/{epochs} ---")
@@ -164,6 +194,13 @@ class SLFDTrainer:
                     loss_history[k].append(float(v.item()))
 
                 step += 1
+                if on_mps and step % empty_every == 0:
+                    # Autograd graphs form reference cycles, so the MPS tensors they
+                    # pin aren't freed by refcounting alone — they wait for the cyclic
+                    # GC. empty_cache() only reclaims UNREFERENCED blocks, so without a
+                    # collect() first the pool grows unbounded despite a <1GB host RSS.
+                    gc.collect()
+                    torch.mps.empty_cache()
                 if step % 10 == 0:
                     parts = " | ".join(f"{k}={v[-1]:.4f}" for k, v in loss_history.items() if v)
                     print(f"  step {step}: {parts}")

@@ -12,7 +12,12 @@
 # Run:    ./scripts/run_student_ablation.sh
 # Tune:   N_TRAIN=300 N_EVAL=400 EPOCHS=2  (DEV=1 for a tiny local smoke)
 set -euo pipefail
-PY="$(command -v python || command -v python3)"
+# Prefer the repo venv so an un-activated shell doesn't fall back to a bare system
+# python missing peft/torch (instant ModuleNotFoundError). Falls back cleanly if
+# .venv isn't present (e.g. a differently-located env on another machine).
+_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)"
+if [ -x "$_REPO/.venv/bin/python" ]; then PY="$_REPO/.venv/bin/python"
+else PY="$(command -v python || command -v python3)"; fi
 N_TRAIN="${N_TRAIN:-300}"; N_EVAL="${N_EVAL:-400}"; EPOCHS="${EPOCHS:-2}"
 GEN_BACKEND="${GEN_BACKEND:-omlx}"
 # Generation (the EXPENSIVE step) must run on a LOCAL small model, never the

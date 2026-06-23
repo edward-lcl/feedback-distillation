@@ -35,13 +35,23 @@ REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)}"
 [ -d "$REPO/experiments" ] || REPO="$PWD"
 cd "$REPO"
 [ -d experiments ] || { echo "FATAL: run from the feedback-distillation repo root (or set REPO=)" >&2; exit 1; }
-PY="$(command -v python || command -v python3)"
+# Prefer the repo venv. Without it, an un-activated shell falls back to a bare
+# system python that lacks peft/torch and the run dies instantly with
+# ModuleNotFoundError. The explicit check is safe: if .venv isn't there (e.g. a
+# differently-located env on another box) it falls back to whatever python is active.
+if [ -x "$REPO/.venv/bin/python" ]; then PY="$REPO/.venv/bin/python"
+else PY="$(command -v python || command -v python3)"; fi
 
 SEEDS="${SEEDS:-0 1 2}"
 N_EVAL="${N_EVAL:-1000}"
 EPOCHS="${EPOCHS:-2}"
 BATCH_SIZE="${BATCH_SIZE:-4}"
 N_BOOT="${N_BOOT:-10000}"
+# MAX_STEPS caps training per cell so a multi-seed sweep fits overnight on a Mac
+# (a full pass is ~16h/cell). The cap is applied IDENTICALLY to every cell, so the
+# priv-vs-nogt sign comparison stays fair — sign-stability across seeds is the
+# question, and it doesn't need full convergence. Unset = train to completion.
+MAX_STEPS="${MAX_STEPS:-}"
 STUDENT_MODEL="${STUDENT_MODEL:-}"
 RUN_B4="${RUN_B4:-0}"
 RUN_LOGIT_KD="${RUN_LOGIT_KD:-0}"
@@ -73,12 +83,13 @@ cell () {
   local kd_arg=""; [ -n "$kd" ] && kd_arg="--kd_teacher $kd"
   local sm_arg="$SM_ARG"; [ -n "$smo" ] && sm_arg="--student_model $smo"
   local bs="$BATCH_SIZE"; [ -n "$kd" ] && bs=2   # live KD teacher needs the headroom
+  local ms_arg=""; [ -n "$MAX_STEPS" ] && ms_arg="--max_steps $MAX_STEPS"
   if [ -f "results/ablation/$tag/per_step_scores.json" ]; then
     log "skip $tag (already done)"; return 0
   fi
-  log "train $tag  (ablation=$abl seed=$seed${kd:+ kd=$kd})"
+  log "train $tag  (ablation=$abl seed=$seed${kd:+ kd=$kd}${MAX_STEPS:+ max_steps=$MAX_STEPS})"
   "$PY" -m experiments.train_slfd --dataset "$data" --ablation "$abl" \
-      --epochs "$EPOCHS" --batch_size "$bs" --seed "$seed" \
+      --epochs "$EPOCHS" --batch_size "$bs" --seed "$seed" $ms_arg \
       $sm_arg $kd_arg --checkpoint "checkpoints/$tag.pt"
   log "eval $tag"
   "$PY" -m experiments.run_processbench --checkpoint "checkpoints/$tag.pt" \
