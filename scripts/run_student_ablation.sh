@@ -41,10 +41,10 @@ DEVFLAG=""; [ "${DEV:-0}" = "1" ] && DEVFLAG="--dev_mode"
 mkdir -p data/raw data/labeled checkpoints results/ablation
 
 echo "== 1/4  Data: MATH train problems + ProcessBench MATH eval (shuffled) =="
-# "$PY" -m scripts.download_data --train_source math --n "$N_TRAIN" --output data/raw/math_train.jsonl
-# "$PY" -m scripts.download_data --processbench --config math --output data/processbench_math.jsonl
-# "$PY" -m scripts.shuffle_jsonl --input data/processbench_math.jsonl \
-#     --output data/processbench_math_shuffled.jsonl --seed 0
+"$PY" -m scripts.download_data --train_source math --n "$N_TRAIN" --output data/raw/math_train.jsonl
+"$PY" -m scripts.download_data --processbench --config math --output data/processbench_math.jsonl
+"$PY" -m scripts.shuffle_jsonl --input data/processbench_math.jsonl \
+    --output data/processbench_math_shuffled.jsonl --seed 0
 
 echo "== 2/4  Generate candidate solutions (mix of correct/incorrect) — via GEN endpoint =="
 OMLX_URL="$GEN_OMLX_URL" OMLX_MODEL="$GEN_OMLX_MODEL" OMLX_API_KEY="${GEN_OMLX_API_KEY:-${OMLX_API_KEY:-}}" \

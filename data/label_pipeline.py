@@ -149,7 +149,7 @@ def label_file(input_path: str, output_path: str, max_samples: int = None,
     with open(output_path, "w") as fout:
         if use_omlx:
             from concurrent.futures import ThreadPoolExecutor, as_completed
-            with ThreadPoolExecutor(max_workers=32) as executor:
+            with ThreadPoolExecutor(max_workers=2) as executor:
                 futures = [executor.submit(process_line, line) for line in lines]
                 for future in tqdm(as_completed(futures), total=len(futures)):
                     fout.write(json.dumps(future.result()) + "\n")
