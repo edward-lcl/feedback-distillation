@@ -36,6 +36,12 @@ def evaluate_processbench(student, dataset_path: str, max_samples: int = None) -
       - clean_seq_acc          : frac of error-free sequences correctly left unflagged
     """
     from data.step_segmentation import segment_steps
+    from models.device import is_mps
+    import gc
+    # Same MPS unified-memory accumulation that OOM-kills training also hits a
+    # 1000-sample eval (thousands of score_step forwards): the caching allocator
+    # grows its pool and SIGKILLs the run despite no_grad. Hand it back periodically.
+    on_mps = is_mps()
 
     y_true, y_pred, y_score, y_seq = [], [], [], []
     first_error_correct = 0
@@ -70,6 +76,10 @@ def evaluate_processbench(student, dataset_path: str, max_samples: int = None) -
                 y_score.append(-logit)
                 y_seq.append(i)   # sequence id → enables a clustered paired bootstrap
                 prefix += step["text"] + "\n"
+
+            if on_mps and i % 25 == 0:
+                gc.collect()
+                torch.mps.empty_cache()
 
             # First-error-step accuracy (overall + split by whether the seq has an error)
             true_first = next((j for j, s in enumerate(steps) if s.get("is_error")), None)
