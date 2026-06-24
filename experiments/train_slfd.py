@@ -68,6 +68,16 @@ def main():
     parser.add_argument("--score_lr", type=float, default=5e-5)
     parser.add_argument("--align_lr", type=float, default=1e-6)
     parser.add_argument("--weight_decay", type=float, default=0.01)
+    parser.add_argument("--lm_weight", type=float, default=1.0)
+    parser.add_argument("--score_weight", type=float, default=1.0)
+    parser.add_argument("--hidden_weight", type=float, default=1.0)
+    parser.add_argument("--score_loss", choices=["mse", "bce", "rank", "bce_rank"], default="mse")
+    parser.add_argument("--error_weight", type=float, default=1.0,
+                        help="Per-sample weight for error steps when --score_loss=bce.")
+    parser.add_argument("--rank_margin", type=float, default=1.0,
+                        help="Margin for pairwise score ranking losses.")
+    parser.add_argument("--balanced_batches", action="store_true",
+                        help="Oversample error/clean examples so each batch contains both classes.")
     parser.add_argument("--ablation", choices=["score_critique", "score_only"],
                         default="score_critique",
                         help="score_critique = scorer + NL critique (L_score+L_LM); "
@@ -100,7 +110,14 @@ def main():
     trainer = SLFDTrainer(student, teacher=None, dataset=dataset,
                           loss_flags=loss_flags, dev_mode=args.dev_mode,
                           model_lr=args.model_lr, score_lr=args.score_lr,
-                          align_lr=args.align_lr, weight_decay=args.weight_decay)
+                          align_lr=args.align_lr, weight_decay=args.weight_decay,
+                          lm_weight=args.lm_weight,
+                          score_weight=args.score_weight,
+                          hidden_weight=args.hidden_weight,
+                          score_loss=args.score_loss,
+                          error_weight=args.error_weight,
+                          rank_margin=args.rank_margin,
+                          balanced_batches=args.balanced_batches)
 
     summary = trainer.train(epochs=args.epochs, batch_size=args.batch_size, max_steps=args.max_steps)
     trainer.save_checkpoint(args.checkpoint)

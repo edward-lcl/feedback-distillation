@@ -51,12 +51,21 @@ def best_dtype() -> torch.dtype:
     return torch.float32
 
 
+def _cuda_max_memory() -> dict:
+    per_gpu = os.environ.get("SLFD_CUDA_MAX_MEMORY", "22GB")
+    cpu = os.environ.get("SLFD_CPU_MAX_MEMORY", "200GB")
+    max_memory = {i: per_gpu for i in range(torch.cuda.device_count())}
+    max_memory["cpu"] = cpu
+    return max_memory
+
+
 def load_model_for_device(model_name: str, dev_mode: bool = False):
     """Load a causal LM with the right precision/placement for this machine.
 
     MPS: float16 + explicit .to(mps), no bitsandbytes (CUDA-only).
     CUDA dev mode: 4-bit quantization via bitsandbytes.
-    CUDA full / CPU: float16 with device_map="auto".
+    CUDA full: bf16 with configurable placement.
+    CPU: bf16 on CPU.
     """
     device = best_device()
     if str(device) == "mps":
@@ -73,16 +82,38 @@ def load_model_for_device(model_name: str, dev_mode: bool = False):
         return AutoModelForCausalLM.from_pretrained(
             model_name, quantization_config=bnb_config, trust_remote_code=True
         )
-    else:
-        # CUDA full precision or CPU.
+    elif str(device) == "cuda":
+        # CUDA full precision. By default, allow HF/Accelerate to use all GPUs
+        # visible to this process. For parallel sweeps, launch each job with
+        # TRAIN_CUDA_VISIBLE_DEVICES=<gpu> and SLFD_CUDA_PLACEMENT=single.
         from transformers import AutoModelForCausalLM
-        print(f"Native HF loader: Offloading {model_name} to CPU...")
+        placement = os.environ.get("SLFD_CUDA_PLACEMENT", "auto").strip().lower()
+        if placement == "single":
+            print(f"Native HF loader: placing {model_name} on one visible CUDA device...")
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                torch_dtype=torch.bfloat16,
+                trust_remote_code=True,
+            )
+            return model.to(device)
+        if placement != "auto":
+            raise ValueError("SLFD_CUDA_PLACEMENT must be 'auto' or 'single'")
+
+        max_memory = _cuda_max_memory()
+        print(f"Native HF loader: auto-placing {model_name} with max_memory={max_memory}...")
         return AutoModelForCausalLM.from_pretrained(
-            model_name, 
-            torch_dtype=torch.bfloat16, 
-            device_map="auto", 
-            max_memory={0: "22GB", 1: "22GB", "cpu": "200GB"},
-            trust_remote_code=True
+            model_name,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            max_memory=max_memory,
+            trust_remote_code=True,
+        )
+    else:
+        from transformers import AutoModelForCausalLM
+        return AutoModelForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype=torch.bfloat16,
+            trust_remote_code=True,
         )
 
 

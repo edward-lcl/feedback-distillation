@@ -20,6 +20,10 @@ def main():
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--max_samples", type=int, default=None)
+    parser.add_argument("--batch_size", type=int, default=1,
+                        help="Number of ProcessBench step prompts to score per forward pass. "
+                             "Use 1 for exact historical eval semantics; >1 is faster but can "
+                             "slightly perturb bf16 rankings due to padded batched inference.")
     parser.add_argument("--results_dir", default="results/processbench")
     parser.add_argument("--dev_mode", action="store_true",
                         help="Use smaller models for local Apple Silicon development.")
@@ -42,7 +46,12 @@ def main():
             student.model.load_state_dict(ckpt, strict=False)
             print(f"Loaded checkpoint (model only — no score head): {args.checkpoint}")
 
-    results = evaluate_processbench(student, args.dataset, args.max_samples)
+    results = evaluate_processbench(
+        student,
+        args.dataset,
+        max_samples=args.max_samples,
+        batch_size=args.batch_size,
+    )
     
     # Extract raw scores for bootstrap CI
     raw_y_true = results.pop("raw_y_true", [])

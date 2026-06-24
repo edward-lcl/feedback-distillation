@@ -27,6 +27,13 @@ class SLFDTrainer:
         score_lr: float = 5e-5,
         align_lr: float = 1e-6,
         weight_decay: float = 0.01,
+        lm_weight: float = 1.0,
+        score_weight: float = 1.0,
+        hidden_weight: float = 1.0,
+        score_loss: str = "mse",
+        error_weight: float = 1.0,
+        rank_margin: float = 1.0,
+        balanced_batches: bool = False,
     ):
         import torch.nn as nn
         from models.device import is_dev_mode, best_device
@@ -41,6 +48,15 @@ class SLFDTrainer:
         self.device = device or best_device()
         self.loss_flags = loss_flags or [True, True, True, False]  # LM, hidden, score, logit
         self.loss_config = LossConfig(self.loss_flags)
+        self.loss_weights = {
+            "lm_loss": lm_weight,
+            "hidden_loss": hidden_weight,
+            "scoring_loss": score_weight,
+        }
+        self.score_loss = score_loss
+        self.error_weight = error_weight
+        self.rank_margin = rank_margin
+        self.balanced_batches = balanced_batches
         self.threshold_policy = AdaptiveWeightedKDPolicyEMA(
             num_losses=self.loss_config.num_enabled,
             device=str(self.device),
@@ -72,6 +88,11 @@ class SLFDTrainer:
         trainable_model_params = [p for p in self.student.model.parameters() if p.requires_grad]
         print(f"Optimizer: model_lr={model_lr:g} score_lr={score_lr:g} "
               f"align_lr={align_lr:g} weight_decay={weight_decay:g}")
+        print("Loss weights: " + " ".join(
+            f"{name}={weight:g}" for name, weight in self.loss_weights.items()
+        ))
+        print(f"Score loss: {score_loss} error_weight={error_weight:g} "
+              f"rank_margin={rank_margin:g} balanced_batches={balanced_batches}")
         self.optimizer = AdamW([
             {"params": trainable_model_params, "lr": model_lr, "weight_decay": weight_decay},
             {"params": self.student.score_head.parameters(), "lr": score_lr, "weight_decay": weight_decay},
@@ -88,13 +109,55 @@ class SLFDTrainer:
         loss_history = {"lm_loss": [], "hidden_loss": [], "scoring_loss": []}
         step = 0
 
+        def is_error_sample(sample: dict) -> bool:
+            score = sample.get("score", 0.0)
+            return bool(sample.get("is_error", score < 0.0))
+
+        def iter_balanced_batches():
+            errors = [s for s in self.dataset if is_error_sample(s)]
+            clean = [s for s in self.dataset if not is_error_sample(s)]
+            if not errors or not clean:
+                raise ValueError("balanced_batches requires at least one error and one clean sample")
+            n_error = max(1, batch_size // 2)
+            n_clean = max(1, batch_size - n_error)
+            error_i = clean_i = 0
+            random.shuffle(errors)
+            random.shuffle(clean)
+            while True:
+                batch = []
+                for _ in range(n_error):
+                    if error_i >= len(errors):
+                        random.shuffle(errors)
+                        error_i = 0
+                    batch.append(errors[error_i])
+                    error_i += 1
+                for _ in range(n_clean):
+                    if clean_i >= len(clean):
+                        random.shuffle(clean)
+                        clean_i = 0
+                    batch.append(clean[clean_i])
+                    clean_i += 1
+                random.shuffle(batch)
+                yield batch
+
         for epoch in range(epochs):
             print(f"\n--- Epoch {epoch+1}/{epochs} ---")
-            for batch_start in range(0, len(self.dataset), batch_size):
+            if self.balanced_batches:
+                balanced_source = iter_balanced_batches()
+                n_batches = max_steps if max_steps else max(1, len(self.dataset) // batch_size)
+                batch_iter = (next(balanced_source) for _ in range(n_batches))
+            else:
+                batch_iter = (
+                    self.dataset[i: i + batch_size]
+                    for i in range(0, len(self.dataset), batch_size)
+                )
+
+            for batch in batch_iter:
                 if max_steps and step >= max_steps:
                     break
-                batch = self.dataset[batch_start: batch_start + batch_size]
                 batch_losses = {"lm_loss": [], "hidden_loss": [], "scoring_loss": []}
+                score_logits = []
+                error_targets = []
 
                 for sample in batch:
                     problem = sample.get("problem", "")
@@ -102,12 +165,15 @@ class SLFDTrainer:
                     solution_prefix = sample.get("solution_prefix", "")
                     teacher_score = sample.get("score", 0.0)
                     teacher_feedback = sample.get("feedback", "")
+                    is_error = bool(sample.get("is_error", teacher_score < 0.0))
                     if not problem or not step_text:
                         continue
 
                     # Student forward — score_logit has gradient (boundary-token
                     # read, no generation).
                     student_score_logit = self.student.score_step(problem, solution_prefix, step_text)
+                    score_logits.append(student_score_logit.to(torch.float32).view(-1)[0])
+                    error_targets.append(is_error)
 
                     # L_feedback_LM — natural-language critique loss. Gated by the
                     # LM flag so the score-only ablation trains the scorer alone
@@ -125,16 +191,57 @@ class SLFDTrainer:
                         batch_losses["lm_loss"].append(lm_out.loss)
 
                     # L_score
-                    target = torch.tensor([teacher_score], dtype=torch.float32, device=self.device)
-                    batch_losses["scoring_loss"].append(
-                        torch.nn.functional.mse_loss(student_score_logit.to(torch.float32), target)
-                    )
+                    if self.score_loss in ("bce", "bce_rank"):
+                        # Treat score_head output as a correctness logit:
+                        # positive => correct, negative => error. Upweight
+                        # error steps to counter the mostly-correct label mix.
+                        target = torch.tensor(
+                            [0.0 if is_error else 1.0],
+                            dtype=torch.float32,
+                            device=self.device,
+                        )
+                        weight = torch.tensor(
+                            [self.error_weight if is_error else 1.0],
+                            dtype=torch.float32,
+                            device=self.device,
+                        )
+                        batch_losses["scoring_loss"].append(
+                            torch.nn.functional.binary_cross_entropy_with_logits(
+                                student_score_logit.to(torch.float32),
+                                target,
+                                weight=weight,
+                            )
+                        )
+                    elif self.score_loss == "mse":
+                        target = torch.tensor([teacher_score], dtype=torch.float32, device=self.device)
+                        batch_losses["scoring_loss"].append(
+                            torch.nn.functional.mse_loss(student_score_logit.to(torch.float32), target)
+                        )
 
                 aggregated = {k: torch.stack(v).mean() for k, v in batch_losses.items() if v}
+                if self.score_loss in ("rank", "bce_rank") and score_logits:
+                    logits = torch.stack(score_logits)
+                    errors = torch.tensor(error_targets, dtype=torch.bool, device=self.device)
+                    error_logits = logits[errors]
+                    clean_logits = logits[~errors]
+                    if error_logits.numel() and clean_logits.numel():
+                        # score_head is a correctness logit, so clean steps
+                        # should score above error steps by rank_margin.
+                        rank_terms = torch.nn.functional.softplus(
+                            error_logits[:, None] - clean_logits[None, :] + self.rank_margin
+                        )
+                        rank_loss = rank_terms.mean()
+                        if "scoring_loss" in aggregated:
+                            aggregated["scoring_loss"] = aggregated["scoring_loss"] + rank_loss
+                        else:
+                            aggregated["scoring_loss"] = rank_loss
                 if not aggregated:
                     continue
 
-                total_loss = sum(aggregated.values())
+                total_loss = sum(
+                    self.loss_weights.get(name, 1.0) * value
+                    for name, value in aggregated.items()
+                )
                 # Skip non-finite steps so a single NaN/Inf can't corrupt weights
                 # (fp16 on MPS overflows easily). The checkpoint stays clean.
                 if not torch.isfinite(total_loss):

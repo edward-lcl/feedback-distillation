@@ -19,13 +19,23 @@ EPOCHS="${EPOCHS:-2}"
 BATCH_SIZE="${BATCH_SIZE:-2}"
 N_EVAL="${N_EVAL:-1000}"
 N_BOOT="${N_BOOT:-10000}"
+EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-1}"
 TRAIN_DTYPE="${TRAIN_DTYPE:-auto}"
+TRAIN_CUDA_VISIBLE_DEVICES="${TRAIN_CUDA_VISIBLE_DEVICES:-}"
+SLFD_CUDA_PLACEMENT="${SLFD_CUDA_PLACEMENT:-auto}"
 MAX_STEPS="${MAX_STEPS:-}"
 ABLATION="${ABLATION:-score_critique}"
 MODEL_LR="${MODEL_LR:-1e-4}"
 SCORE_LR="${SCORE_LR:-5e-5}"
 ALIGN_LR="${ALIGN_LR:-1e-6}"
 WEIGHT_DECAY="${WEIGHT_DECAY:-0.01}"
+LM_WEIGHT="${LM_WEIGHT:-1.0}"
+SCORE_WEIGHT="${SCORE_WEIGHT:-1.0}"
+HIDDEN_WEIGHT="${HIDDEN_WEIGHT:-1.0}"
+SCORE_LOSS="${SCORE_LOSS:-mse}"
+ERROR_WEIGHT="${ERROR_WEIGHT:-1.0}"
+RANK_MARGIN="${RANK_MARGIN:-1.0}"
+BALANCED_BATCHES="${BALANCED_BATCHES:-0}"
 OVERWRITE="${OVERWRITE:-0}"
 DEV="${DEV:-0}"
 DRY_RUN="${DRY_RUN:-0}"
@@ -79,6 +89,16 @@ if [[ -n "$MAX_STEPS" ]]; then
   MAX_STEPS_ARGS=(--max_steps "$MAX_STEPS")
 fi
 
+BALANCED_ARGS=()
+if [[ "$BALANCED_BATCHES" == "1" ]]; then
+  BALANCED_ARGS=(--balanced_batches)
+fi
+
+TRAIN_ENV=(env SLFD_CUDA_PLACEMENT="$SLFD_CUDA_PLACEMENT")
+if [[ -n "$TRAIN_CUDA_VISIBLE_DEVICES" ]]; then
+  TRAIN_ENV+=(CUDA_VISIBLE_DEVICES="$TRAIN_CUDA_VISIBLE_DEVICES")
+fi
+
 cleanup() {
   if [[ -n "$VLLM_PID" ]] && kill -0 "$VLLM_PID" 2>/dev/null; then
     kill "$VLLM_PID" 2>/dev/null || true
@@ -125,8 +145,11 @@ mkdir -p checkpoints results/ablation results/bon_paired/candidates
 echo "== Phase B capacity gate =="
 echo "student=${STUDENT_MODEL}"
 echo "tag=${TAG}"
-echo "seed=${SEED} epochs=${EPOCHS} batch_size=${BATCH_SIZE} n_eval=${N_EVAL}"
+echo "seed=${SEED} epochs=${EPOCHS} batch_size=${BATCH_SIZE} n_eval=${N_EVAL} eval_batch_size=${EVAL_BATCH_SIZE}"
 echo "ablation=${ABLATION} model_lr=${MODEL_LR} score_lr=${SCORE_LR}"
+echo "train_cuda_visible_devices=${TRAIN_CUDA_VISIBLE_DEVICES:-all-visible} slfd_cuda_placement=${SLFD_CUDA_PLACEMENT}"
+echo "loss_weights=lm:${LM_WEIGHT} score:${SCORE_WEIGHT} hidden:${HIDDEN_WEIGHT}"
+echo "score_loss=${SCORE_LOSS} error_weight=${ERROR_WEIGHT} rank_margin=${RANK_MARGIN} balanced_batches=${BALANCED_BATCHES}"
 echo "priv_labels=${PRIV_LABELS}"
 echo "nogt_labels=${NOGT_LABELS}"
 echo
@@ -141,7 +164,7 @@ run_cell() {
   local checkpoint="$2"
   local results_dir="$3"
 
-  "$PY" -m experiments.train_slfd \
+  "${TRAIN_ENV[@]}" "$PY" -m experiments.train_slfd \
     --dataset "$labels" \
     --student_model "$STUDENT_MODEL" \
     --ablation "$ABLATION" \
@@ -153,15 +176,23 @@ run_cell() {
     --score_lr "$SCORE_LR" \
     --align_lr "$ALIGN_LR" \
     --weight_decay "$WEIGHT_DECAY" \
+    --lm_weight "$LM_WEIGHT" \
+    --score_weight "$SCORE_WEIGHT" \
+    --hidden_weight "$HIDDEN_WEIGHT" \
+    --score_loss "$SCORE_LOSS" \
+    --error_weight "$ERROR_WEIGHT" \
+    --rank_margin "$RANK_MARGIN" \
     --checkpoint "$checkpoint" \
     "${MAX_STEPS_ARGS[@]}" \
+    "${BALANCED_ARGS[@]}" \
     "${DEVFLAG[@]}"
 
-  "$PY" -m experiments.run_processbench \
+  "${TRAIN_ENV[@]}" "$PY" -m experiments.run_processbench \
     --student_model "$STUDENT_MODEL" \
     --checkpoint "$checkpoint" \
     --dataset "$EVAL_DATASET" \
     --max_samples "$N_EVAL" \
+    --batch_size "$EVAL_BATCH_SIZE" \
     --results_dir "$results_dir" \
     "${DEVFLAG[@]}"
 }
