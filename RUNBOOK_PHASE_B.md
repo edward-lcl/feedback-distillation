@@ -110,6 +110,12 @@ STUDENT_MODEL=Qwen/Qwen2.5-7B-Instruct SEED=0 BATCH_SIZE=1 \
 ```
 The runner stores results under versioned names such as `results/ablation/Qwen_Qwen2.5-3B-Instruct_seed0_priv_critique/` and `results/bon_paired/Qwen_Qwen2.5-3B-Instruct_seed0_quick_m200/`, so it does not overwrite the 1.5B gate. If a config clears `prm_rerank > majority_vote`, replicate that exact config with `SEED=1` and `SEED=2`, then run/force the full BoN gate with `RUN_FULL_BON=1`.
 
+For live read-only monitoring and pivot hints while a capacity gate is running:
+```bash
+python scripts/watch_capacity_gate.py --tag Qwen_Qwen2.5-3B-Instruct_seed0_ms100 \
+  --log phaseb_capacity_3b_ms100_20260624.log
+```
+
 ## B3 — positive control (sensitivity check — critical for the null)
 Confirm the pipeline *can* detect a teacher-quality difference when one exists. Re-label with a deliberately **weak** teacher and compare the resulting student to the Gemma-4-labeled one:
 ```bash
