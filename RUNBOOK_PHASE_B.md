@@ -202,3 +202,13 @@ _Append any anomalies, special methodological tweaks, or notable outcomes here d
     - **95% CI:** `[0.0200, 0.0767]`
     - **Verdict:** SIGNIFICANT. The CI strictly excludes 0.
   - *Insight:* This is a solid scientific win to bank for the paper. Because the student's performance degraded significantly when trained on a weaker teacher, we proved the training pipeline is highly sensitive to the quality of the incoming labels. Therefore, the earlier null result (Privileged vs No-GT) is not just pipeline insensitivity. The next step is the multi-seed N=5000 scaling run to see if we can lift the student over the Majority Vote competence floor (P0).
+
+- **[2026-06-22]**: **Deferred Git Merge (Merge Conflicts across Python logic):**
+  Attempted to pull `origin/main` to retrieve the new `run_overnight_mac.sh` multi-seed variance script. However, `main` has significantly diverged, creating massive merge conflicts across critical evaluation logic (`experiments/run_processbench.py`, `train_slfd.py`). Because Phase 4 of our current overnight N=5000 background sweep must execute these scripts tomorrow morning, leaving the workspace in a conflicted state would crash Phase 4 with a `SyntaxError`. The merge was immediately aborted to protect the overnight run.
+  - *Action Item:* Let the 18-hour N=5000 sweep finish completely on the clean `saksham/run-ablation-gemma2` branch. Once results are banked, manually resolve conflicts and pull `main` before kicking off the 3-seed variance test.
+
+- **[2026-06-24]**: **Phase B gate correction + B0b result banked; B0 paired BoN running.**
+  We stopped the legacy `resume_scale.sh` trajectory because it would continue training/evaluating cells and then run separate-pool BoN, which is not the main Phase B gate. Added `scripts/run_phase_b_gate.sh` to run the gate directly: B0b nogt sidecar eval, B0b transfer CI, local capped vLLM startup, then B0 same-pool paired BoN.
+  - **B0b eval:** `priv_critique` ROC-AUC `0.6251`; `nogt_critique` ROC-AUC `0.6348` on `N_EVAL=1000` (`6505` scored steps).
+  - **B0b transfer CI:** `priv - nogt` ROC-AUC gap `-0.0098`, 95% CI `[-0.0252, 0.0053]`, two-sided `p=0.1984`. The CI includes zero, so there is **no reliable privileged-student ROC-AUC advantage** on this seed/config.
+  - **Current pending result:** B0 same-pool paired BoN is running in tmux session `phaseb_gate_20260623_2257` with local `google/gemma-2-9b-it` vLLM on port `8080`; result will land in `results/bon_paired/bon_paired_results.json`. This is the next paper gate: whether either verifier clears majority vote and whether priv beats no-GT on the same candidate pool.
