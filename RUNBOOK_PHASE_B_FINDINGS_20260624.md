@@ -117,11 +117,17 @@ only weakly.
       source-specific ProcessBench-gold transfer the strongest positive result.
 
 14. The source-specific positive result survives full MATH-1000 eval.
+    - GSM8K seed 0 evaluated on all 1,000 ProcessBench MATH samples reached
+      ROC-AUC 0.7439, PR-AUC 0.2234, and best eval-swept F1 0.3213.
     - GSM8K seed 1 evaluated on all 1,000 ProcessBench MATH samples reached
       ROC-AUC 0.7760, PR-AUC 0.2264, and best eval-swept F1 0.3413 over 6,505
       steps / 594 error steps.
+    - OmniMath seed 0 evaluated on all 1,000 ProcessBench MATH samples reached
+      ROC-AUC 0.7539, PR-AUC 0.2277, and best eval-swept F1 0.3145.
     - OmniMath seed 1 evaluated on all 1,000 ProcessBench MATH samples reached
       ROC-AUC 0.7792, PR-AUC 0.2633, and best eval-swept F1 0.3385.
+    - Two-seed means: GSM8K ROC-AUC 0.7600, PR-AUC 0.2249; OmniMath ROC-AUC
+      0.7665, PR-AUC 0.2455.
     - This is now the strongest publishable-direction result: two different
       non-MATH source configs train a 3B verifier that transfers to full
       ProcessBench MATH under exact serial evaluation.
@@ -134,6 +140,11 @@ only weakly.
       noGT) reached ROC-AUC 0.6324 and PR-AUC 0.1418.
     - On the same 6,505 MATH steps, source-specific ProcessBench-gold transfer
       beats both generated-label baselines by large paired-bootstrap margins.
+
+16. Exact problem-overlap leakage check is clean.
+    - GSM8K source train400 vs MATH1000 eval: 0 exact problem overlaps.
+    - OmniMath source train400 vs MATH1000 eval: 0 exact problem overlaps.
+    - OlympiadBench source train400 vs MATH1000 eval: 0 exact problem overlaps.
 
 ## Fast Gate Results
 
@@ -195,9 +206,23 @@ debug signal so far.
 | GSM8K+OmniMath ProcessBench gold, 800 samples, seed 1 | ProcessBench MATH 400 samples | score-only BCE, balanced batches, 500 steps | 0.5166 | 0.0932 | 0.1612 | 0.8803 | combined-source instability |
 | GSM8K+OmniMath ProcessBench gold, 800 samples, seed 2 | ProcessBench MATH 400 samples | score-only BCE, balanced batches, 500 steps | 0.6328 | 0.1289 | 0.2069 | 0.5659 | only moderate; do not scale mixing |
 | GSM8K ProcessBench gold, 400 samples, seed 1 | full ProcessBench MATH 1000 samples | score-only BCE, balanced batches, 500 steps | 0.7760 | 0.2264 | 0.2707 | 0.4776 | full-eval positive holds |
+| GSM8K ProcessBench gold, 400 samples, seed 0 | full ProcessBench MATH 1000 samples | score-only BCE, balanced batches, 500 steps | 0.7439 | 0.2234 | 0.2421 | 0.5462 | full-eval positive holds |
 | OmniMath ProcessBench gold, 400 samples, seed 1 | full ProcessBench MATH 1000 samples | score-only BCE, balanced batches, 500 steps | 0.7792 | 0.2633 | 0.3086 | 0.3640 | full-eval positive holds |
+| OmniMath ProcessBench gold, 400 samples, seed 0 | full ProcessBench MATH 1000 samples | score-only BCE, balanced batches, 500 steps | 0.7539 | 0.2277 | 0.3052 | 0.1797 | full-eval positive holds |
 | Best privileged generated-label checkpoint (`bce_ew3` priv) | full ProcessBench MATH 1000 samples | score-only BCE, 100 steps | 0.5503 | 0.0992 | 0.0000 | 0.0000 | weak, fixed-threshold silent collapse |
 | Best generated-label checkpoint overall (`rank_bal` noGT) | full ProcessBench MATH 1000 samples | rank-only, balanced batches, 100 steps | 0.6324 | 0.1418 | 0.2151 | 0.3819 | best generated-label baseline, still far below gold-transfer |
+
+Compact full-MATH table:
+
+| Training source | Seeds | ROC-AUC | PR-AUC | Best F1* | Fixed F1 | Pred error rate |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| GSM8K gold -> MATH1000 | 0,1 | 0.7600 (0.7439-0.7760) | 0.2249 (0.2234-0.2264) | 0.3313 (0.3213-0.3413) | 0.2564 (0.2421-0.2707) | 0.5119 (0.4776-0.5462) |
+| OmniMath gold -> MATH1000 | 0,1 | 0.7665 (0.7539-0.7792) | 0.2455 (0.2277-0.2633) | 0.3265 (0.3145-0.3385) | 0.3069 (0.3052-0.3086) | 0.2719 (0.1797-0.3640) |
+| Generated priv BCE -> MATH1000 | 0 | 0.5503 | 0.0992 | 0.1803 | 0.0000 | 0.0000 |
+| Generated noGT rank -> MATH1000 | 0 | 0.6324 | 0.1418 | 0.2221 | 0.2151 | 0.3819 |
+
+*Best F1 is threshold-swept on the eval slice and should be treated as an
+optimistic diagnostic unless a held-out calibration split is used.
 
 Cross-config vs generated-label baselines, paired step bootstrap:
 
@@ -213,6 +238,10 @@ Cross-config vs generated-label baselines, paired step bootstrap:
 | OmniMath gold -> full MATH1000, seed 1 | full-MATH privileged teacher-label BCE baseline | +0.2290 | [0.1997, 0.2574] | 0.0004 | full-eval paired gap |
 | GSM8K gold -> full MATH1000, seed 1 | full-MATH best generated-label baseline (`rank_bal` noGT) | +0.1434 | [0.1230, 0.1639] | 0.0004 | full-eval paired gap |
 | OmniMath gold -> full MATH1000, seed 1 | full-MATH best generated-label baseline (`rank_bal` noGT) | +0.1466 | [0.1239, 0.1691] | 0.0004 | full-eval paired gap |
+| GSM8K gold -> full MATH1000, seed 0 | full-MATH privileged teacher-label BCE baseline | +0.1940 | [0.1645, 0.2235] | 0.0004 | replicated full-eval paired gap |
+| OmniMath gold -> full MATH1000, seed 0 | full-MATH privileged teacher-label BCE baseline | +0.2034 | [0.1730, 0.2331] | 0.0004 | replicated full-eval paired gap |
+| GSM8K gold -> full MATH1000, seed 0 | full-MATH best generated-label baseline (`rank_bal` noGT) | +0.1116 | [0.0862, 0.1377] | 0.0004 | replicated full-eval paired gap |
+| OmniMath gold -> full MATH1000, seed 0 | full-MATH best generated-label baseline (`rank_bal` noGT) | +0.1213 | [0.0950, 0.1484] | 0.0004 | replicated full-eval paired gap |
 
 Transfer CI summaries:
 
@@ -301,6 +330,12 @@ External check on 2026-06-24:
   <https://arxiv.org/pdf/2501.07301>. The PRM800K baseline card also notes that
   Qwen2.5-Math-7B-PRM800K is trained on PRM800K with MATH-test leakage removed:
   <https://huggingface.co/Qwen/Qwen2.5-Math-7B-PRM800K>.
+- ProcessLID is an ICLR 2026 under-review internal-reward method with explicit
+  transfer tables across ProcessBench GSM8K, MATH, OlympiadBench, and OmniMath:
+  <https://openreview.net/pdf?id=5O5AlNVAbs>.
+- Preference-based PRM work reports ProcessBench comparisons for hard labels,
+  soft labels, and preference labels on 7B reward models:
+  <https://openreview.net/pdf?id=09Nj40ScvC>.
 
 Positioning implication:
 
@@ -310,6 +345,10 @@ Positioning implication:
 > ProcessBench-style gold labels do transfer. If we want a benchmark-performance
 > claim, we need full ProcessBench-style evaluation and direct baselines against
 > Qwen/PRM800K/FreePRM-style methods.
+
+Also do not claim that cross-config ProcessBench transfer itself is wholly new;
+the safer novelty is the controlled mismatch comparison between generated
+teacher labels and ProcessBench-style gold labels under the same student path.
 
 ## Next Best Move
 
@@ -412,7 +451,9 @@ longer:
   - `results/diagnostics/processbench_gsm8k_omnimath_to_math400_scorehead_qwen3b_bce_bal_seed0/processbench_results.json`
   - `results/diagnostics/processbench_gsm8k_omnimath_to_math400_scorehead_qwen3b_bce_bal_seed1/processbench_results.json`
   - `results/diagnostics/processbench_gsm8k_omnimath_to_math400_scorehead_qwen3b_bce_bal_seed2/processbench_results.json`
+  - `results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed0/processbench_results.json`
   - `results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed1/processbench_results.json`
+  - `results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed0/processbench_results.json`
   - `results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed1/processbench_results.json`
   - `results/diagnostics/teacher_bce_priv_to_math1000_qwen3b_seed0/processbench_results.json`
   - `results/diagnostics/generated_rank_nogt_to_math1000_qwen3b_seed0/processbench_results.json`
@@ -426,6 +467,10 @@ longer:
   - `results/diagnostics/omnimath_math1000_vs_teacher_bce_priv_transfer_ci.json`
   - `results/diagnostics/gsm8k_math1000_vs_best_generated_rank_nogt_transfer_ci.json`
   - `results/diagnostics/omnimath_math1000_vs_best_generated_rank_nogt_transfer_ci.json`
+  - `results/diagnostics/gsm8k_seed0_math1000_vs_teacher_bce_priv_transfer_ci.json`
+  - `results/diagnostics/omnimath_seed0_math1000_vs_teacher_bce_priv_transfer_ci.json`
+  - `results/diagnostics/gsm8k_seed0_math1000_vs_best_generated_rank_nogt_transfer_ci.json`
+  - `results/diagnostics/omnimath_seed0_math1000_vs_best_generated_rank_nogt_transfer_ci.json`
   - `phaseb_gsm8k_to_math_scorehead_3b_500_20260624.log`
   - `phaseb_gsm8k_to_math_scorehead_3b_500_seed1_20260624.log`
   - `phaseb_olymp_to_math_scorehead_3b_500_20260624.log`
@@ -434,7 +479,9 @@ longer:
   - `phaseb_gsm8k_omnimath_to_math_scorehead_3b_500_seed1_20260624.log`
   - `phaseb_gsm8k_omnimath_to_math_scorehead_3b_500_seed2_20260624.log`
   - `phaseb_omni_to_math_scorehead_3b_500_seed1_20260624.log`
+  - `phaseb_gsm8k_to_math1000_scorehead_3b_seed0_20260624.log`
   - `phaseb_gsm8k_to_math1000_scorehead_3b_seed1_20260624.log`
+  - `phaseb_omnimath_to_math1000_scorehead_3b_seed0_20260624.log`
   - `phaseb_omnimath_to_math1000_scorehead_3b_seed1_20260624.log`
   - `phaseb_teacher_bce_priv_to_math1000_qwen3b_seed0_20260624.log`
   - `phaseb_generated_rank_nogt_to_math1000_qwen3b_seed0_20260624.log`
