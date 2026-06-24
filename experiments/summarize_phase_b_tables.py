@@ -16,6 +16,13 @@ class RunGroup:
     paths: list[str]
 
 
+@dataclass(frozen=True)
+class BudgetRun:
+    label: str
+    max_steps: str
+    path: str
+
+
 MAIN_GROUPS = [
     RunGroup(
         "GSM8K ProcessBench gold -> MATH1000",
@@ -83,6 +90,13 @@ ENSEMBLE_GROUPS = [
             ],
         ],
     ),
+    RunGroup(
+        "GSM8K 1500-step 3-seed mean score",
+        [
+            f"results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed{seed}_ms1500/per_step_scores.json"
+            for seed in range(3)
+        ],
+    ),
 ]
 
 CI_COMPARISONS = [
@@ -106,10 +120,105 @@ CI_COMPARISONS = [
         "GSM8K+OmniMath 8-seed mean score",
         "results/diagnostics/qwen_prm800k_vs_gsm8k_omnimath_8seed_mean_sequence_ci.json",
     ),
+    (
+        "GSM8K 1500-step 3-seed mean score",
+        "Generated no-GT teacher labels, rank loss",
+        "results/diagnostics/gsm8k_ms1500_3seed_mean_vs_best_generated_rank_nogt_sequence_ci.json",
+    ),
+    (
+        "Qwen2.5-Math-7B-PRM800K",
+        "GSM8K 1500-step 3-seed mean score",
+        "results/diagnostics/qwen_prm800k_vs_gsm8k_ms1500_3seed_mean_sequence_ci.json",
+    ),
 ]
 
 CALIBRATED_ENSEMBLE_PATH = (
     "results/diagnostics/math1000_calibrated_threshold_metrics_cal200_eval800_ensembles.json"
+)
+
+TRAINING_BUDGET_RUNS = [
+    BudgetRun(
+        "GSM8K gold seed 0",
+        "500",
+        "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed0/processbench_results.json",
+    ),
+    BudgetRun(
+        "GSM8K gold seed 0",
+        "1500",
+        "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed0_ms1500/processbench_results.json",
+    ),
+    BudgetRun(
+        "GSM8K gold seed 1",
+        "500",
+        "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed1/processbench_results.json",
+    ),
+    BudgetRun(
+        "GSM8K gold seed 1",
+        "1500",
+        "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed1_ms1500/processbench_results.json",
+    ),
+    BudgetRun(
+        "GSM8K gold seed 2",
+        "500",
+        "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed2/processbench_results.json",
+    ),
+    BudgetRun(
+        "GSM8K gold seed 2",
+        "1500",
+        "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed2_ms1500/processbench_results.json",
+    ),
+    BudgetRun(
+        "OmniMath gold seed 0",
+        "500",
+        "results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed0/processbench_results.json",
+    ),
+    BudgetRun(
+        "OmniMath gold seed 0",
+        "1500",
+        "results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed0_ms1500/processbench_results.json",
+    ),
+]
+
+TRAINING_BUDGET_CI_COMPARISONS = [
+    (
+        "GSM8K gold seed 0, 1500 steps",
+        "GSM8K gold seed 0, 500 steps",
+        "results/diagnostics/gsm8k_seed0_ms1500_vs_ms500_sequence_ci.json",
+    ),
+    (
+        "OmniMath gold seed 0, 1500 steps",
+        "OmniMath gold seed 0, 500 steps",
+        "results/diagnostics/omnimath_seed0_ms1500_vs_ms500_sequence_ci.json",
+    ),
+    (
+        "GSM8K gold seed 1, 1500 steps",
+        "GSM8K gold seed 1, 500 steps",
+        "results/diagnostics/gsm8k_seed1_ms1500_vs_ms500_sequence_ci.json",
+    ),
+    (
+        "GSM8K gold seed 2, 1500 steps",
+        "GSM8K gold seed 2, 500 steps",
+        "results/diagnostics/gsm8k_seed2_ms1500_vs_ms500_sequence_ci.json",
+    ),
+    (
+        "GSM8K gold seed 0, 1500 steps",
+        "Generated no-GT teacher labels, rank loss",
+        "results/diagnostics/gsm8k_seed0_ms1500_vs_best_generated_rank_nogt_sequence_ci.json",
+    ),
+    (
+        "Qwen2.5-Math-7B-PRM800K",
+        "GSM8K gold seed 0, 1500 steps",
+        "results/diagnostics/qwen_prm800k_vs_gsm8k_seed0_ms1500_sequence_ci.json",
+    ),
+    (
+        "GSM8K gold seed 0, 1500 steps",
+        "OmniMath gold seed 3, 500 steps",
+        "results/diagnostics/gsm8k_seed0_ms1500_vs_omnimath_seed3_sequence_ci.json",
+    ),
+]
+
+TRAINING_BUDGET_CALIBRATED_PATH = (
+    "results/diagnostics/math1000_calibrated_threshold_metrics_cal200_eval800_gsm_ms1500_budget.json"
 )
 
 METRICS = [
@@ -159,6 +268,20 @@ def markdown_table(groups: list[RunGroup]) -> str:
     return "\n".join(lines)
 
 
+def budget_markdown_table(runs: list[BudgetRun]) -> str:
+    headers = ["Run", "Max steps"] + [label for label, _ in METRICS]
+    aligns = ["---", "---:"] + ["---:"] * len(METRICS)
+    lines = [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join(aligns) + " |",
+    ]
+    for run in runs:
+        row = load_json(run.path)
+        vals = [f"{float(row[key]):.4f}" for _, key in METRICS]
+        lines.append("| " + " | ".join([run.label, run.max_steps, *vals]) + " |")
+    return "\n".join(lines)
+
+
 def latex_escape(text: str) -> str:
     return (
         text.replace("\\", "\\textbackslash{}")
@@ -188,6 +311,35 @@ def latex_table(groups: list[RunGroup], caption: str, label: str) -> str:
     ]
     for row in [summarize_group(group) for group in groups]:
         lines.append(" & ".join(latex_escape(cell) for cell in row) + " \\\\")
+    lines.extend([
+        "\\bottomrule",
+        "\\end{tabular}",
+        f"\\caption{{{latex_escape(caption)}}}",
+        f"\\label{{{label}}}",
+        "\\end{table}",
+    ])
+    return "\n".join(lines)
+
+
+def budget_latex_table(runs: list[BudgetRun], caption: str, label: str) -> str:
+    headers = ["Run", "Max steps"] + [name for name, _ in METRICS]
+    col_spec = "lr" + "r" * len(METRICS)
+    lines = [
+        "\\begin{table}[t]",
+        "\\centering",
+        "\\small",
+        f"\\begin{{tabular}}{{{col_spec}}}",
+        "\\toprule",
+        " & ".join(latex_escape(header) for header in headers) + " \\\\",
+        "\\midrule",
+    ]
+    for run in runs:
+        row = load_json(run.path)
+        vals = [f"{float(row[key]):.4f}" for _, key in METRICS]
+        lines.append(
+            " & ".join(latex_escape(cell) for cell in [run.label, run.max_steps, *vals])
+            + " \\\\"
+        )
     lines.extend([
         "\\bottomrule",
         "\\end{tabular}",
@@ -426,6 +578,28 @@ def main() -> None:
             CALIBRATED_ENSEMBLE_PATH,
             "Held-out threshold calibration for the score-averaging diagnostic.",
             "tab:phase-b-score-ensemble-calibrated",
+        ),
+        "phase_b_training_budget_table.md": budget_markdown_table(TRAINING_BUDGET_RUNS),
+        "phase_b_training_budget_table.tex": budget_latex_table(
+            TRAINING_BUDGET_RUNS,
+            "Seed-0 training-budget diagnostic for source-specific gold supervision.",
+            "tab:phase-b-training-budget",
+        ),
+        "phase_b_training_budget_ci_table.md": ci_markdown_table(
+            TRAINING_BUDGET_CI_COMPARISONS
+        ),
+        "phase_b_training_budget_ci_table.tex": ci_latex_table(
+            TRAINING_BUDGET_CI_COMPARISONS,
+            "Sequence-cluster bootstrap comparisons for the seed-0 training-budget diagnostic.",
+            "tab:phase-b-training-budget-ci",
+        ),
+        "phase_b_training_budget_calibrated_table.md": calibrated_markdown_table(
+            TRAINING_BUDGET_CALIBRATED_PATH
+        ),
+        "phase_b_training_budget_calibrated_table.tex": calibrated_latex_table(
+            TRAINING_BUDGET_CALIBRATED_PATH,
+            "Held-out threshold calibration for the seed-0 training-budget diagnostic.",
+            "tab:phase-b-training-budget-calibrated",
         ),
     }
 

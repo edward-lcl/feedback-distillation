@@ -4,3 +4,5 @@
 | GSM8K+OmniMath 8-seed mean score | Generated no-GT teacher labels, rank loss | +0.1749 | [0.1548, 0.1951] | 0.0004 |
 | GSM8K+OmniMath 8-seed mean score | OmniMath gold seed 3 | +0.0203 | [0.0097, 0.0309] | 0.0004 |
 | Qwen2.5-Math-7B-PRM800K | GSM8K+OmniMath 8-seed mean score | +0.0305 | [0.0121, 0.0487] | 0.0020 |
+| GSM8K 1500-step 3-seed mean score | Generated no-GT teacher labels, rank loss | +0.1830 | [0.1607, 0.2049] | 0.0004 |
+| Qwen2.5-Math-7B-PRM800K | GSM8K 1500-step 3-seed mean score | +0.0225 | [0.0031, 0.0416] | 0.0220 |

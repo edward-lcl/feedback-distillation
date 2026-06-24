@@ -207,7 +207,34 @@ only weakly.
       even the eight-member score average remains below Qwen PRM800K's 0.8379
       ROC-AUC. Use this as an appendix diagnostic, not the main claim.
 
-19. Sequence-cluster bootstrap confirms the gap.
+19. Longer training improves GSM8K on average, but with high seed variance.
+    - Increasing GSM8K source-specific seed 0 from 500 to 1500 steps improves
+      ROC-AUC 0.7439 -> 0.7942, PR-AUC 0.2234 -> 0.2879, fixed F1
+      0.2421 -> 0.3330, and held-out calibrated F1 0.3166 -> 0.3558.
+      Sequence-cluster bootstrap gap: +0.0506 ROC-AUC, 95% CI
+      [0.0288, 0.0722], p=0.0004.
+    - GSM8K seed 1 also improves: ROC-AUC 0.7760 -> 0.8111, PR-AUC
+      0.2264 -> 0.3150, calibrated F1 0.2977 -> 0.3622. Sequence-cluster
+      bootstrap gap: +0.0351 ROC-AUC, 95% CI [0.0197, 0.0498], p=0.0004.
+    - GSM8K seed 2 regresses: ROC-AUC 0.7603 -> 0.6978, PR-AUC
+      0.2317 -> 0.1739, calibrated F1 0.2969 -> 0.2557. Sequence-cluster
+      bootstrap gap: -0.0622 ROC-AUC, 95% CI [-0.0801, -0.0444],
+      p=0.0004.
+    - Averaging the three GSM8K 1500-step seeds gives ROC-AUC 0.8153, PR-AUC
+      0.3130, best eval-swept F1 0.3990, and held-out calibrated F1 0.3715.
+      It beats the best generated-label baseline by +0.1830 ROC-AUC, 95% CI
+      [0.1607, 0.2049], p=0.0004.
+    - Increasing OmniMath seed 0 from 500 to 1500 steps is mixed: ROC-AUC
+      0.7539 -> 0.7422 with CI including 0, but PR-AUC 0.2277 -> 0.2697,
+      fixed F1 0.3052 -> 0.3414, and calibrated F1 0.3062 -> 0.3377.
+    - Qwen PRM800K still beats the three-seed GSM8K 1500-step average by
+      +0.0225 ROC-AUC, 95% CI [0.0031, 0.0416], p=0.0220.
+    - Interpretation: the 500-step gold-source result was undertrained for at
+      least some GSM8K seeds, but longer training increases variance and is
+      source-specific. Treat this as an appendix/saturation diagnostic, not the
+      main claim.
+
+20. Sequence-cluster bootstrap confirms the gap.
     - The earlier paired bootstrap resampled individual steps; this is fast but
       optimistic because steps within one solution are correlated.
     - A stricter paired bootstrap that resamples whole solution sequences still
@@ -220,7 +247,7 @@ only weakly.
       GSM8K seeds 0-3, and +0.1214, +0.1468, +0.1253, and +0.1546 for
       OmniMath seeds 0-3; all two-sided p=0.0010 with 2,000 bootstrap samples.
 
-20. Held-out threshold calibration also favors source-specific gold transfer.
+21. Held-out threshold calibration also favors source-specific gold transfer.
     - Thresholds chosen on the first 200 MATH sequences and evaluated on the
       remaining 800 sequences give calibrated F1 0.2714-0.3166 for GSM8K seeds
       0-3 and 0.3062-0.3316 for OmniMath seeds 0-3.
@@ -228,7 +255,7 @@ only weakly.
     - Generated privileged BCE reaches calibrated F1 0.1673; the best
       generated-label baseline reaches calibrated F1 0.2085.
 
-21. Exact problem-overlap leakage check is clean.
+22. Exact problem-overlap leakage check is clean.
     - GSM8K source train400 vs MATH1000 eval: 0 exact problem overlaps.
     - OmniMath source train400 vs MATH1000 eval: 0 exact problem overlaps.
     - OlympiadBench source train400 vs MATH1000 eval: 0 exact problem overlaps.

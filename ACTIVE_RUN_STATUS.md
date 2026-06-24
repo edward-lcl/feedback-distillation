@@ -3,6 +3,7 @@
 ## Current Jobs
 
 No experiment job is currently running. Both GPUs were idle at the latest check.
+
 For future independent score-head gates, use
 `scripts/run_gold_scorehead_dual_gpu_queue.sh` with `GPUS=0,1`; it pins one
 job per GPU via `TRAIN_CUDA_VISIBLE_DEVICES`/`EVAL_CUDA_VISIBLE_DEVICES` and
@@ -37,6 +38,25 @@ Optional score-ensemble diagnostic:
   [0.0097, 0.0309], p=0.0004, but remains below Qwen PRM800K by
   -0.0305 ROC-AUC, 95% CI [-0.0487, -0.0121], p=0.0020. Held-out calibrated
   F1 is 0.3508 versus 0.3855 for Qwen PRM800K.
+
+Training-budget diagnostic:
+
+- GSM8K gold improves from 500 to 1500 steps for seeds 0 and 1, but seed 2
+  regresses:
+  - seed 0: ROC-AUC 0.7439 -> 0.7942; gap +0.0506, 95% CI
+    [0.0288, 0.0722], p=0.0004.
+  - seed 1: ROC-AUC 0.7760 -> 0.8111; gap +0.0351, 95% CI
+    [0.0197, 0.0498], p=0.0004.
+  - seed 2: ROC-AUC 0.7603 -> 0.6978; gap -0.0622, 95% CI
+    [-0.0801, -0.0444], p=0.0004.
+- GSM8K 1500-step 3-seed mean score: ROC-AUC 0.8153, PR-AUC 0.3130,
+  best eval-swept F1 0.3990, held-out calibrated F1 0.3715. It beats the best
+  generated-label baseline by +0.1830 ROC-AUC, 95% CI [0.1607, 0.2049],
+  p=0.0004, but Qwen PRM800K still beats it by +0.0225 ROC-AUC,
+  95% CI [0.0031, 0.0416], p=0.0220.
+- OmniMath gold seed 0 is mixed at 1500 steps: ROC-AUC 0.7539 -> 0.7422
+  (not significant, CI includes 0), but fixed F1 0.3052 -> 0.3414 and
+  calibrated F1 0.3062 -> 0.3377.
 
 Paired step bootstrap on the same 6,505 MATH steps:
 
@@ -106,10 +126,8 @@ tail -n 80 phaseb_olympiadbench_to_math1000_scorehead_3b_seed1_20260624.log
 
 ## Next Decision
 
-- Two longer-training saturation gates are currently running in tmux session
-  `phaseb_ms1500_dualgpu_20260624_101648`: GSM8K source400 seed0 at
-  MAX_STEPS=1500 on GPU 0, and OmniMath source400 seed0 at MAX_STEPS=1500 on
-  GPU 1.
+- Keep GSM8K longer-training as an appendix/saturation result: the 3-seed mean
+  is strong, but per-seed variance is high and Qwen PRM800K still wins on ROC.
 - Use the four-seed full-MATH GSM8K/OmniMath table as the main Phase B
   positive result.
 - OlympiadBench is resolved as a boundary/variance diagnostic.

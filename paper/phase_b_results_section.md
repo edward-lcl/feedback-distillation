@@ -70,10 +70,22 @@ PRM800K, but it establishes that our numbers are not state of the art:
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Qwen2.5-Math-7B-PRM800K | 0.8379 | 0.3254 | 0.3991 | 0.3953 | 0.1436 |
 
-Qwen PRM800K beats our strongest single gold-source seed, OmniMath seed 3, by
-+0.0509 ROC-AUC under sequence-cluster bootstrap (95% CI [0.0330, 0.0682],
-p=0.0010). It beats the best generated-label baseline by +0.2055 ROC-AUC
-(95% CI [0.1810, 0.2309], p=0.0010).
+Qwen PRM800K beats our strongest 500-step single gold-source seed, OmniMath
+seed 3, by +0.0509 ROC-AUC under sequence-cluster bootstrap (95% CI
+[0.0330, 0.0682], p=0.0010). It beats the best generated-label baseline by
++0.2055 ROC-AUC (95% CI [0.1810, 0.2309], p=0.0010).
+
+An additional training-budget diagnostic suggests the 500-step gold-source
+verifiers are not fully saturated, but longer training increases seed variance.
+Increasing GSM8K seeds 0 and 1 from 500 to 1500 training steps improves ROC-AUC
+by +0.0506 and +0.0351 under sequence-cluster bootstrap, while seed 2 worsens
+by -0.0622. Averaging the three GSM8K 1500-step seeds gives 0.8153 ROC-AUC,
+0.3130 PR-AUC, best F1 0.3990, and held-out calibrated F1 0.3715. This
+three-seed average beats the best generated-label baseline by +0.1830 ROC-AUC
+(95% CI [0.1607, 0.2049], p=0.0004), but Qwen PRM800K still beats it by
++0.0225 ROC-AUC (95% CI [0.0031, 0.0416], p=0.0220). OmniMath seed 0 does not
+show a significant ROC-AUC gain at 1500 steps. We therefore treat longer
+training as an appendix saturation diagnostic rather than the main claim.
 
 Optional score averaging improves the gold-source verifier without additional
 training. Averaging the four GSM8K seeds gives 0.7832 ROC-AUC, averaging the

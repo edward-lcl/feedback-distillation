@@ -42,10 +42,23 @@ source-boundary/variance diagnostic, not a third clean headline source.
 
 External calibration baseline: `Qwen/Qwen2.5-Math-7B-PRM800K` reaches
 ROC-AUC 0.8379, PR-AUC 0.3254, best F1 0.3991, fixed F1 0.3953, and pred error
-rate 0.1436 on the same MATH1000 split. It beats the strongest single
-gold-source seed (OmniMath seed 3) by +0.0509 ROC-AUC, 95% CI
-[0.0330, 0.0682], p=0.0010. This confirms the current result is not a SOTA PRM
-claim; it is a controlled mismatch/transfer claim.
+rate 0.1436 on the same MATH1000 split. It beats the strongest 500-step
+single gold-source seed (OmniMath seed 3) by +0.0509 ROC-AUC, 95% CI
+[0.0330, 0.0682], p=0.0010. It also beats a stronger GSM8K seed-0
+1500-step diagnostic by +0.0435 ROC-AUC, 95% CI [0.0222, 0.0647],
+p=0.0004. This confirms the current result is not a SOTA PRM claim; it is a
+controlled mismatch/transfer claim.
+
+Training-budget diagnostic: increasing GSM8K from 500 to 1500 training steps
+improves seeds 0 and 1 but hurts seed 2. ROC-AUC changes are +0.0506 for seed 0
+(95% CI [0.0288, 0.0722], p=0.0004), +0.0351 for seed 1 (95% CI
+[0.0197, 0.0498], p=0.0004), and -0.0622 for seed 2 (95% CI
+[-0.0801, -0.0444], p=0.0004). Averaging the three GSM8K 1500-step seeds gives
+0.8153 ROC-AUC, 0.3130 PR-AUC, best F1 0.3990, and held-out calibrated F1
+0.3715. It beats the best generated-label baseline by +0.1830 ROC-AUC
+(95% CI [0.1607, 0.2049], p=0.0004), but Qwen PRM800K still beats it by
++0.0225 ROC-AUC (95% CI [0.0031, 0.0416], p=0.0220). Treat this as an
+appendix/saturation result, not the main claim.
 
 Appendix-style ensemble diagnostic: averaging saved per-step scores across the
 four GSM8K seeds gives 0.7832 ROC-AUC; averaging the four OmniMath seeds gives
