@@ -47,6 +47,11 @@ gold-source seed (OmniMath seed 3) by +0.0509 ROC-AUC, 95% CI
 [0.0330, 0.0682], p=0.0010. This confirms the current result is not a SOTA PRM
 claim; it is a controlled mismatch/transfer claim.
 
+Appendix-style ensemble diagnostic: averaging saved per-step scores across the
+four GSM8K seeds gives 0.7832 ROC-AUC; averaging the four OmniMath seeds gives
+0.7865 ROC-AUC; averaging all eight GSM8K+OmniMath seeds gives 0.8073 ROC-AUC
+and 0.2935 PR-AUC. This narrows but does not close the gap to Qwen PRM800K.
+
 ## Paired Bootstrap Gaps
 
 The main robustness check should use the sequence-cluster bootstrap, which

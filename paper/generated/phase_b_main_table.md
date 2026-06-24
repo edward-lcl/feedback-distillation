@@ -1,0 +1,7 @@
+| Training source | Seeds | ROC-AUC | PR-AUC | Best F1 | Fixed F1 | Pred error rate |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| GSM8K ProcessBench gold -> MATH1000 | 0-3 | 0.7515 (0.7256-0.7760) | 0.2188 (0.1935-0.2317) | 0.3144 (0.2864-0.3413) | 0.2503 (0.2137-0.2747) | 0.5111 (0.2949-0.7259) |
+| OmniMath ProcessBench gold -> MATH1000 | 0-3 | 0.7694 (0.7539-0.7869) | 0.2524 (0.2277-0.2877) | 0.3276 (0.3145-0.3385) | 0.3055 (0.2830-0.3254) | 0.2920 (0.1797-0.3791) |
+| Qwen2.5-Math-7B-PRM800K public baseline | 0 | 0.8379 | 0.3254 | 0.3991 | 0.3953 | 0.1436 |
+| Generated privileged teacher labels, BCE | 0 | 0.5503 | 0.0992 | 0.1803 | 0.0000 | 0.0000 |
+| Generated no-GT teacher labels, rank loss | 0 | 0.6324 | 0.1418 | 0.2221 | 0.2151 | 0.3819 |

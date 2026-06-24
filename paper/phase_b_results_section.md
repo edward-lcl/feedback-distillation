@@ -39,6 +39,10 @@ three source files.
 
 ### Main Result
 
+The manuscript tables below are also generated from the raw result JSONs by
+`python -m experiments.summarize_phase_b_tables --out_dir paper/generated`.
+The generated markdown and LaTeX versions live in `paper/generated/`.
+
 | Training source | Seeds | ROC-AUC | PR-AUC | Best F1* | Fixed F1 | Pred error rate |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
 | GSM8K ProcessBench gold -> MATH1000 | 0-3 | 0.7515 (0.7256-0.7760) | 0.2188 (0.1935-0.2317) | 0.3144 (0.2864-0.3413) | 0.2503 (0.2137-0.2747) | 0.5111 (0.2949-0.7259) |
@@ -70,6 +74,13 @@ Qwen PRM800K beats our strongest single gold-source seed, OmniMath seed 3, by
 +0.0509 ROC-AUC under sequence-cluster bootstrap (95% CI [0.0330, 0.0682],
 p=0.0010). It beats the best generated-label baseline by +0.2055 ROC-AUC
 (95% CI [0.1810, 0.2309], p=0.0010).
+
+Optional score averaging improves the gold-source verifier without additional
+training. Averaging the four GSM8K seeds gives 0.7832 ROC-AUC, averaging the
+four OmniMath seeds gives 0.7865 ROC-AUC, and averaging all eight GSM8K+OmniMath
+seeds gives 0.8073 ROC-AUC and 0.2935 PR-AUC. This remains below Qwen PRM800K,
+but it suggests the single-seed gold-source result is not saturated. Treat this
+as a diagnostic or appendix result, not the main claim.
 
 ### Paired Robustness Check
 
@@ -170,6 +181,8 @@ where compatible ProcessBench-style gold labels transfer.
 - Full runbook: `RUNBOOK_PHASE_B_FINDINGS_20260624.md`
 - Active status: `ACTIVE_RUN_STATUS.md`
 - Public baseline evaluator: `experiments/eval_qwen_prm800k_processbench.py`
+- Table generator: `experiments/summarize_phase_b_tables.py`
+- Generated tables: `paper/generated/`
 - Main MATH1000 result JSONs:
   - `results/diagnostics/qwen_prm800k_math1000/processbench_results.json`
   - `results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed0/processbench_results.json`

@@ -184,7 +184,18 @@ only weakly.
       student path separates compatible gold process supervision from generated
       teacher labels.
 
-18. Sequence-cluster bootstrap confirms the gap.
+18. Score averaging gives a stronger gold-source diagnostic.
+    - Averaging per-step scores across the four GSM8K seeds gives ROC-AUC
+      0.7832, PR-AUC 0.2504, and best eval-swept F1 0.3506.
+    - Averaging across the four OmniMath seeds gives ROC-AUC 0.7865, PR-AUC
+      0.2674, and best eval-swept F1 0.3442.
+    - Averaging all eight GSM8K+OmniMath source-specific seeds gives ROC-AUC
+      0.8073, PR-AUC 0.2935, and best eval-swept F1 0.3611.
+    - Interpretation: the single-seed gold-source result is not saturated, but
+      even the eight-member score average remains below Qwen PRM800K's 0.8379
+      ROC-AUC. Use this as an appendix diagnostic, not the main claim.
+
+19. Sequence-cluster bootstrap confirms the gap.
     - The earlier paired bootstrap resampled individual steps; this is fast but
       optimistic because steps within one solution are correlated.
     - A stricter paired bootstrap that resamples whole solution sequences still
@@ -197,7 +208,7 @@ only weakly.
       GSM8K seeds 0-3, and +0.1214, +0.1468, +0.1253, and +0.1546 for
       OmniMath seeds 0-3; all two-sided p=0.0010 with 2,000 bootstrap samples.
 
-19. Held-out threshold calibration also favors source-specific gold transfer.
+20. Held-out threshold calibration also favors source-specific gold transfer.
     - Thresholds chosen on the first 200 MATH sequences and evaluated on the
       remaining 800 sequences give calibrated F1 0.2714-0.3166 for GSM8K seeds
       0-3 and 0.3062-0.3316 for OmniMath seeds 0-3.
@@ -205,7 +216,7 @@ only weakly.
     - Generated privileged BCE reaches calibrated F1 0.1673; the best
       generated-label baseline reaches calibrated F1 0.2085.
 
-20. Exact problem-overlap leakage check is clean.
+21. Exact problem-overlap leakage check is clean.
     - GSM8K source train400 vs MATH1000 eval: 0 exact problem overlaps.
     - OmniMath source train400 vs MATH1000 eval: 0 exact problem overlaps.
     - OlympiadBench source train400 vs MATH1000 eval: 0 exact problem overlaps.
@@ -478,6 +489,10 @@ longer:
    - Launch each process with `TRAIN_CUDA_VISIBLE_DEVICES=0` or `1`.
    - Use `SLFD_CUDA_PLACEMENT=single` so each 3B job stays on one 3090 instead
      of `device_map=auto` spreading a single run across both GPUs.
+   - For queued independent gold-source gates, prefer
+     `scripts/run_gold_scorehead_dual_gpu_queue.sh` with a tab-separated job
+     file. It assigns jobs across `GPUS=0,1`, writes per-run logs, and skips
+     existing checkpoint/result tags by default.
    - Keep vLLM BoN generation separate; the default vLLM path uses both GPUs via
      tensor parallelism.
    - For ProcessBench-gold transfer gates, use `scripts/run_gold_scorehead_gate.sh`.

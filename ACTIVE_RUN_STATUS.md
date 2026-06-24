@@ -3,6 +3,10 @@
 ## Current Jobs
 
 No experiment job is currently running. Both GPUs were idle at the latest check.
+For future independent score-head gates, use
+`scripts/run_gold_scorehead_dual_gpu_queue.sh` with `GPUS=0,1`; it pins one
+job per GPU via `TRAIN_CUDA_VISIBLE_DEVICES`/`EVAL_CUDA_VISIBLE_DEVICES` and
+skips existing run tags by default.
 
 ## Latest Results
 
@@ -24,6 +28,12 @@ External calibration baseline:
 - Qwen2.5-Math-7B-PRM800K: ROC-AUC 0.8379, PR-AUC 0.3254, fixed F1 0.3953,
   best eval-swept F1 0.3991. It beats OmniMath seed 3 by +0.0509 ROC-AUC,
   p=0.0010.
+
+Optional score-ensemble diagnostic:
+
+- GSM8K+OmniMath 8-seed mean score: ROC-AUC 0.8073, PR-AUC 0.2935,
+  best eval-swept F1 0.3611. This improves over any single gold-source seed
+  but remains below Qwen PRM800K.
 
 Paired step bootstrap on the same 6,505 MATH steps:
 
@@ -98,3 +108,5 @@ tail -n 80 phaseb_olympiadbench_to_math1000_scorehead_3b_seed1_20260624.log
 - OlympiadBench is resolved as a boundary/variance diagnostic.
 - Next useful work is polishing the paper-style result section and deciding
   whether to run any additional public PRM baselines beyond Qwen PRM800K.
+- If running more training diagnostics, batch independent jobs through the
+  dual-GPU queue rather than serial launch commands.
