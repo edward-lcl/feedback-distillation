@@ -95,6 +95,10 @@ cell () {
   "$PY" -m experiments.run_processbench --checkpoint "checkpoints/$tag.pt" \
       $sm_arg --dataset "$EVAL" --max_samples "$N_EVAL" \
       --results_dir "results/ablation/$tag"
+  # Each checkpoint is ~3GB and is ONLY needed for the eval just run — the result
+  # is per_step_scores.json. Delete it so a multi-seed sweep can't fill the disk
+  # (6 cells x 3GB = 18GB otherwise). set -e means we only reach here on eval OK.
+  rm -f "checkpoints/$tag.pt" && log "freed checkpoints/$tag.pt"
 }
 
 ci () {  # $1=priv tag  $2=nogt tag  $3=out json
