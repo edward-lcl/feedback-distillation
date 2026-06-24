@@ -22,6 +22,9 @@ cross-config score-head runs:
 - OlympiadBench ProcessBench gold -> full MATH1000, seeds 0-1: mean ROC-AUC
   0.6509 (range 0.5854-0.7163), mean PR-AUC 0.1619. This is a boundary
   diagnostic, not a third clean headline source.
+- Public Qwen2.5-Math-7B-PRM800K -> full MATH1000: ROC-AUC 0.8379, PR-AUC
+  0.3254, best eval-swept F1 0.3991. This is an external calibration baseline,
+  not our training recipe.
 
 This moves the live strategy away from more teacher-label loss variants and
 toward source-distribution experiments: cross-config gold supervision reliably
@@ -165,28 +168,44 @@ only weakly.
       [0.0579, 0.1083], p=0.0010.
     - Interpretation: OlympiadBench supports the source-distribution framing,
       but it should not be included as a clean headline transfer source.
-    - On the same 6,505 MATH steps, source-specific ProcessBench-gold transfer
-      beats both generated-label baselines by large paired-bootstrap margins.
 
-16. Sequence-cluster bootstrap confirms the gap.
+17. A public Qwen PRM baseline is substantially stronger on the same split.
+    - `Qwen/Qwen2.5-Math-7B-PRM800K`, evaluated with the model-card
+      `<extra_0>` separator-token scoring convention, reached ROC-AUC 0.8379,
+      PR-AUC 0.3254, fixed-threshold F1 0.3953, and best eval-swept F1 0.3991.
+    - The run used revision `9d6e292f6ccfd474fa44461ce6d5b80d08d8f3c7`.
+    - It had 0 truncated sequences and 0 score-count mismatches.
+    - Sequence-cluster bootstrap: Qwen PRM800K beats OmniMath seed 3 by
+      +0.0509 ROC-AUC, 95% CI [0.0330, 0.0682], p=0.0010, and beats the best
+      generated-label baseline by +0.2055 ROC-AUC, 95% CI [0.1810, 0.2309],
+      p=0.0010.
+    - Interpretation: this confirms our result is not a SOTA PRM claim. It is
+      still valuable as a controlled mismatch result because the same small
+      student path separates compatible gold process supervision from generated
+      teacher labels.
+
+18. Sequence-cluster bootstrap confirms the gap.
     - The earlier paired bootstrap resampled individual steps; this is fast but
       optimistic because steps within one solution are correlated.
     - A stricter paired bootstrap that resamples whole solution sequences still
       gives significant gaps for every GSM8K/OmniMath seed against both
       full-MATH generated-label baselines.
+    - On the same 6,505 MATH steps, source-specific ProcessBench-gold transfer
+      beats both generated-label baselines by large paired-bootstrap margins.
     - Against the best generated-label baseline (`rank_bal` noGT), sequence
-      bootstrap ROC-AUC gaps are +0.1113 and +0.1436 for GSM8K seeds 0/1, and
-      +0.1214 and +0.1468 for OmniMath seeds 0/1; all two-sided p=0.0010 with
-      2,000 bootstrap samples.
+      bootstrap ROC-AUC gaps are +0.1113, +0.1436, +0.1279, and +0.0930 for
+      GSM8K seeds 0-3, and +0.1214, +0.1468, +0.1253, and +0.1546 for
+      OmniMath seeds 0-3; all two-sided p=0.0010 with 2,000 bootstrap samples.
 
-17. Held-out threshold calibration also favors source-specific gold transfer.
+19. Held-out threshold calibration also favors source-specific gold transfer.
     - Thresholds chosen on the first 200 MATH sequences and evaluated on the
-      remaining 800 sequences give calibrated F1 0.2977-0.3166 for GSM8K seeds
-      0/1 and 0.3062-0.3294 for OmniMath seeds 0/1.
+      remaining 800 sequences give calibrated F1 0.2714-0.3166 for GSM8K seeds
+      0-3 and 0.3062-0.3316 for OmniMath seeds 0-3.
+    - Qwen PRM800K reaches calibrated F1 0.3855 on the same split.
     - Generated privileged BCE reaches calibrated F1 0.1673; the best
       generated-label baseline reaches calibrated F1 0.2085.
 
-18. Exact problem-overlap leakage check is clean.
+20. Exact problem-overlap leakage check is clean.
     - GSM8K source train400 vs MATH1000 eval: 0 exact problem overlaps.
     - OmniMath source train400 vs MATH1000 eval: 0 exact problem overlaps.
     - OlympiadBench source train400 vs MATH1000 eval: 0 exact problem overlaps.
@@ -395,6 +414,8 @@ External check on 2026-06-24:
   <https://arxiv.org/pdf/2501.07301>. The PRM800K baseline card also notes that
   Qwen2.5-Math-7B-PRM800K is trained on PRM800K with MATH-test leakage removed:
   <https://huggingface.co/Qwen/Qwen2.5-Math-7B-PRM800K>.
+  We evaluated the public 7B PRM800K checkpoint directly on our MATH1000 split
+  as a calibration baseline.
 - ProcessLID is an ICLR 2026 under-review internal-reward method with explicit
   transfer tables across ProcessBench GSM8K, MATH, OlympiadBench, and OmniMath:
   <https://openreview.net/pdf?id=5O5AlNVAbs>.

@@ -19,6 +19,12 @@ Full MATH-1000 generated-label baselines:
 - Best generated-label overall (`rank_bal` noGT): ROC-AUC 0.6324,
   PR-AUC 0.1418.
 
+External calibration baseline:
+
+- Qwen2.5-Math-7B-PRM800K: ROC-AUC 0.8379, PR-AUC 0.3254, fixed F1 0.3953,
+  best eval-swept F1 0.3991. It beats OmniMath seed 3 by +0.0509 ROC-AUC,
+  p=0.0010.
+
 Paired step bootstrap on the same 6,505 MATH steps:
 
 - GSM8K gold vs privileged teacher BCE: +0.2257 ROC-AUC,
@@ -90,5 +96,5 @@ tail -n 80 phaseb_olympiadbench_to_math1000_scorehead_3b_seed1_20260624.log
 - Use the four-seed full-MATH GSM8K/OmniMath table as the main Phase B
   positive result.
 - OlympiadBench is resolved as a boundary/variance diagnostic.
-- Next useful work is writing the result into a paper-style section/table and
-  deciding whether to compare directly to public PRM baselines.
+- Next useful work is polishing the paper-style result section and deciding
+  whether to run any additional public PRM baselines beyond Qwen PRM800K.

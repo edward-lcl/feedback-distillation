@@ -40,6 +40,13 @@ baseline by sequence-cluster bootstrap (-0.0466 ROC-AUC, 95% CI
 (+0.0835 ROC-AUC, 95% CI [0.0579, 0.1083], p=0.0010). Treat this as a
 source-boundary/variance diagnostic, not a third clean headline source.
 
+External calibration baseline: `Qwen/Qwen2.5-Math-7B-PRM800K` reaches
+ROC-AUC 0.8379, PR-AUC 0.3254, best F1 0.3991, fixed F1 0.3953, and pred error
+rate 0.1436 on the same MATH1000 split. It beats the strongest single
+gold-source seed (OmniMath seed 3) by +0.0509 ROC-AUC, 95% CI
+[0.0330, 0.0682], p=0.0010. This confirms the current result is not a SOTA PRM
+claim; it is a controlled mismatch/transfer claim.
+
 ## Paired Bootstrap Gaps
 
 The main robustness check should use the sequence-cluster bootstrap, which
@@ -83,6 +90,7 @@ reported on the remaining 800 sequences.
 | OmniMath gold seed 1 | 0.3294 | 0.7723 | 0.2606 | 0.2321 |
 | OmniMath gold seed 2 | 0.3148 | 0.7529 | 0.2327 | 0.2056 |
 | OmniMath gold seed 3 | 0.3316 | 0.7855 | 0.2818 | 0.1987 |
+| Qwen2.5-Math-7B-PRM800K | 0.3855 | 0.8372 | 0.3242 | 0.1091 |
 | Generated privileged BCE | 0.1673 | 0.5490 | 0.1002 | 0.3212 |
 | Best generated-label baseline | 0.2085 | 0.6314 | 0.1431 | 0.1695 |
 
@@ -105,6 +113,8 @@ concurrent work includes:
 - Qwen PRM work showing ProcessBench trends across data sources and strong
   public 7B/72B PRM baselines:
   <https://arxiv.org/pdf/2501.07301>.
+- Qwen2.5-Math-7B-PRM800K public model card and scoring convention:
+  <https://huggingface.co/Qwen/Qwen2.5-Math-7B-PRM800K>.
 - FreePRM, a weak-supervision PRM method without ground-truth process labels,
   reporting ProcessBench F1 by source split:
   <https://arxiv.org/pdf/2506.03570>.
@@ -142,6 +152,7 @@ transfer cleanly.
 - OmniMath seed 3: `results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed3/processbench_results.json`
 - OlympiadBench seed 0: `results/diagnostics/processbench_olympiadbench_to_math1000_scorehead_qwen3b_bce_bal_seed0/processbench_results.json`
 - OlympiadBench seed 1: `results/diagnostics/processbench_olympiadbench_to_math1000_scorehead_qwen3b_bce_bal_seed1/processbench_results.json`
+- Qwen PRM800K baseline: `results/diagnostics/qwen_prm800k_math1000/processbench_results.json`
 - Generated privileged BCE: `results/diagnostics/teacher_bce_priv_to_math1000_qwen3b_seed0/processbench_results.json`
 - Best generated-label baseline: `results/diagnostics/generated_rank_nogt_to_math1000_qwen3b_seed0/processbench_results.json`
 - Full runbook: `RUNBOOK_PHASE_B_FINDINGS_20260624.md`

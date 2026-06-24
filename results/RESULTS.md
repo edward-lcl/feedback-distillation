@@ -1,6 +1,36 @@
 # Distilling Privileged Feedback into Ground-Truth-Free Process Reward Models
 **Session Results & Experimental Summary**
 
+## Phase B Addendum — 2026-06-24
+
+The older Phase 2/3 results below are useful historical context, but the
+current strongest evidence is the Phase B full-MATH1000 transfer diagnostic.
+Under the same Qwen2.5-3B score-head training/evaluation path, ProcessBench-style
+gold labels from GSM8K and OmniMath transfer strongly to full ProcessBench MATH,
+while our generated teacher-label checkpoints remain weak.
+
+| Training source | Seeds | MATH1000 ROC-AUC | MATH1000 PR-AUC |
+| :--- | :--- | ---: | ---: |
+| GSM8K ProcessBench gold -> MATH1000 | 0-3 | 0.7515 (0.7256-0.7760) | 0.2188 (0.1935-0.2317) |
+| OmniMath ProcessBench gold -> MATH1000 | 0-3 | 0.7694 (0.7539-0.7869) | 0.2524 (0.2277-0.2877) |
+| Qwen2.5-Math-7B-PRM800K public baseline | 0 | 0.8379 | 0.3254 |
+| Generated privileged teacher labels, BCE | 0 | 0.5503 | 0.0992 |
+| Generated no-GT teacher labels, rank loss | 0 | 0.6324 | 0.1418 |
+
+Sequence-cluster bootstrap over whole MATH solutions shows every GSM8K/OmniMath
+gold-source seed significantly beats both generated-label baselines. The
+publishable framing is therefore not "privilege transfers"; it is the controlled
+mismatch finding: generated privileged/no-GT teacher labels fail under the same
+3B student, optimizer, and full-MATH evaluation path where compatible
+ProcessBench-style gold labels transfer. The public Qwen PRM800K baseline is
+stronger on the same split, so the result should not be framed as SOTA PRM
+performance.
+
+See:
+- `paper/phase_b_results_section.md`
+- `PHASE_B_PAPER_RESULT_CARD.md`
+- `RUNBOOK_PHASE_B_FINDINGS_20260624.md`
+
 ## 1. Experimental Setup & Hardware
 - **Hardware:** Local Compute (Dual NVIDIA GeForce RTX 3090, 24GB VRAM per GPU)
 - **Teacher Model:** `google/gemma-2-9b-it` (Unquantized, bf16/fp16)
