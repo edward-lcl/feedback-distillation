@@ -32,19 +32,37 @@ calibration split.
 
 ## Paired Bootstrap Gaps
 
-Paired step bootstrap uses the same 6,505 MATH steps. `p` is two-sided from
-5,000 bootstrap samples.
+The main robustness check should use the sequence-cluster bootstrap, which
+resamples whole solutions rather than individual steps. `p` is two-sided from
+2,000 bootstrap samples.
 
 | Model A | Model B | ROC-AUC gap | 95% CI | p |
 | --- | --- | ---: | --- | ---: |
-| GSM8K gold seed 0 | generated privileged BCE | +0.1940 | [0.1645, 0.2235] | 0.0004 |
-| GSM8K gold seed 1 | generated privileged BCE | +0.2257 | [0.2008, 0.2501] | 0.0004 |
-| OmniMath gold seed 0 | generated privileged BCE | +0.2034 | [0.1730, 0.2331] | 0.0004 |
-| OmniMath gold seed 1 | generated privileged BCE | +0.2290 | [0.1997, 0.2574] | 0.0004 |
-| GSM8K gold seed 0 | best generated-label baseline | +0.1116 | [0.0862, 0.1377] | 0.0004 |
-| GSM8K gold seed 1 | best generated-label baseline | +0.1434 | [0.1230, 0.1639] | 0.0004 |
-| OmniMath gold seed 0 | best generated-label baseline | +0.1213 | [0.0950, 0.1484] | 0.0004 |
-| OmniMath gold seed 1 | best generated-label baseline | +0.1466 | [0.1239, 0.1691] | 0.0004 |
+| GSM8K gold seed 0 | generated privileged BCE | +0.1932 | [0.1644, 0.2208] | 0.0010 |
+| GSM8K gold seed 1 | generated privileged BCE | +0.2256 | [0.2010, 0.2500] | 0.0010 |
+| OmniMath gold seed 0 | generated privileged BCE | +0.2033 | [0.1757, 0.2316] | 0.0010 |
+| OmniMath gold seed 1 | generated privileged BCE | +0.2287 | [0.1997, 0.2567] | 0.0010 |
+| GSM8K gold seed 0 | best generated-label baseline | +0.1113 | [0.0874, 0.1339] | 0.0010 |
+| GSM8K gold seed 1 | best generated-label baseline | +0.1436 | [0.1248, 0.1627] | 0.0010 |
+| OmniMath gold seed 0 | best generated-label baseline | +0.1214 | [0.0964, 0.1458] | 0.0010 |
+| OmniMath gold seed 1 | best generated-label baseline | +0.1468 | [0.1254, 0.1676] | 0.0010 |
+
+The older step-level bootstrap gives very similar gaps but is less conservative
+because steps within a solution are correlated.
+
+## Held-Out Threshold Calibration
+
+Thresholds are chosen to maximize F1 on the first 200 MATH sequences, then
+reported on the remaining 800 sequences.
+
+| Model | Calibrated F1 | Eval ROC-AUC | Eval PR-AUC | Pred error rate |
+| --- | ---: | ---: | ---: | ---: |
+| GSM8K gold seed 0 | 0.3166 | 0.7452 | 0.2339 | 0.2488 |
+| GSM8K gold seed 1 | 0.2977 | 0.7707 | 0.2152 | 0.1466 |
+| OmniMath gold seed 0 | 0.3062 | 0.7483 | 0.2292 | 0.2742 |
+| OmniMath gold seed 1 | 0.3294 | 0.7723 | 0.2606 | 0.2321 |
+| Generated privileged BCE | 0.1673 | 0.5490 | 0.1002 | 0.3212 |
+| Best generated-label baseline | 0.2085 | 0.6314 | 0.1431 | 0.1695 |
 
 ## Interpretation
 

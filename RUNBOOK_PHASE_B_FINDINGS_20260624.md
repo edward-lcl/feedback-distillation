@@ -141,7 +141,25 @@ only weakly.
     - On the same 6,505 MATH steps, source-specific ProcessBench-gold transfer
       beats both generated-label baselines by large paired-bootstrap margins.
 
-16. Exact problem-overlap leakage check is clean.
+16. Sequence-cluster bootstrap confirms the gap.
+    - The earlier paired bootstrap resampled individual steps; this is fast but
+      optimistic because steps within one solution are correlated.
+    - A stricter paired bootstrap that resamples whole solution sequences still
+      gives significant gaps for every GSM8K/OmniMath seed against both
+      full-MATH generated-label baselines.
+    - Against the best generated-label baseline (`rank_bal` noGT), sequence
+      bootstrap ROC-AUC gaps are +0.1113 and +0.1436 for GSM8K seeds 0/1, and
+      +0.1214 and +0.1468 for OmniMath seeds 0/1; all two-sided p=0.0010 with
+      2,000 bootstrap samples.
+
+17. Held-out threshold calibration also favors source-specific gold transfer.
+    - Thresholds chosen on the first 200 MATH sequences and evaluated on the
+      remaining 800 sequences give calibrated F1 0.2977-0.3166 for GSM8K seeds
+      0/1 and 0.3062-0.3294 for OmniMath seeds 0/1.
+    - Generated privileged BCE reaches calibrated F1 0.1673; the best
+      generated-label baseline reaches calibrated F1 0.2085.
+
+18. Exact problem-overlap leakage check is clean.
     - GSM8K source train400 vs MATH1000 eval: 0 exact problem overlaps.
     - OmniMath source train400 vs MATH1000 eval: 0 exact problem overlaps.
     - OlympiadBench source train400 vs MATH1000 eval: 0 exact problem overlaps.
@@ -242,6 +260,26 @@ Cross-config vs generated-label baselines, paired step bootstrap:
 | OmniMath gold -> full MATH1000, seed 0 | full-MATH privileged teacher-label BCE baseline | +0.2034 | [0.1730, 0.2331] | 0.0004 | replicated full-eval paired gap |
 | GSM8K gold -> full MATH1000, seed 0 | full-MATH best generated-label baseline (`rank_bal` noGT) | +0.1116 | [0.0862, 0.1377] | 0.0004 | replicated full-eval paired gap |
 | OmniMath gold -> full MATH1000, seed 0 | full-MATH best generated-label baseline (`rank_bal` noGT) | +0.1213 | [0.0950, 0.1484] | 0.0004 | replicated full-eval paired gap |
+
+Sequence-cluster bootstrap summary:
+
+| Model A | Model B | ROC-AUC gap | 95% CI | Two-sided p |
+| --- | --- | ---: | --- | ---: |
+| GSM8K gold -> full MATH1000, seed 0 | full-MATH best generated-label baseline (`rank_bal` noGT) | +0.1113 | [0.0874, 0.1339] | 0.0010 |
+| GSM8K gold -> full MATH1000, seed 1 | full-MATH best generated-label baseline (`rank_bal` noGT) | +0.1436 | [0.1248, 0.1627] | 0.0010 |
+| OmniMath gold -> full MATH1000, seed 0 | full-MATH best generated-label baseline (`rank_bal` noGT) | +0.1214 | [0.0964, 0.1458] | 0.0010 |
+| OmniMath gold -> full MATH1000, seed 1 | full-MATH best generated-label baseline (`rank_bal` noGT) | +0.1468 | [0.1254, 0.1676] | 0.0010 |
+
+Held-out calibrated threshold summary:
+
+| Model | Calibrated F1 | Eval ROC-AUC | Eval PR-AUC | Pred error rate |
+| --- | ---: | ---: | ---: | ---: |
+| GSM8K gold seed 0 | 0.3166 | 0.7452 | 0.2339 | 0.2488 |
+| GSM8K gold seed 1 | 0.2977 | 0.7707 | 0.2152 | 0.1466 |
+| OmniMath gold seed 0 | 0.3062 | 0.7483 | 0.2292 | 0.2742 |
+| OmniMath gold seed 1 | 0.3294 | 0.7723 | 0.2606 | 0.2321 |
+| Generated privileged BCE | 0.1673 | 0.5490 | 0.1002 | 0.3212 |
+| Best generated-label baseline (`rank_bal` noGT) | 0.2085 | 0.6314 | 0.1431 | 0.1695 |
 
 Transfer CI summaries:
 
@@ -471,6 +509,15 @@ longer:
   - `results/diagnostics/omnimath_seed0_math1000_vs_teacher_bce_priv_transfer_ci.json`
   - `results/diagnostics/gsm8k_seed0_math1000_vs_best_generated_rank_nogt_transfer_ci.json`
   - `results/diagnostics/omnimath_seed0_math1000_vs_best_generated_rank_nogt_transfer_ci.json`
+  - `results/diagnostics/gsm8k_seed0_math1000_vs_teacher_bce_priv_sequence_ci.json`
+  - `results/diagnostics/gsm8k_seed1_math1000_vs_teacher_bce_priv_sequence_ci.json`
+  - `results/diagnostics/omnimath_seed0_math1000_vs_teacher_bce_priv_sequence_ci.json`
+  - `results/diagnostics/omnimath_seed1_math1000_vs_teacher_bce_priv_sequence_ci.json`
+  - `results/diagnostics/gsm8k_seed0_math1000_vs_best_generated_rank_nogt_sequence_ci.json`
+  - `results/diagnostics/gsm8k_seed1_math1000_vs_best_generated_rank_nogt_sequence_ci.json`
+  - `results/diagnostics/omnimath_seed0_math1000_vs_best_generated_rank_nogt_sequence_ci.json`
+  - `results/diagnostics/omnimath_seed1_math1000_vs_best_generated_rank_nogt_sequence_ci.json`
+  - `results/diagnostics/math1000_calibrated_threshold_metrics_cal200_eval800.json`
   - `phaseb_gsm8k_to_math_scorehead_3b_500_20260624.log`
   - `phaseb_gsm8k_to_math_scorehead_3b_500_seed1_20260624.log`
   - `phaseb_olymp_to_math_scorehead_3b_500_20260624.log`
@@ -502,4 +549,6 @@ explicitly requested. The publishable code changes to keep are:
   `experiments/processbench_gold_probe.py`
 - diagnostic ProcessBench split helper in `experiments/make_processbench_gold_split.py`
 - ProcessBench-gold transfer runner in `scripts/run_gold_scorehead_gate.sh`
+- sequence-cluster bootstrap in `experiments/sequence_transfer_ci.py`
+- held-out threshold calibration in `experiments/calibrated_processbench_metrics.py`
 - this findings log
