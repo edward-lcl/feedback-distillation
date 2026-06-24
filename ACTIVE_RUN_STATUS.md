@@ -35,7 +35,8 @@ Optional score-ensemble diagnostic:
   best eval-swept F1 0.3611. This improves over any single gold-source seed
   by +0.0203 ROC-AUC under sequence-cluster bootstrap, 95% CI
   [0.0097, 0.0309], p=0.0004, but remains below Qwen PRM800K by
-  -0.0305 ROC-AUC, 95% CI [-0.0487, -0.0121], p=0.0020.
+  -0.0305 ROC-AUC, 95% CI [-0.0487, -0.0121], p=0.0020. Held-out calibrated
+  F1 is 0.3508 versus 0.3855 for Qwen PRM800K.
 
 Paired step bootstrap on the same 6,505 MATH steps:
 
@@ -105,6 +106,10 @@ tail -n 80 phaseb_olympiadbench_to_math1000_scorehead_3b_seed1_20260624.log
 
 ## Next Decision
 
+- Two longer-training saturation gates are currently running in tmux session
+  `phaseb_ms1500_dualgpu_20260624_101648`: GSM8K source400 seed0 at
+  MAX_STEPS=1500 on GPU 0, and OmniMath source400 seed0 at MAX_STEPS=1500 on
+  GPU 1.
 - Use the four-seed full-MATH GSM8K/OmniMath table as the main Phase B
   positive result.
 - OlympiadBench is resolved as a boundary/variance diagnostic.

@@ -84,7 +84,9 @@ eight-member average significantly beats the best single gold-source seed by
 +0.0203 ROC-AUC under sequence-cluster bootstrap (95% CI [0.0097, 0.0309],
 p=0.0004), while Qwen PRM800K still beats the eight-member average by
 +0.0305 ROC-AUC (95% CI [0.0121, 0.0487], p=0.0020). Treat this as a diagnostic
-or appendix result, not the main claim.
+or appendix result, not the main claim. Under the same held-out threshold
+calibration protocol used below, the eight-member average reaches F1 0.3508 on
+the final 800 MATH sequences, compared with 0.3855 for Qwen PRM800K.
 
 ### Paired Robustness Check
 

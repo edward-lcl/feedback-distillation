@@ -108,6 +108,10 @@ CI_COMPARISONS = [
     ),
 ]
 
+CALIBRATED_ENSEMBLE_PATH = (
+    "results/diagnostics/math1000_calibrated_threshold_metrics_cal200_eval800_ensembles.json"
+)
+
 METRICS = [
     ("ROC-AUC", "roc_auc"),
     ("PR-AUC", "pr_auc"),
@@ -312,6 +316,76 @@ def ci_latex_table(
     return "\n".join(lines)
 
 
+def calibrated_rows(path: str) -> list[list[str]]:
+    payload = load_json(path)
+    rows = []
+    for row in payload["results"]:
+        ev = row["evaluation"]
+        rows.append([
+            row["name"],
+            f"{float(ev['f1']):.4f}",
+            f"{float(ev['roc_auc']):.4f}",
+            f"{float(ev['pr_auc']):.4f}",
+            f"{float(ev['precision']):.4f}",
+            f"{float(ev['recall']):.4f}",
+            f"{float(ev['pred_error_rate']):.4f}",
+            f"{float(ev['first_error_acc']):.4f}",
+        ])
+    return rows
+
+
+def calibrated_markdown_table(path: str) -> str:
+    headers = [
+        "Model",
+        "Calibrated F1",
+        "Eval ROC-AUC",
+        "Eval PR-AUC",
+        "Precision",
+        "Recall",
+        "Pred error rate",
+        "First-error acc",
+    ]
+    aligns = ["---"] + ["---:"] * (len(headers) - 1)
+    lines = [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join(aligns) + " |",
+    ]
+    lines.extend("| " + " | ".join(row) + " |" for row in calibrated_rows(path))
+    return "\n".join(lines)
+
+
+def calibrated_latex_table(path: str, caption: str, label: str) -> str:
+    headers = [
+        "Model",
+        "Calibrated F1",
+        "Eval ROC-AUC",
+        "Eval PR-AUC",
+        "Precision",
+        "Recall",
+        "Pred error rate",
+        "First-error acc",
+    ]
+    lines = [
+        "\\begin{table}[t]",
+        "\\centering",
+        "\\small",
+        "\\begin{tabular}{lrrrrrrr}",
+        "\\toprule",
+        " & ".join(latex_escape(header) for header in headers) + " \\\\",
+        "\\midrule",
+    ]
+    for row in calibrated_rows(path):
+        lines.append(" & ".join(latex_escape(cell) for cell in row) + " \\\\")
+    lines.extend([
+        "\\bottomrule",
+        "\\end{tabular}",
+        f"\\caption{{{latex_escape(caption)}}}",
+        f"\\label{{{label}}}",
+        "\\end{table}",
+    ])
+    return "\n".join(lines)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out_dir", default="paper/generated")
@@ -344,6 +418,14 @@ def main() -> None:
             CI_COMPARISONS,
             "Sequence-cluster bootstrap comparisons for the score-averaging diagnostic.",
             "tab:phase-b-score-ensemble-ci",
+        ),
+        "phase_b_ensemble_calibrated_table.md": calibrated_markdown_table(
+            CALIBRATED_ENSEMBLE_PATH
+        ),
+        "phase_b_ensemble_calibrated_table.tex": calibrated_latex_table(
+            CALIBRATED_ENSEMBLE_PATH,
+            "Held-out threshold calibration for the score-averaging diagnostic.",
+            "tab:phase-b-score-ensemble-calibrated",
         ),
     }
 

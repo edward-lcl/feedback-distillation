@@ -199,6 +199,10 @@ only weakly.
       +0.2570 ROC-AUC, 95% CI [0.2308, 0.2834], p=0.0004.
     - Qwen PRM800K still beats the eight-seed average by +0.0305 ROC-AUC,
       95% CI [0.0121, 0.0487], p=0.0020.
+    - Held-out threshold calibration (first 200 MATH sequences for threshold,
+      remaining 800 for eval) gives calibrated F1 0.3300 for the GSM8K
+      four-seed average, 0.3403 for the OmniMath four-seed average, 0.3508 for
+      the eight-seed average, and 0.3855 for Qwen PRM800K.
     - Interpretation: the single-seed gold-source result is not saturated, but
       even the eight-member score average remains below Qwen PRM800K's 0.8379
       ROC-AUC. Use this as an appendix diagnostic, not the main claim.

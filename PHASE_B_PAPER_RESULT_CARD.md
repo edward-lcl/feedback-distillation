@@ -54,6 +54,9 @@ and 0.2935 PR-AUC. Sequence-cluster bootstrap shows this eight-member score
 average significantly beats the best single gold-source seed by +0.0203 ROC-AUC
 (95% CI [0.0097, 0.0309], p=0.0004), but Qwen PRM800K still beats it by
 +0.0305 ROC-AUC (95% CI [0.0121, 0.0487], p=0.0020).
+With threshold chosen on the first 200 MATH sequences and evaluated on the
+remaining 800, the same eight-member average reaches calibrated F1 0.3508,
+versus 0.3855 for Qwen PRM800K.
 
 ## Paired Bootstrap Gaps
 
