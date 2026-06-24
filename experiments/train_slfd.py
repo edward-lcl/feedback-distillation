@@ -64,6 +64,10 @@ def main():
     parser.add_argument("--train_dtype", choices=["auto", "fp32", "fp16"], default="auto",
                         help="Weight precision for training. 'auto' uses fp32 on MPS "
                              "(fp16 NaNs there) and the device default elsewhere.")
+    parser.add_argument("--model_lr", type=float, default=1e-4)
+    parser.add_argument("--score_lr", type=float, default=5e-5)
+    parser.add_argument("--align_lr", type=float, default=1e-6)
+    parser.add_argument("--weight_decay", type=float, default=0.01)
     parser.add_argument("--ablation", choices=["score_critique", "score_only"],
                         default="score_critique",
                         help="score_critique = scorer + NL critique (L_score+L_LM); "
@@ -94,7 +98,9 @@ def main():
     print(f"Ablation: {args.ablation}  (loss_flags={loss_flags})")
     # teacher=None: offline distillation, labels are already in the dataset.
     trainer = SLFDTrainer(student, teacher=None, dataset=dataset,
-                          loss_flags=loss_flags, dev_mode=args.dev_mode)
+                          loss_flags=loss_flags, dev_mode=args.dev_mode,
+                          model_lr=args.model_lr, score_lr=args.score_lr,
+                          align_lr=args.align_lr, weight_decay=args.weight_decay)
 
     summary = trainer.train(epochs=args.epochs, batch_size=args.batch_size, max_steps=args.max_steps)
     trainer.save_checkpoint(args.checkpoint)

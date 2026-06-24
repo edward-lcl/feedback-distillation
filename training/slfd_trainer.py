@@ -15,7 +15,19 @@ class SLFDTrainer:
     Teacher is frozen throughout. Student's score_head has gradients.
     """
 
-    def __init__(self, student, teacher, dataset: list[dict], loss_flags=None, device=None, dev_mode=False):
+    def __init__(
+        self,
+        student,
+        teacher,
+        dataset: list[dict],
+        loss_flags=None,
+        device=None,
+        dev_mode=False,
+        model_lr: float = 1e-4,
+        score_lr: float = 5e-5,
+        align_lr: float = 1e-6,
+        weight_decay: float = 0.01,
+    ):
         import torch.nn as nn
         from models.device import is_dev_mode, best_device
         self.student = student
@@ -58,10 +70,12 @@ class SLFDTrainer:
         # the score head + the alignment layer. LoRA tolerates a much higher LR
         # than the old full-FT 5e-7.
         trainable_model_params = [p for p in self.student.model.parameters() if p.requires_grad]
+        print(f"Optimizer: model_lr={model_lr:g} score_lr={score_lr:g} "
+              f"align_lr={align_lr:g} weight_decay={weight_decay:g}")
         self.optimizer = AdamW([
-            {"params": trainable_model_params, "lr": 1e-4, "weight_decay": 0.01},
-            {"params": self.student.score_head.parameters(), "lr": 5e-5, "weight_decay": 0.01},
-            {"params": self.align_hidden.parameters(), "lr": 1e-6, "weight_decay": 0.01},
+            {"params": trainable_model_params, "lr": model_lr, "weight_decay": weight_decay},
+            {"params": self.student.score_head.parameters(), "lr": score_lr, "weight_decay": weight_decay},
+            {"params": self.align_hidden.parameters(), "lr": align_lr, "weight_decay": weight_decay},
         ], betas=(0.9, 0.999), eps=1e-8)
 
     def train(self, epochs: int = 2, batch_size: int = 4, max_steps: int = None) -> dict:

@@ -21,6 +21,11 @@ N_EVAL="${N_EVAL:-1000}"
 N_BOOT="${N_BOOT:-10000}"
 TRAIN_DTYPE="${TRAIN_DTYPE:-auto}"
 MAX_STEPS="${MAX_STEPS:-}"
+ABLATION="${ABLATION:-score_critique}"
+MODEL_LR="${MODEL_LR:-1e-4}"
+SCORE_LR="${SCORE_LR:-5e-5}"
+ALIGN_LR="${ALIGN_LR:-1e-6}"
+WEIGHT_DECAY="${WEIGHT_DECAY:-0.01}"
 OVERWRITE="${OVERWRITE:-0}"
 DEV="${DEV:-0}"
 DRY_RUN="${DRY_RUN:-0}"
@@ -121,6 +126,7 @@ echo "== Phase B capacity gate =="
 echo "student=${STUDENT_MODEL}"
 echo "tag=${TAG}"
 echo "seed=${SEED} epochs=${EPOCHS} batch_size=${BATCH_SIZE} n_eval=${N_EVAL}"
+echo "ablation=${ABLATION} model_lr=${MODEL_LR} score_lr=${SCORE_LR}"
 echo "priv_labels=${PRIV_LABELS}"
 echo "nogt_labels=${NOGT_LABELS}"
 echo
@@ -138,11 +144,15 @@ run_cell() {
   "$PY" -m experiments.train_slfd \
     --dataset "$labels" \
     --student_model "$STUDENT_MODEL" \
-    --ablation score_critique \
+    --ablation "$ABLATION" \
     --epochs "$EPOCHS" \
     --batch_size "$BATCH_SIZE" \
     --seed "$SEED" \
     --train_dtype "$TRAIN_DTYPE" \
+    --model_lr "$MODEL_LR" \
+    --score_lr "$SCORE_LR" \
+    --align_lr "$ALIGN_LR" \
+    --weight_decay "$WEIGHT_DECAY" \
     --checkpoint "$checkpoint" \
     "${MAX_STEPS_ARGS[@]}" \
     "${DEVFLAG[@]}"
