@@ -6,16 +6,22 @@ log, not a final claims document.
 
 ## Current Status
 
-No Phase B gate is running at this moment. Both GPUs are idle after the
-full-MATH-1000 GSM8K and OmniMath source-specific evals.
+No experiment job is running now. Both GPUs are idle.
 
-The newest completed gates are the non-leaky ProcessBench cross-config
-score-head runs:
+The newest completed gates are the four-seed non-leaky ProcessBench
+cross-config score-head runs:
 
 - GSM8K ProcessBench gold -> MATH 400, seed 0: ROC-AUC 0.7241, PR-AUC 0.1848.
 - GSM8K ProcessBench gold -> MATH 400, seed 1: ROC-AUC 0.7860, PR-AUC 0.2418.
 - OmniMath ProcessBench gold -> MATH 400, seed 0: ROC-AUC 0.7569, PR-AUC 0.2107.
 - OlympiadBench ProcessBench gold -> MATH 400, seed 0: ROC-AUC 0.5883, PR-AUC 0.1291.
+- GSM8K ProcessBench gold -> full MATH1000, seeds 0-3: mean ROC-AUC 0.7515
+  (range 0.7256-0.7760), mean PR-AUC 0.2188.
+- OmniMath ProcessBench gold -> full MATH1000, seeds 0-3: mean ROC-AUC 0.7694
+  (range 0.7539-0.7869), mean PR-AUC 0.2524.
+- OlympiadBench ProcessBench gold -> full MATH1000, seeds 0-1: mean ROC-AUC
+  0.6509 (range 0.5854-0.7163), mean PR-AUC 0.1619. This is a boundary
+  diagnostic, not a third clean headline source.
 
 This moves the live strategy away from more teacher-label loss variants and
 toward source-distribution experiments: cross-config gold supervision reliably
@@ -122,12 +128,20 @@ only weakly.
     - GSM8K seed 1 evaluated on all 1,000 ProcessBench MATH samples reached
       ROC-AUC 0.7760, PR-AUC 0.2264, and best eval-swept F1 0.3413 over 6,505
       steps / 594 error steps.
+    - GSM8K seed 2 reached ROC-AUC 0.7603, PR-AUC 0.2317, and best eval-swept
+      F1 0.3088.
+    - GSM8K seed 3 reached ROC-AUC 0.7256, PR-AUC 0.1935, and best eval-swept
+      F1 0.2864.
     - OmniMath seed 0 evaluated on all 1,000 ProcessBench MATH samples reached
       ROC-AUC 0.7539, PR-AUC 0.2277, and best eval-swept F1 0.3145.
     - OmniMath seed 1 evaluated on all 1,000 ProcessBench MATH samples reached
       ROC-AUC 0.7792, PR-AUC 0.2633, and best eval-swept F1 0.3385.
-    - Two-seed means: GSM8K ROC-AUC 0.7600, PR-AUC 0.2249; OmniMath ROC-AUC
-      0.7665, PR-AUC 0.2455.
+    - OmniMath seed 2 reached ROC-AUC 0.7578, PR-AUC 0.2308, and best
+      eval-swept F1 0.3193.
+    - OmniMath seed 3 reached ROC-AUC 0.7869, PR-AUC 0.2877, and best
+      eval-swept F1 0.3380.
+    - Four-seed means: GSM8K ROC-AUC 0.7515, PR-AUC 0.2188; OmniMath ROC-AUC
+      0.7694, PR-AUC 0.2524.
     - This is now the strongest publishable-direction result: two different
       non-MATH source configs train a 3B verifier that transfers to full
       ProcessBench MATH under exact serial evaluation.
@@ -138,6 +152,19 @@ only weakly.
       collapsed to 0.0 because it predicted no errors.
     - Best generated-label checkpoint overall from the fast gates (`rank_bal`
       noGT) reached ROC-AUC 0.6324 and PR-AUC 0.1418.
+
+16. OlympiadBench is a high-variance boundary source.
+    - Seed 0 reached ROC-AUC 0.5854, PR-AUC 0.1209, and best eval-swept F1
+      0.1918 on full MATH-1000.
+    - Seed 1 reached ROC-AUC 0.7163, PR-AUC 0.2029, and best eval-swept F1
+      0.2850.
+    - Mean over two seeds: ROC-AUC 0.6509, PR-AUC 0.1619.
+    - Sequence-cluster bootstrap vs the best generated-label baseline:
+      seed 0 is worse by -0.0466 ROC-AUC, 95% CI [-0.0747, -0.0184],
+      p=0.0010; seed 1 is better by +0.0835 ROC-AUC, 95% CI
+      [0.0579, 0.1083], p=0.0010.
+    - Interpretation: OlympiadBench supports the source-distribution framing,
+      but it should not be included as a clean headline transfer source.
     - On the same 6,505 MATH steps, source-specific ProcessBench-gold transfer
       beats both generated-label baselines by large paired-bootstrap margins.
 
@@ -374,6 +401,15 @@ External check on 2026-06-24:
 - Preference-based PRM work reports ProcessBench comparisons for hard labels,
   soft labels, and preference labels on 7B reward models:
   <https://openreview.net/pdf?id=09Nj40ScvC>.
+- A 2026 PRM survey frames the field around data generation, PRM training, and
+  PRM usage, and explicitly categorizes automated supervision as a crowded
+  design space: <https://arxiv.org/abs/2510.08049>.
+- uPRM is a 2026 unsupervised PRM method that uses next-token probabilities and
+  reports ProcessBench improvements without step labels or final-answer
+  verification: <https://arxiv.org/abs/2605.10158>.
+- ThinkPRM is an ICLR 2026 withdrawn submission on generative/verbalized PRMs
+  with minimal process labels and ProcessBench results:
+  <https://openreview.net/forum?id=V727xqBYIW>.
 
 Positioning implication:
 
@@ -410,11 +446,12 @@ longer:
      0.757 ROC-AUC; OlympiadBench -> MATH is weaker at 0.588 ROC-AUC.
    - Combined GSM8K+OmniMath is unstable across seeds (0.7516, 0.5166, 0.6328
      AUC). Do not scale combined-source training yet.
-   - Source-specific GSM8K and OmniMath are replicated positives, and both hold
-     on full MATH-1000.
-   - Full-MATH generated-label baselines are much weaker. Next version: prepare
-     a compact result table, then decide whether one more source-specific seed
-     or calibrated-threshold eval is the best use of compute.
+   - Source-specific GSM8K and OmniMath are replicated positives over four
+     seeds each, and both hold on full MATH-1000.
+   - OlympiadBench is high-variance over two seeds and should be treated as a
+     boundary/source-distribution diagnostic.
+   - Full-MATH generated-label baselines are much weaker. Do not run more
+     GSM8K/OmniMath replication unless a reviewer specifically needs it.
 
 3. Use both GPUs safely for independent fast gates.
    - Launch each process with `TRAIN_CUDA_VISIBLE_DEVICES=0` or `1`.
@@ -443,8 +480,8 @@ longer:
 - Combined-source two-seed gate on both GPUs: about 1-2 hours to get the first
   actionable result, assuming no queueing or memory contention.
 - After full-MATH-1000 positives: source-specific transfer is strong enough for
-  a result table. Next compute should either replicate one more source-specific
-  seed or calibrate thresholds for F1-style reporting.
+  a result table. Four seeds per strong source are now complete; next compute is
+  only for boundary/source-distribution diagnostics such as OlympiadBench.
 - New training recipe gate: only after the probe shows usable signal.
 - Quick BoN: only after ProcessBench ROC-AUC is at least about 0.58 and the
   priv-vs-noGT gap remains positive.
