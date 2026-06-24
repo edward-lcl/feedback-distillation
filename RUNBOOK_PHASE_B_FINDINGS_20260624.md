@@ -191,6 +191,14 @@ only weakly.
       0.2674, and best eval-swept F1 0.3442.
     - Averaging all eight GSM8K+OmniMath source-specific seeds gives ROC-AUC
       0.8073, PR-AUC 0.2935, and best eval-swept F1 0.3611.
+    - The eight-seed average significantly beats the best single gold-source
+      seed by +0.0203 ROC-AUC under sequence-cluster bootstrap, 95% CI
+      [0.0097, 0.0309], p=0.0004.
+    - It also beats the best generated-label baseline by +0.1749 ROC-AUC,
+      95% CI [0.1548, 0.1951], p=0.0004, and the privileged BCE baseline by
+      +0.2570 ROC-AUC, 95% CI [0.2308, 0.2834], p=0.0004.
+    - Qwen PRM800K still beats the eight-seed average by +0.0305 ROC-AUC,
+      95% CI [0.0121, 0.0487], p=0.0020.
     - Interpretation: the single-seed gold-source result is not saturated, but
       even the eight-member score average remains below Qwen PRM800K's 0.8379
       ROC-AUC. Use this as an appendix diagnostic, not the main claim.

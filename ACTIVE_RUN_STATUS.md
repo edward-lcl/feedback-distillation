@@ -33,7 +33,9 @@ Optional score-ensemble diagnostic:
 
 - GSM8K+OmniMath 8-seed mean score: ROC-AUC 0.8073, PR-AUC 0.2935,
   best eval-swept F1 0.3611. This improves over any single gold-source seed
-  but remains below Qwen PRM800K.
+  by +0.0203 ROC-AUC under sequence-cluster bootstrap, 95% CI
+  [0.0097, 0.0309], p=0.0004, but remains below Qwen PRM800K by
+  -0.0305 ROC-AUC, 95% CI [-0.0487, -0.0121], p=0.0020.
 
 Paired step bootstrap on the same 6,505 MATH steps:
 

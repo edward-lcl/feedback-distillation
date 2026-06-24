@@ -50,7 +50,10 @@ claim; it is a controlled mismatch/transfer claim.
 Appendix-style ensemble diagnostic: averaging saved per-step scores across the
 four GSM8K seeds gives 0.7832 ROC-AUC; averaging the four OmniMath seeds gives
 0.7865 ROC-AUC; averaging all eight GSM8K+OmniMath seeds gives 0.8073 ROC-AUC
-and 0.2935 PR-AUC. This narrows but does not close the gap to Qwen PRM800K.
+and 0.2935 PR-AUC. Sequence-cluster bootstrap shows this eight-member score
+average significantly beats the best single gold-source seed by +0.0203 ROC-AUC
+(95% CI [0.0097, 0.0309], p=0.0004), but Qwen PRM800K still beats it by
++0.0305 ROC-AUC (95% CI [0.0121, 0.0487], p=0.0020).
 
 ## Paired Bootstrap Gaps
 
@@ -138,12 +141,19 @@ concurrent work includes:
 - ThinkPRM, a 2026 generative/verbalized PRM submission with ProcessBench
   results under minimal process supervision:
   <https://openreview.net/forum?id=V727xqBYIW>.
+- RetrievalPRM, which explicitly frames PRM failures as question/step
+  out-of-distribution issues across GSM8K, MATH, OlympiadBench, and OmniMath:
+  <https://arxiv.org/pdf/2502.14361>.
+- Learning Discriminative Process Reward Models without Step Labels, a 2026
+  outcome-label-only PRM paper adjacent to weak step-supervision claims:
+  <https://openreview.net/forum?id=df3p10k2kq>.
 
 Positioning implication: do not claim that "cross-config ProcessBench transfer"
-alone is novel. The sharper contribution is the controlled mismatch result:
-generated privileged/no-GT teacher labels fail badly under the same 3B student,
-optimizer, and full-MATH eval path where non-MATH ProcessBench-style gold labels
-transfer cleanly.
+alone is novel, and do not claim that PRM source-distribution/OOD framing is
+new. The sharper contribution is the controlled mismatch result: generated
+privileged/no-GT teacher labels fail badly under the same 3B student, optimizer,
+and full-MATH eval path where non-MATH ProcessBench-style gold labels transfer
+cleanly.
 
 ## Artifact Paths
 

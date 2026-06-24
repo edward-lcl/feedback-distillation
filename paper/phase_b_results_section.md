@@ -79,8 +79,12 @@ Optional score averaging improves the gold-source verifier without additional
 training. Averaging the four GSM8K seeds gives 0.7832 ROC-AUC, averaging the
 four OmniMath seeds gives 0.7865 ROC-AUC, and averaging all eight GSM8K+OmniMath
 seeds gives 0.8073 ROC-AUC and 0.2935 PR-AUC. This remains below Qwen PRM800K,
-but it suggests the single-seed gold-source result is not saturated. Treat this
-as a diagnostic or appendix result, not the main claim.
+but it suggests the single-seed gold-source result is not saturated. The
+eight-member average significantly beats the best single gold-source seed by
++0.0203 ROC-AUC under sequence-cluster bootstrap (95% CI [0.0097, 0.0309],
+p=0.0004), while Qwen PRM800K still beats the eight-member average by
++0.0305 ROC-AUC (95% CI [0.0121, 0.0487], p=0.0020). Treat this as a diagnostic
+or appendix result, not the main claim.
 
 ### Paired Robustness Check
 
@@ -168,6 +172,10 @@ the generated teacher-labeled training data and the ProcessBench-MATH target.
   0.8379 ROC-AUC.
 - Do not claim that cross-source ProcessBench transfer itself is wholly novel;
   recent work already studies PRM data sources and cross-source behavior.
+- Do not claim that PRM source-distribution/OOD framing is new; RetrievalPRM
+  explicitly frames PRM generalization failures across GSM8K, MATH,
+  OlympiadBench, and OmniMath as question/step OOD, and 2026 weak-supervision
+  PRM papers study outcome-label-only alternatives to step labels.
 - Do not claim that OlympiadBench cleanly transfers based on the current two
   seeds. It is a boundary diagnostic.
 
@@ -182,6 +190,7 @@ where compatible ProcessBench-style gold labels transfer.
 - Active status: `ACTIVE_RUN_STATUS.md`
 - Public baseline evaluator: `experiments/eval_qwen_prm800k_processbench.py`
 - Table generator: `experiments/summarize_phase_b_tables.py`
+- Score ensemble utility: `experiments/make_score_ensemble.py`
 - Generated tables: `paper/generated/`
 - Main MATH1000 result JSONs:
   - `results/diagnostics/qwen_prm800k_math1000/processbench_results.json`

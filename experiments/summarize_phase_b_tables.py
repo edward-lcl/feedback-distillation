@@ -85,6 +85,29 @@ ENSEMBLE_GROUPS = [
     ),
 ]
 
+CI_COMPARISONS = [
+    (
+        "GSM8K+OmniMath 8-seed mean score",
+        "Generated privileged teacher labels, BCE",
+        "results/diagnostics/gsm8k_omnimath_8seed_mean_vs_teacher_bce_priv_sequence_ci.json",
+    ),
+    (
+        "GSM8K+OmniMath 8-seed mean score",
+        "Generated no-GT teacher labels, rank loss",
+        "results/diagnostics/gsm8k_omnimath_8seed_mean_vs_best_generated_rank_nogt_sequence_ci.json",
+    ),
+    (
+        "GSM8K+OmniMath 8-seed mean score",
+        "OmniMath gold seed 3",
+        "results/diagnostics/gsm8k_omnimath_8seed_mean_vs_omnimath_seed3_sequence_ci.json",
+    ),
+    (
+        "Qwen2.5-Math-7B-PRM800K",
+        "GSM8K+OmniMath 8-seed mean score",
+        "results/diagnostics/qwen_prm800k_vs_gsm8k_omnimath_8seed_mean_sequence_ci.json",
+    ),
+]
+
 METRICS = [
     ("ROC-AUC", "roc_auc"),
     ("PR-AUC", "pr_auc"),
@@ -240,6 +263,55 @@ def ensemble_latex_table(groups: list[RunGroup], caption: str, label: str) -> st
     return "\n".join(lines)
 
 
+def summarize_ci(label_a: str, label_b: str, path: str) -> list[str]:
+    data = load_json(path)
+    lower, upper = data["ci95"]
+    return [
+        label_a,
+        label_b,
+        f"{float(data['gap_model_a_minus_model_b']):+.4f}",
+        f"[{float(lower):.4f}, {float(upper):.4f}]",
+        f"{float(data['p_two_sided']):.4f}",
+    ]
+
+
+def ci_markdown_table(comparisons: list[tuple[str, str, str]]) -> str:
+    headers = ["Model A", "Model B", "ROC-AUC gap", "95% CI", "p"]
+    aligns = ["---", "---", "---:", "---", "---:"]
+    rows = [summarize_ci(*comparison) for comparison in comparisons]
+    lines = [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join(aligns) + " |",
+    ]
+    lines.extend("| " + " | ".join(row) + " |" for row in rows)
+    return "\n".join(lines)
+
+
+def ci_latex_table(
+    comparisons: list[tuple[str, str, str]], caption: str, label: str
+) -> str:
+    headers = ["Model A", "Model B", "ROC-AUC gap", "95% CI", "p"]
+    lines = [
+        "\\begin{table}[t]",
+        "\\centering",
+        "\\small",
+        "\\begin{tabular}{llrrr}",
+        "\\toprule",
+        " & ".join(latex_escape(header) for header in headers) + " \\\\",
+        "\\midrule",
+    ]
+    for row in [summarize_ci(*comparison) for comparison in comparisons]:
+        lines.append(" & ".join(latex_escape(cell) for cell in row) + " \\\\")
+    lines.extend([
+        "\\bottomrule",
+        "\\end{tabular}",
+        f"\\caption{{{latex_escape(caption)}}}",
+        f"\\label{{{label}}}",
+        "\\end{table}",
+    ])
+    return "\n".join(lines)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out_dir", default="paper/generated")
@@ -266,6 +338,12 @@ def main() -> None:
             ENSEMBLE_GROUPS,
             "Optional score-averaging diagnostic over saved gold-source verifier scores.",
             "tab:phase-b-score-ensembles",
+        ),
+        "phase_b_ensemble_ci_table.md": ci_markdown_table(CI_COMPARISONS),
+        "phase_b_ensemble_ci_table.tex": ci_latex_table(
+            CI_COMPARISONS,
+            "Sequence-cluster bootstrap comparisons for the score-averaging diagnostic.",
+            "tab:phase-b-score-ensemble-ci",
         ),
     }
 
