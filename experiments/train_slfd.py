@@ -19,6 +19,7 @@ Usage:
 """
 import argparse
 import json
+import random
 
 import torch
 from models.student import StudentModel
@@ -35,6 +36,18 @@ def load_dataset(path: str) -> list[dict]:
     return rows                                        # already flat
 
 
+def set_seed(seed: int) -> None:
+    random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    try:
+        import numpy as np
+        np.random.seed(seed)
+    except Exception:
+        pass
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", required=True,
@@ -44,6 +57,8 @@ def main():
     parser.add_argument("--epochs", type=int, default=2)
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--max_steps", type=int, default=None)
+    parser.add_argument("--seed", type=int, default=0,
+                        help="Seed for LoRA init, data order, and torch RNGs.")
     parser.add_argument("--dev_mode", action="store_true",
                         help="Use smaller models for local Apple Silicon development.")
     parser.add_argument("--train_dtype", choices=["auto", "fp32", "fp16"], default="auto",
@@ -54,6 +69,9 @@ def main():
                         help="score_critique = scorer + NL critique (L_score+L_LM); "
                              "score_only = scorer alone (the headline ablation).")
     args = parser.parse_args()
+
+    set_seed(args.seed)
+    print(f"Seed: {args.seed}")
 
     dataset = load_dataset(args.dataset)
     print(f"Loaded {len(dataset)} per-step training examples from {args.dataset}")

@@ -96,6 +96,20 @@ done
 ```
 (1.5/3/7B all fit on 2×3090. Lower `BATCH_SIZE` for 7B if OOM.) This doubles as the **capacity arm** of the boundary sweep: does privilege start to transfer at higher capacity?
 
+### Fast capacity gate runner (reuse labels; no relabeling)
+After the B0/B0b gate, the fastest safe path is capacity before new data. This runner reuses the existing Gemma-4 labels, writes versioned checkpoints/results, caches the BoN candidate pool, and never deletes previous artifacts:
+```bash
+# 3B first. Runs priv_critique + nogt_critique, ProcessBench, transfer_ci,
+# quick same-pool BoN, and full BoN only if the quick gate is promising.
+STUDENT_MODEL=Qwen/Qwen2.5-3B-Instruct SEED=0 BATCH_SIZE=2 \
+  ./scripts/run_capacity_gate.sh
+
+# If 3B does not clear majority vote, try 7B with a smaller batch.
+STUDENT_MODEL=Qwen/Qwen2.5-7B-Instruct SEED=0 BATCH_SIZE=1 \
+  ./scripts/run_capacity_gate.sh
+```
+The runner stores results under versioned names such as `results/ablation/Qwen_Qwen2.5-3B-Instruct_seed0_priv_critique/` and `results/bon_paired/Qwen_Qwen2.5-3B-Instruct_seed0_quick_m200/`, so it does not overwrite the 1.5B gate. If a config clears `prm_rerank > majority_vote`, replicate that exact config with `SEED=1` and `SEED=2`, then run/force the full BoN gate with `RUN_FULL_BON=1`.
+
 ## B3 — positive control (sensitivity check — critical for the null)
 Confirm the pipeline *can* detect a teacher-quality difference when one exists. Re-label with a deliberately **weak** teacher and compare the resulting student to the Gemma-4-labeled one:
 ```bash
