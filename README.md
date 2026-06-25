@@ -57,11 +57,12 @@ filtering/ranking scheme.
 
 **Live dashboard:** https://feedback-distillation.exe.xyz · **Paper:** [Overleaf](https://www.overleaf.com/2555239245xpdcmsxkrzgx)
 
-**Headline — privilege has a *tractability sweet spot*.** A privileged (answer-aware)
-teacher's step labels help the GT-free student only where the teacher *needs* the
-reference (can't self-verify) **and** can *use* it (the problem is tractable). And only
-*rich* privilege works — a bare final answer is inert; the full worked solution carries
-the signal.
+**Headline — privilege has a *tractability sweet spot* (at the teacher level).** A privileged
+(answer-aware) teacher localizes step errors better only where it *needs* the reference
+(can't self-verify) **and** can *use* it (the problem is tractable). And only *rich* privilege
+works — a bare final answer is inert; the full worked solution carries the signal. (This is a
+property of the teacher's labeling — whether it **distills** into the student is a separate
+question, answered below: it doesn't.)
 
 | Difficulty | Δ F1 (full solution − no-GT) | reading |
 |---|---|---|
@@ -78,6 +79,21 @@ the rescue rate falls with reference length (0.37→0.33→0.28). A bare *answer
 predictions everywhere. Cross-family **confirmed** (Qwen-27B teacher: +0.082 on MATH).
 Teacher selected by bake-off (**Gemma-4-26b**, F1 0.91).
 
+**Second finding — the teacher's advantage does NOT distill into the student (verified, N=1000).**
+With the real Gemma-4 teacher labeling (+0.07 gap confirmed), the privileged and no-GT 1.5B
+students are *statistically indistinguishable* verifiers: no-GT ≥ priv on threshold-free
+`roc_auc` (0.641 vs 0.631) and on downstream best-of-N re-rank (0.375 vs 0.340, paired McNemar
+p=0.14, n.s.); neither beats majority vote. The mechanism: privilege churns ~31% of step labels
+but **symmetrically** (1001 vs 956) — the gain is real but *diffuse*, not a clean directional
+signal a small student can latch onto. *(The earlier "F1 0.197 vs 0.037 transfers" was a
+fixed-threshold artifact and does not reproduce.)*
+
+**Gating caveat / what's next (Phase B).** The student PRM currently *loses to majority vote*
+(0.34/0.375 < 0.39), so the null is presently "doesn't distill into a *weak* verifier." Phase B
+makes the student competent (data scale + capacity sweep) and re-asks whether privilege transfers
+into a verifier that actually works — see [`RUNBOOK_PHASE_B.md`](RUNBOOK_PHASE_B.md) and
+[`RESEARCH_ROADMAP.md`](RESEARCH_ROADMAP.md).
+
 ### Pipeline (built &amp; smoke-tested)
 
 | Phase | Command | Output |
@@ -90,15 +106,18 @@ Teacher selected by bake-off (**Gemma-4-26b**, F1 0.91).
 Teacher labeling runs against any OpenAI-compatible endpoint (oMLX locally, vLLM on GPU):
 set `OMLX_URL` / `OMLX_MODEL` / `OMLX_API_KEY`.
 
-**Paper:** the 4-page draft is assembled and compiles — Related Work (§1.1–1.4) +
-3-tier sweet-spot results (Table 2) + a §2.7 downstream-verifier stub (an honest
-negative: prelim PRM re-rank 32.0 < majority vote 32.5, gated on the threshold-free
-re-score before it claims anything). Remaining: flip cases, OlympiadBench cell, §2.7
-real numbers. Compiled snapshot: [`paper/SLFD_draft.pdf`](paper/SLFD_draft.pdf).
+**Paper:** the 4-page draft compiles — Related Work (§1.1–1.4) + 3-tier sweet-spot results
+(Table 2). §2.7 (downstream verifier) is now a **verified negative** (no transfer; numbers in
+[`results/RESULTS.md`](results/RESULTS.md)) and needs the reframe: lead with the teacher-level
+sweet spot, present the student-transfer null + mechanism honestly. Remaining: §2.7 rewrite +
+contribution reframe, the `+0.5`→`+0.05` typo, table consolidation, flip cases, OlympiadBench
+cell — see [`HANDOFF_HENRY.md`](HANDOFF_HENRY.md). Compiled snapshot: [`paper/SLFD_draft.pdf`](paper/SLFD_draft.pdf).
 
 ### Runbooks
-- **Saksham (GPU):** [`HANDOFF_SAKSHAM.md`](HANDOFF_SAKSHAM.md) — serve Gemma, run Phases 1–3.
-- **Henry (paper):** [`HANDOFF_HENRY.md`](HANDOFF_HENRY.md) — sweet-spot framing, results, verifier section (draft assembled; see the 2026-06-17 sync block for remaining items).
+- **Next experiments:** [`RUNBOOK_PHASE_B.md`](RUNBOOK_PHASE_B.md) — make the student beat majority vote (data scale + capacity sweep) → re-test transfer. **Start here (B0).**
+- **Plan:** [`RESEARCH_ROADMAP.md`](RESEARCH_ROADMAP.md) — the path from honest null to impactful result + reviewer-question map.
+- **Saksham (GPU):** [`HANDOFF_SAKSHAM.md`](HANDOFF_SAKSHAM.md) — current status + pointer to Phase B.
+- **Henry (paper):** [`HANDOFF_HENRY.md`](HANDOFF_HENRY.md) — §2.7 verified-negative reframe + remaining paper tasks.
 
 ---
 

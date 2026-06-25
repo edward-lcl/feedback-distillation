@@ -86,6 +86,29 @@ def compute_scoring_loss(
     return F.mse_loss(pred, target)
 
 
+def compute_score_loss(student_score_logit, teacher_score, mode, device):
+    """Score-head distillation loss under the B4 distillation-method mode.
+
+      mse     — regress the exact teacher scalar in [-1,1] (point estimate)
+      verdict — BCE on the hard binary verdict (correct iff score>=0); the head
+                output is read as a logit (eval thresholds sign, so consistent)
+      soft    — BCE on the soft prob p=(score+1)/2 (keeps the teacher's confidence
+                as a distribution instead of a point)
+    """
+    pred = student_score_logit.to(torch.float32).view(1)
+    if mode == "mse":
+        target = torch.tensor([teacher_score], dtype=torch.float32, device=device)
+        return F.mse_loss(pred, target)
+    if mode == "verdict":
+        target = torch.tensor([1.0 if teacher_score >= 0 else 0.0], dtype=torch.float32, device=device)
+        return F.binary_cross_entropy_with_logits(pred, target)
+    if mode == "soft":
+        p = (float(teacher_score) + 1.0) / 2.0   # [-1,1] -> [0,1]
+        target = torch.tensor([p], dtype=torch.float32, device=device)
+        return F.binary_cross_entropy_with_logits(pred, target)
+    raise ValueError(f"unknown score_loss_mode {mode!r}")
+
+
 # ---------------------------------------------------------------------------
 # Logit standardisation loss (disabled when tokenizers differ)
 # ---------------------------------------------------------------------------
@@ -120,6 +143,63 @@ def compute_logit_standardization(
     s_log_probs = F.log_softmax(s_proj, dim=-1)
     t_probs = F.softmax(t_logits, dim=-1)
     return F.kl_div(s_log_probs, t_probs, reduction="batchmean")
+
+
+# ---------------------------------------------------------------------------
+# Online logit-KD: soft KL distillation of the teacher's critique distribution
+# ---------------------------------------------------------------------------
+
+def compute_logit_kd_loss(
+    student,
+    teacher,
+    problem: str,
+    solution_prefix: str,
+    step_text: str,
+    teacher_feedback: str,
+    teacher_score: float,
+    temperature: float = 2.0,
+) -> torch.Tensor:
+    """KL(teacher ‖ student) over the teacher's critique tokens — the *soft*
+    counterpart of the hard-CE LM loss (B4a-online).
+
+    Both models read the SAME sequence (prompt + the teacher's privileged
+    critique), built by the student's own tokenizer; we match next-token
+    distributions only on the critique span (labels != -100). Requires a
+    same-family teacher so the vocabularies align — logits are truncated to the
+    shared min-vocab as a safety net. Returns a 0-dim tensor (0.0 if the critique
+    span is empty after truncation).
+    """
+    input_ids, labels, attn = student.prepare_step_inputs_and_labels(
+        problem, solution_prefix, step_text, teacher_feedback, teacher_score
+    )
+    s_dev = student.device
+    t_dev = next(teacher.model.parameters()).device
+
+    s_out = student.model(input_ids=input_ids.to(s_dev),
+                          attention_mask=attn.to(s_dev), return_dict=True)
+    with torch.no_grad():
+        t_out = teacher.model(input_ids=input_ids.to(t_dev),
+                              attention_mask=attn.to(t_dev), return_dict=True)
+
+    # next-token alignment: position i predicts token i+1
+    s_logits = s_out.logits[:, :-1, :].float()
+    t_logits = t_out.logits[:, :-1, :].float().to(s_dev)
+    mask = (labels[:, 1:] != -100).to(s_dev)            # critique-span positions
+
+    V = min(s_logits.size(-1), t_logits.size(-1))
+    s_logits, t_logits = s_logits[..., :V], t_logits[..., :V]
+
+    if mask.sum() == 0:
+        return torch.zeros((), device=s_dev, dtype=s_logits.dtype)
+
+    T = temperature
+    s_logp = F.log_softmax(s_logits / T, dim=-1)
+    t_prob = F.softmax(t_logits / T, dim=-1)
+    # per-position KL(teacher ‖ student); kl_div(input=logQ, target=P) = sum P·(logP - logQ)
+    kl = F.kl_div(s_logp, t_prob, reduction="none").sum(dim=-1)   # [B, T-1]
+    kl = kl[mask]                                                 # critique tokens only
+    # T^2 keeps the gradient magnitude comparable across temperatures (Hinton KD).
+    return (T * T) * kl.mean()
 
 
 # ---------------------------------------------------------------------------

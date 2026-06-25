@@ -26,21 +26,22 @@ OVERVIEW = [
     ("Why it was revived",
      "The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <b>June 2026</b> with a shift to <b>step-level reasoning evaluation</b> over final-answer accuracy. Target: a publishable result for the <b>COLM workshop (~early July)</b> — flexible; quality over the date."),
     ("Where we are today",
-     "<b>First full GPU run is in</b> (Saksham — probe + student ablation + best-of-N, on the <code>gemma-2-9b-it</code> fallback). <b>Phase 1 probe replicates</b> (privilege gap holds). But the Phase 2 student headline is <b>on hold pending a metric fix</b>: the reported privilege-transfer gap (F1 0.037 → 0.197) turned out to be a <b>fixed-threshold artifact</b>, not capability — caught via the tell that <code>first_error_acc</code> was identical across cells. Eval is now <b>threshold-free (ROC/PR-AUC)</b>; we re-score the existing checkpoints, switch to the canonical teacher, <i>then</i> scale. Phase 3 prelim: PRM re-rank 32.0 vs majority-vote 32.5 — not a win yet."),
+     "<b>Verified N=1000 run + diagnostics are in.</b> Teacher-level privilege is validated (sweet spot; +0.07 for the Gemma-4 labeler), but it <b>does NOT transfer into the 1.5B student</b>. The diagnostics make it mechanistic: priv vs no-GT labels differ on ~31% of steps but <b>nearly symmetrically</b> (1001 vs 956) — the teacher's gain is real but <b>diffuse</b>; distilled, the two students are <b>statistically indistinguishable</b> verifiers (paired McNemar p=0.14), neither beating majority vote. Clean honest null: <i>a real teacher gap doesn't distill because it's diffuse.</i> Next: re-run the paired test at N=1000, and <b>Phase B</b> — make the student actually beat majority vote."),
 ]
 
 RESEARCH_Q = ("The research question",
     "Does distilling a teacher's <b>step-level score + natural-language critique</b> — and its <b>privileged</b> (answer-aware) judgment — into a small answer-blind student make it better at catching reasoning-step errors? <b>Finding:</b> privilege has a <b>tractability sweet spot</b> — it helps only where the teacher both <i>needs</i> the reference (can't self-verify) and can <i>use</i> it; and only <b>rich</b> privilege works (a worked solution, not a bare answer).")
 
-PHASE = "First GPU run in; probe replicates. Reorienting: PRM eval made threshold-free (ROC/PR-AUC) — re-score checkpoints + switch to canonical teacher before scaling Phase 2/3"
+PHASE = "Null is verified + diagnosed: real teacher privilege (+0.07) is diffuse (~31% labels churn symmetrically) and does NOT distill — students indistinguishable (p=0.14). Next: paired test @ N=1000 + Phase B (student must beat majority vote)."
 
 RUNS = [  # (label, state) state in {running, done, queued}
     ("Teacher bake-off (5 models, N=30)", "done"),
     ("Privilege × difficulty (GSM8K · MATH · OlympiadBench)", "done"),
     ("Cross-teacher replication (Qwen-27B · MATH N=150)", "done"),
-    ("First end-to-end GPU run (probe+ablation+BoN · gemma-2-9b fallback)", "done"),
-    ("Re-score checkpoints threshold-free (ROC/PR-AUC) — confirm transfer", "queued"),
-    ("Student ablation + best-of-N verifier @ scale (canonical teacher)", "queued"),
+    ("Threshold-free re-score (ROC/PR-AUC) — no-GT ≥ priv", "done"),
+    ("Scaled run N=1000 — Gemma-4 labeling, BoN re-rank (no transfer)", "done"),
+    ("Diagnostics: Gemma-4 probe (+0.07) · label agreement (~31% churn) · paired BoN (p=0.14)", "done"),
+    ("Re-run paired BoN @ N=1000 + Phase B: student to beat majority vote", "queued"),
 ]
 
 DECISIONS = [
@@ -54,17 +55,17 @@ DECISIONS = [
      "gap_solution: GSM8K ≈0 · MATH +0.05 (95% CI [0.01, 0.09], significant) · OlympiadBench ≈0 (verified) — helps only mid-difficulty; bare answer inert everywhere."),
     ("PRM eval metric", "Threshold-free (ROC-AUC / PR-AUC) — not F1 at a fixed cutoff",
      "F1/first_error_acc move with score-head calibration: a silent cell collapses F1 to ~0 while banking the ~0.44 error-free base rate on first_error_acc. Compare cells on AUC + the split (error_recall / pred_error_rate)."),
-    ("Student transfer (Phase 2)", "PENDING — re-score before claiming",
-     "First run's 0.037→0.197 'privilege transfers' gap was a fixed-threshold artifact. Thesis holds iff ROC-AUC(priv) &gt; ROC-AUC(noGT) by a real margin once re-scored."),
+    ("Student transfer (Phase 2/3)", "NEGATIVE + diagnosed — real teacher gap is diffuse, doesn't distill",
+     "no-GT ≥ priv on roc_auc (0.641 vs 0.631) AND paired downstream (0.375 vs 0.340, McNemar p=0.14, n.s.); neither beats majority vote. Mechanism: priv vs no-GT labels differ on ~31% of steps but symmetrically (1001 vs 956) — gain is real (+0.07 teacher) but diffuse. Gating issue: student must first beat majority vote (Phase B)."),
 ]
 
 TASKS = [  # who, track, status (active|blocked|queued|done), next action
     ("Edward", "Trainer + analysis", "active",
-     "Caught the Phase 2 metric artifact + landed the threshold-free PRM eval (ROC/PR-AUC + split diagnostics) on branch <code>fix-prm-metric-threshold-free</code>. Next: review Saksham's re-scored AUCs and decide whether the privilege-transfer thesis holds before the at-scale run."),
+     "Diagnostics done &amp; verified: the null is mechanistic (real +0.07 teacher gap, diffuse/symmetric label churn, indistinguishable students). Propagated everywhere. All Phase-B tooling now BUILT &amp; smoke-tested for the team: D1 rigor (train_slfd --seed + experiments.transfer_ci clustered paired bootstrap CI on the priv−nogt roc_auc gap) and the full distillation-method ablation set — ABLATION=verdict (hard BCE), soft (distribution BCE), and logit_kd (online soft KL toward a LOCAL same-family teacher, since the served Gemma-4 exposes no logits). Now design the capacity/boundary sweep + positive control."),
     ("Saksham", "GPU pipeline", "active",
-     "First end-to-end run done (gemma-2-9b fallback). NEXT: (1) commit/push run JSONs to a branch, (2) re-score the 3 saved checkpoints threshold-free (no retrain) → compare on ROC/PR-AUC, (3) switch teacher to canonical Gemma-4-26b, then scale. Runbook: HANDOFF_SAKSHAM.md (READ FIRST block)."),
+     "Phase A diagnostics complete (label agreement, paired BoN, Gemma-4 probe; math_verify wired in — nice). NEXT (cheap-first, no new labeling): (1) re-run paired BoN @ N=1000 + report the McNemar p (B0/B0b), (2) strong-vs-weak-teacher positive control (B3) — is the pipeline even sensitive to teacher quality? THEN spend compute: scale data + capacity sweep so the PRM beats majority vote (B1/B2). Distillation-method ablation (B4) is the mechanism slot if those don't open the gap. Runbook: RUNBOOK_PHASE_B.md · roadmap: RESEARCH_ROADMAP.md."),
     ("Henry", "Research / paper", "active",
-    "✓ Related Work (PRM positioning) · ✓ Results restructured to 3-tier sweet spot · ✓ by-level figure (N=400, inverted-U) + mechanism (rescue × tractability) · ✓ significance (+0.05, 95% CI [0.010, 0.093]) · ✓ downstream-verifier §2.7 stub · ✓ full draft assembled + compiles. Green light to keep drafting now (prelim results paint the picture). ☐ consolidate the 6 tables into fewer (one conditions table, not 5) · ☐ paste 2–3 flip cases from per_sample.jsonl · ☐ OlympiadBench gap cell (Table 2) · ☐ §2.7 real numbers (gated on Saksham re-score)."),
+    "✓ Related Work · ✓ 3-tier sweet-spot results + mechanism + significance (+0.05 [0.010, 0.093]) · ✓ full draft compiles. NEW: §2.7 is now a VERIFIED NEGATIVE (no transfer) — ☐ rewrite §2.7 with the N=1000 numbers (no-GT ≥ priv) · ☐ reframe contribution so it doesn't imply the distillation works (teacher sweet-spot is the headline; student null + diagnosis is honest secondary) · ☐ fix '+0.5'→'+0.05' typo (§2.3, still present) · ☐ consolidate the 6 tables · ☐ flip cases + OlympiadBench cell. See HANDOFF_HENRY.md."),
 ]
 
 HOW_WE_WORK = [
@@ -79,35 +80,43 @@ BULLETPROOFING = [
     ("done", "OlympiadBench (OE-only, verified) — privilege ≈0 there → sweet spot, NOT monotonic with difficulty."),
     ("done", "with_answer ≡ no_gt confirmed real (bare answer inert), not a wiring bug."),
     ("done", "PRM eval made threshold-free (ROC/PR-AUC + error_recall/pred_error_rate split) — fixed-cutoff F1 hid a silent-collapse artifact in Phase 2."),
-    ("todo", "Re-score the 3 student checkpoints on AUC; confirm privilege transfers before scaling."),
-    ("todo", "Bootstrap CIs / multiple seeds on the gaps; baselines (Math-Shepherd, self-critique)."),
-    ("todo", "Use the OFFICIAL Gemma checkpoint for the reported labeling pass."),
+    ("done", "N=1000 run verified to label through the real Gemma-4 teacher (~32k served requests) — the negative is not a weak-teacher artifact."),
+    ("done", "Gemma-4 privilege probe: +0.07 solution gap — the actual labeling teacher's labels genuinely differ (null is not 'identical labels')."),
+    ("done", "Label agreement: priv vs no-GT differ on ~31% of steps but symmetrically (1001 vs 956) — the teacher gain is diffuse, not directional."),
+    ("done", "Same-pool paired BoN: students statistically indistinguishable (McNemar p=0.14) — but N=200 is underpowered; re-run @ N=1000."),
+    ("todo", "Phase B: scale data + larger student base so the PRM beats majority vote (gating for impact)."),
+    ("todo", "Boundary: capacity (0.5/1.5/7B) + data-scale sweep + strong-vs-weak-teacher positive control + seeds/CIs."),
+    ("todo", "Distillation method (B4): logit/KL loss is wired-but-disabled (vocab mismatch) — try distribution distillation w/ a Gemma-family student + structured-verdict critique. Mechanism slot if capacity/data don't open the gap."),
+    ("todo", "Statistical rigor: the N=1000 null is 0.641 vs 0.631 roc_auc on ONE seed — not 'validated' until a bootstrap CI + multi-seed retrain, and the student clears MV."),
     ("idea", "Does a stronger teacher extend the sweet spot upward on OlympiadBench?"),
 ]
 
 MILESTONES = [
     ("done", "Teacher/dataset/privilege locked; sweet spot verified (GSM8K·MATH·OlympiadBench)"),
     ("done", "Student pipeline built: trainer fixed + ablation + best-of-N verifier (smoke-tested)"),
-    ("done", "First end-to-end GPU run; PRM eval made threshold-free after catching the Phase 2 artifact"),
-    ("now", "Re-score checkpoints on AUC + switch to canonical teacher — confirm privilege transfers"),
-    ("then", "Scale Phase 2/3 + CIs + baselines + paper draft (sweet spot + downstream verifier)"),
+    ("done", "Verified N=1000 null + diagnosed (real teacher gap is diffuse, doesn't distill)"),
+    ("now", "Phase B: make the student beat majority vote (data scale + bigger base) + re-run paired BoN @ N=1000"),
+    ("then", "Map the transfer boundary (capacity/data sweep + positive control) → paper"),
 ]
 
 # Path to submission — granular, owner-tagged, so everyone (esp. Saksham) has line of sight.
 PATH_TO_SUBMISSION = [
     ("done", "Team", "Teacher / dataset / privilege locked; sweet spot verified across 3 difficulty tiers + cross-family."),
     ("done", "Edward", "Full pipeline built &amp; smoke-tested (probe → student ablation → best-of-N verifier); runbooks written."),
-    ("now", "Saksham", "Re-score the 3 student checkpoints threshold-free (no retrain) → compare on ROC/PR-AUC; commit run JSONs to a branch. Then switch teacher to canonical Gemma-4-26b. Runbook: HANDOFF_SAKSHAM.md (READ FIRST)."),
-    ("next", "Edward", "Review re-scored AUCs; decide whether privilege transfers to the student before the at-scale run."),
-    ("next", "Saksham", "If transfer holds: scale Phase 2 (N=1000) + Phase 3 — <code>bon_rerank.py</code> with the symbolic MATH checker, larger N, CIs → does the PRM verifier beat majority vote?"),
-    ("next", "Edward", "Bootstrap CIs / seeds on every gap; baselines (Math-Shepherd PRM, self-critique)."),
-    ("now", "Henry", "Full draft assembled &amp; compiles (Related Work + 3-tier sweet spot + §2.7 verifier stub). Polishing: consolidate the 6 tables into fewer, paste 2–3 flip cases, fill the OlympiadBench cell. §2.7 numbers gated on Saksham's re-score."),
+    ("done", "Saksham", "N=1000 run complete &amp; verified (Gemma-4 labeling): privilege does NOT transfer to the 1.5B student — no-GT ≥ priv on roc_auc + downstream; neither beats majority vote."),
+    ("done", "Saksham", "Phase A diagnostics: Gemma-4 probe (+0.07) · label agreement (~31% churn, symmetric) · paired BoN (p=0.14, n.s.). math_verify wired into answer-matching."),
+    ("now", "Saksham", "Cheap-first: paired BoN @ N=1000 + McNemar p (B0/B0b) and the strong-vs-weak-teacher positive control (B3); THEN data + capacity sweep to beat majority vote (B1/B2); B4 distillation-method is the mechanism slot. Runbook: RUNBOOK_PHASE_B.md."),
+    ("now", "Edward", "Built &amp; smoke-tested all Phase-B tooling: D1 (--seed + experiments.transfer_ci paired bootstrap CI) and the full B4 method set (ABLATION=verdict/soft/logit_kd; logit_kd does online KL vs a local same-family teacher). Now design the capacity/data sweep + positive control."),
+    ("next", "Edward", "Baselines (Math-Shepherd PRM, self-critique); distribution-matched eval; seeds/CIs on teacher gap + transfer null."),
+    ("now", "Henry", "§2.7 = VERIFIED NEGATIVE + now a mechanism: real +0.07 teacher gap is diffuse (~31% symmetric label churn) → indistinguishable students (p=0.14). Write it as an honest, mechanistic null. ✓ flip cases in; ☐ consolidate 6 tables · ☐ '+0.5'→'+0.05' typo · ☐ contribution reframe. See HANDOFF_HENRY.md / RESULTS.md."),
     ("then", "Team", "Submit — COLM (early July) / AAAI / workshop. Quality over the date."),
 ]
 
 OVERLEAF_URL = "https://www.overleaf.com/2555239245xpdcmsxkrzgx"
 LINKS = [
     ("Paper (Overleaf)", OVERLEAF_URL),
+    ("Research roadmap", "https://github.com/edward-lcl/feedback-distillation/blob/main/RESEARCH_ROADMAP.md"),
+    ("Phase B runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/RUNBOOK_PHASE_B.md"),
     ("Saksham runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_SAKSHAM.md"),
     ("Henry runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_HENRY.md"),
     ("Repo", "https://github.com/edward-lcl/feedback-distillation"),
@@ -144,6 +153,45 @@ def _gap_badge(g):
         return "<span class=muted>—</span>"
     cls = "pos" if g > 0.02 else ("neg" if g < -0.02 else "zero")
     return f"<span class='badge {cls}'>{g:+.3f}</span>"
+
+
+def student_results_html():
+    """Render the verified N=1000 student-transfer results (Phase 2 roc_auc + Phase 3 BoN)."""
+    cells = [("priv_critique", "Privileged + critique"),
+             ("priv_scoreonly", "Privileged, score-only"),
+             ("nogt_critique", "No-GT + critique")]
+    p2 = ""
+    for key, label in cells:
+        d = _load(f"{RESULTS}/ablation/{key}/processbench_results.json") or {}
+        hi = " style='font-weight:700;color:var(--accent)'" if key == "nogt_critique" else ""
+        p2 += (f"<tr><td>{label}</td><td{hi}>{_fmt(d.get('roc_auc'))}</td>"
+               f"<td>{_fmt(d.get('pr_auc'))}</td><td>{_fmt(d.get('f1'))}</td>"
+               f"<td>{_fmt(d.get('error_recall'))}</td></tr>")
+    bp = _load(f"{RESULTS}/bon_priv/bon_results.json") or {}
+    bn = _load(f"{RESULTS}/bon_nogt/bon_results.json") or {}
+
+    def bonrow(label, d, hi=False):
+        s = " style='font-weight:700;color:var(--accent)'" if hi else ""
+        return (f"<tr><td>{label}</td><td>{_fmt(d.get('pass@1'))}</td>"
+                f"<td{s}>{_fmt(d.get('prm_rerank'))}</td><td>{_fmt(d.get('majority_vote'))}</td>"
+                f"<td>{_fmt(d.get('oracle_pass@N'))}</td></tr>")
+    p3 = bonrow("No-GT verifier", bn, hi=True) + bonrow("Privileged verifier", bp)
+    return f"""
+<div class="section-label">Student transfer — verified N=1000 (privilege does NOT transfer)</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+  <div style="padding:10px 16px 4px;font-size:12px;color:var(--ink3)">Phase 2 — step-level (compare on <b>roc_auc</b>, not F1). No-GT is highest.</div>
+  <table class="data-table">
+    <tr><th>Student (teacher labels)</th><th>roc_auc</th><th>pr_auc</th><th>F1</th><th>error_recall</th></tr>
+    {p2}
+  </table>
+  <div style="padding:10px 16px 4px;font-size:12px;color:var(--ink3);border-top:1px solid var(--border)">Phase 3 — Best-of-N re-rank, N=1000. No-GT verifier re-ranks better; neither beats majority vote.</div>
+  <table class="data-table">
+    <tr><th>Verifier</th><th>pass@1</th><th>prm_rerank</th><th>majority_vote</th><th>oracle</th></tr>
+    {p3}
+  </table>
+  <div style="padding:10px 16px 14px;font-size:12px;color:var(--ink3);border-top:1px solid var(--border)">Labeling confirmed through the served Gemma-4 teacher (~32k requests). <b>Diagnostics:</b> Gemma-4 teacher gap +0.07 (real); priv vs no-GT labels differ on ~31% of steps but symmetrically (1001 vs 956) — diffuse, not directional; paired re-rank students statistically indistinguishable (McNemar p=0.14). Mechanism: a real teacher gap that's too diffuse to distill. Gating next step: the student must first beat majority vote (Phase B).</div>
+</div>
+"""
 
 
 def privilege_card(probe, title, sub, running=False):
@@ -500,6 +548,7 @@ a:hover{text-decoration:underline}
     links_html = "".join(f"<a href='{u}' target='_blank'>{html.escape(n)} ↗</a>" for n, u in LINKS)
 
     bakeoff_html = bakeoff_rows_dark()
+    student_html = student_results_html()
 
     htmldoc = head + f"""
 <body>
@@ -530,7 +579,7 @@ a:hover{text-decoration:underline}
       <span class="chip chip-green" title="Label→train→eval + best-of-N verifier all built &amp; smoke-tested; runbooks written.">Pipeline built · handoff-ready</span>
       <span class="chip chip-green" title="Privilege helps on MATH but not GSM8K (too easy) or OlympiadBench (too hard) — verified, incl. cross-family.">Sweet spot verified</span>
       <span class="chip chip-blue" title="Teacher chosen by bake-off (Gemma, F1 0.91); result replicates with a Qwen-27B teacher.">Gemma teacher · Qwen cross-family</span>
-      <span class="chip chip-yellow" title="Phase 2 headline (privilege transfers to student) was a fixed-threshold artifact; eval now ROC/PR-AUC — re-score checkpoints before scaling.">Reorienting: PRM eval → AUC</span>
+      <span class="chip chip-yellow" title="Verified N=1000 (Gemma-4 labeling): teacher-level privilege validated, but it does NOT transfer to the 1.5B student (no-GT ≥ priv; neither beats majority vote). Now diagnosing why.">Honest null: no student transfer</span>
       <span class="chip chip-gray">edward-lcl/feedback-distillation</span>
     </div>
   </div>
@@ -588,7 +637,7 @@ a:hover{text-decoration:underline}
     <ul class="status-list">{runs_html}</ul>
   </div>
   <div class="card">
-    <div class="card-title" style="margin-bottom:14px">Roadmap</div>
+    <div class="card-title" style="margin-bottom:14px"><a href="https://github.com/edward-lcl/feedback-distillation/blob/main/RESEARCH_ROADMAP.md" target="_blank" style="color:inherit;text-decoration:none">Roadmap <span style="color:var(--accent)">↗</span></a></div>
     <div class="milestones">{miles_html}</div>
   </div>
 </div>
@@ -609,7 +658,7 @@ a:hover{text-decoration:underline}
   </table>
   <div style="padding:10px 16px 14px;font-size:12px;color:var(--ink3);border-top:1px solid var(--border)">Official Gemma checkpoint used for the reported labeling pass. Gemma selected: best F1, zero parse failures, fastest throughput.</div>
 </div>
-
+{student_html}
 <div class="section-label">How we work</div>
 <div class="card">
   <table class="kv-table">{how_html}</table>

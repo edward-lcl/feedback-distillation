@@ -53,17 +53,22 @@ def main():
         batch_size=args.batch_size,
     )
     
-    # Extract raw scores for bootstrap CI
+    # Extract raw scores for bootstrap CI. New evaluators provide y_seq for a
+    # clustered bootstrap; older ones only provide paired per-step arrays.
+    per_step = results.pop("_per_step", None)
     raw_y_true = results.pop("raw_y_true", [])
     raw_y_score = results.pop("raw_y_score", [])
+    if per_step is None and raw_y_true and raw_y_score:
+        per_step = {"y_true": raw_y_true, "y_score": raw_y_score}
     
     print(json.dumps(results, indent=2))
 
     with open(f"{args.results_dir}/processbench_results.json", "w") as f:
         json.dump(results, f, indent=2)
         
-    with open(f"{args.results_dir}/per_step_scores.json", "w") as f:
-        json.dump({"y_true": raw_y_true, "y_score": raw_y_score}, f, indent=2)
+    if per_step:
+        with open(f"{args.results_dir}/per_step_scores.json", "w") as f:
+            json.dump(per_step, f, indent=2)
 
     # Loud, immediate self-check — so an agent re-running this sees a broken cell
     # the moment it finishes, rather than reading a near-zero F1 as a real result.

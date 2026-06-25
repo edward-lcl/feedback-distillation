@@ -12,8 +12,10 @@ To compare models apples-to-apples, read the THRESHOLD-FREE numbers (roc_auc,
 pr_auc) and the split (error_recall / clean_specificity / pred_error_rate),
 not F1 at a fixed cutoff. See the split keys below.
 """
+import gc
 import json
 import torch
+from models.device import is_mps
 from sklearn.metrics import (
     f1_score,
     precision_score,
@@ -24,7 +26,7 @@ from sklearn.metrics import (
 )
 
 
-def _compute_metrics(y_true, y_pred, y_score, sequence_records) -> dict:
+def _compute_metrics(y_true, y_pred, y_score, sequence_records, y_seq=None) -> dict:
     first_error_correct = 0
     total_sequences = 0
     err_seqs = err_seqs_correct = 0
@@ -113,6 +115,14 @@ def _compute_metrics(y_true, y_pred, y_score, sequence_records) -> dict:
         # --- raw scores for bootstrapping ---
         "raw_y_true": y_true,
         "raw_y_score": y_score,
+        "_per_step": {
+            "y_true": y_true,
+            "y_score": y_score,
+            "y_seq": y_seq,
+        } if y_seq is not None else {
+            "y_true": y_true,
+            "y_score": y_score,
+        },
     }
 
 
@@ -167,14 +177,25 @@ def evaluate_processbench(
     y_true = [int(meta["is_error"]) for meta in step_meta]
     y_pred = []
     y_score = []
+    y_seq = [int(meta["seq_idx"]) for meta in step_meta]
+    on_mps = is_mps()
     with torch.no_grad():
         if batch_size > 1 and hasattr(student, "score_steps"):
             score_logits = student.score_steps(step_inputs, batch_size=batch_size)
+            if on_mps:
+                gc.collect()
+                torch.mps.empty_cache()
         else:
-            score_logits = torch.stack([
-                student.score_step(problem, prefix, step_text)
-                for problem, prefix, step_text in step_inputs
-            ])
+            logits = []
+            last_cleared_seq = None
+            for idx, (problem, prefix, step_text) in enumerate(step_inputs):
+                logits.append(student.score_step(problem, prefix, step_text))
+                seq_idx = step_meta[idx]["seq_idx"]
+                if on_mps and seq_idx % 25 == 0 and seq_idx != last_cleared_seq:
+                    gc.collect()
+                    torch.mps.empty_cache()
+                    last_cleared_seq = seq_idx
+            score_logits = torch.stack(logits) if logits else torch.empty(0)
 
     for meta, score_logit in zip(step_meta, score_logits):
         logit = float(score_logit.item())
@@ -187,4 +208,4 @@ def evaluate_processbench(
             if record["pred_first"] is None:
                 record["pred_first"] = meta["step_idx"]
 
-    return _compute_metrics(y_true, y_pred, y_score, sequence_records)
+    return _compute_metrics(y_true, y_pred, y_score, sequence_records, y_seq=y_seq)

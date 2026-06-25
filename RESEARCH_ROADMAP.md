@@ -12,6 +12,15 @@ Why it matters: the field assumes "better labeler → better student" (Math-Shep
 - ✅ **Student transfer = NULL**: no-GT ≥ priv on `roc_auc` (0.641 vs 0.631) and downstream re-rank (0.373 vs 0.349).
 - ⚠️ **Gating weakness:** the student PRM is **below majority vote** (0.37 vs 0.39) and F1 ≈ 0.18. Until the student is a *competent* verifier, the transfer null is confounded with "we trained a weak PRM." **Fixing this is P0.**
 
+> ⚠️ **The N=1000 null is not yet "validated."** The transfer gap is `roc_auc` 0.641 vs 0.631 — **0.01 on a single seed with no CI.** We do not yet know it is statistically distinguishable from zero. "Privilege doesn't transfer" is a *promising* finding, not a validated one, until **(a)** the student beats majority vote (P0) and **(b)** D1 puts a bootstrap CI on the gap. Do not message it as "completely validated."
+
+## Execution order (cheap-first — do these in parallel before any big compute)
+The two cheapest experiments answer "do we even have a real paper?" and gate everything else. Run both first; they need no new labeling:
+1. **C3 positive control** — is the pipeline sensitive to teacher quality at all? (go/no-go on the whole null story)
+2. **D1 multi-seed + bootstrap CI** on the *existing* priv−nogt gap — is the null statistically real or just noise? (now wired: `train_slfd --seed` + `experiments.transfer_ci` clustered paired bootstrap.)
+
+Then pull the P0 lever (beat majority vote): a quick **3B capacity probe (C1)** + modest **B1 data scale**. Only after the student clears MV is "does privilege transfer" a well-posed question. **C4a/C4c** (distillation method) is the mechanism slot if capacity/data don't open the gap. Hold full N=5k–10k relabeling (C2) and contrastive distillation until proven necessary.
+
 ---
 
 ## Phase A — Diagnose the null (P0, cheap, run now)
@@ -33,6 +42,11 @@ Turn a flat null into a *boundary* — far more publishable. _Owner: Saksham (ru
 - **C1 Student-capacity sweep:** distill priv vs no-GT into 0.5B / 1.5B / 7B. Does privilege start to transfer above some capacity? (If yes → a capacity story, more nuanced and stronger than a flat null.)
 - **C2 Train-data scale sweep:** does the priv−nogt transfer gap open as data grows (1k → 10k → 30k)?
 - **C3 Positive control (critical):** distill from a **strong** teacher (Gemma-4 + GT) vs a deliberately **weak** teacher (small model, or label-shuffled). Student quality MUST track teacher quality here. If it does → the pipeline is sensitive, so the *privilege* null is real, not insensitivity. If even strong-vs-weak doesn't move the student → the student/eval is the bottleneck (back to Phase B). **This single experiment is what convinces a skeptical reviewer the null means something.**
+- **C4 Distillation-method ablation (the loss may be lossy):** the current pipeline distills via **MSE on a single scalar score**. If the privileged signal lives in the *shape/confidence* of the teacher's judgment rather than its scalar value, scalar-MSE destroys it and privilege can never transfer regardless of capacity or data. The score-loss method is now an `ABLATION=` knob (`train_slfd.py`). Arms:
+  - **C4c Verdict (BUILT, runnable):** `ABLATION=verdict` — drop the free-text critique and distill the teacher's **hard binary verdict** (correct iff score≥0) via BCE. (The 1.5B can't reproduce a 26B's prose; a clean structured target may beat noisy MSE.)
+  - **C4a-offline Soft distribution (BUILT, runnable):** `ABLATION=soft` — keep the teacher's **confidence** as a soft Bernoulli target `p=(score+1)/2` (distribution, not point estimate) via BCE.
+  - **C4a-online True logit-KL (BUILT, runnable):** `ABLATION=logit_kd KD_TEACHER=<local same-family model>` — soft KL toward a live teacher's distribution over its privileged critique (`compute_logit_kd_loss`). The served Gemma-4 exposes no logits, so it loads a **LOCAL same-family teacher** (cross-family robustness justifies a non-Gemma-4 teacher) + a **Gemma-family student** so vocabs align. Smoke-tested on same-family Qwen DEV models.
+  - (Held: contrastive/triplet distillation on priv-vs-nogt *pairs*. Novel but speculative; revisit only if the above are inconclusive.)
 
 ## Phase D — Rigor / validity (P1, do alongside C)
 _Owner: Edward._
@@ -53,7 +67,7 @@ _Owner: Henry + Edward._
 | :--- | :--- |
 | "Your verifier loses to majority vote — why care?" | **Phase B** (make it competent) |
 | "Is the null real or just underpowered?" | **D1** (seeds/CIs/power) + **C3** (positive control) |
-| "Why doesn't privilege transfer?" | **A1** (label agreement) + **C1** (capacity) + **D2** (distribution) |
+| "Why doesn't privilege transfer?" | **A1** (label agreement) + **C1** (capacity) + **C4** (is scalar-MSE distillation too lossy?) + **D2** (distribution) |
 | "Does it generalize beyond 1.5B / one dataset / one generator?" | **C1, E1, E2** |
 | "Is the teacher sweet-spot itself robust?" | **D1** (seeds/CIs on the teacher gap) |
 | "How does this compare to existing PRMs?" | **D3** (baseline panel) |

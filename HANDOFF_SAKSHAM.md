@@ -2,19 +2,57 @@
 
 **Status: N=1000 RUN COMPLETE & VERIFIED (2026-06-18) — privilege does NOT transfer to the student.** Labeling confirmed to run through the served **Gemma-4** teacher (~32k requests), generation on local `gemma-2-9b`, our threshold-free eval. Result: no-GT student ≥ privileged on `roc_auc` (0.641 vs 0.631) **and** downstream re-rank (0.373 vs 0.349); neither verifier beats majority vote. Teacher-level privilege is still validated — it just doesn't distill into the 1.5B student at this scale. Full numbers: [results/RESULTS.md](results/RESULTS.md). **This is an honest negative — do not report it as "privilege transfers."** Next = the diagnostics (below).
 
-## ✅ Where we are now & next steps (diagnose the null — three follow-ups)
-The metric reorientation is **done** (threshold-free eval landed, re-score complete, the F1 "0.037 vs 0.197" was confirmed a fixed-threshold artifact and does not reproduce). The result is a clean negative. Now we pull the thread:
-1. **Gemma-4 privilege probe** — only the `gemma-2-9b` probe was saved. Run the probe *through the served Gemma-4 teacher* (`OMLX_URL=https://teacher.elcl.systems/v1`) to confirm privileged labels actually differ from no-GT for the teacher we labeled with.
-2. **Same-pool paired Phase 3** — `bon_priv` and `bon_nogt` were *separate* generations. Re-rank **one shared candidate set** with both verifiers; report absolute accuracy + a paired (McNemar) test, not baseline-relative deltas.
-3. **Label-agreement analysis** — dump how often priv vs no-GT teacher labels differ, and on which steps. If they barely differ, that explains the null directly.
+## ✅ Where we are now → next: **Phase B** (see `RUNBOOK_PHASE_B.md`)
+Phase A diagnostics are **done** and the null is mechanistic: real +0.07 teacher gap, but it's **diffuse** (~31% of labels churn symmetrically) so it doesn't distill — the two students are statistically indistinguishable (paired McNemar p=0.14).
 
-(Historical context for steps 1–3 — the original reorientation — is retained below.)
+**Two things gate the paper now, both in `RUNBOOK_PHASE_B.md` (command-first, agent-ready):**
+1. **Cheap-first, no new labeling:** re-run the paired BoN at N=1000 (A2 was N=200, p=0.14) **and** the strong-vs-weak-teacher **positive control** — these gate whether we even have a paper. (The N=1000 null is 0.641 vs 0.631 roc_auc on one seed — *not* "validated" until it has a CI and the student beats MV. Lead with the McNemar p.)
+2. **Then Phase B — make the student beat majority vote** (it currently loses, 0.34/0.375 < 0.39): scale training data (5k/10k) + capacity sweep (1.5B → 3B → 7B via `STUDENT_MODEL=`). If those don't open the gap, the **distillation-method ablation (B4)** is the mechanism slot. Then re-ask: does privilege transfer into a *competent* verifier?
+
+👉 **Go to `RUNBOOK_PHASE_B.md` and start at B0.** Push raw JSONs to a branch; don't hand-edit conclusions.
+
+### 🖥️ No GPU? Train on Edward's Mac (remote, scoped)
+While your GPU box is down, run the **1.5B cheap-first** cells on Edward's Mac. You SSH in as a **restricted `slfd` user** — no sudo, no access to his files — into a self-contained working copy. **The capacity sweep (3B/7B, B2) is NOT possible on the Mac (won't fit 48 GB) — that waits for your GPUs.**
+
+**Connect (one-time setup):**
+1. Send Edward your SSH **public** key (`cat ~/.ssh/id_ed25519.pub`) so he can add it to the `slfd` account.
+2. `brew install cloudflared`, then add to your `~/.ssh/config`:
+   ```
+   Host edmac
+     HostName ssh.elcl.systems
+     User slfd
+     ProxyCommand cloudflared access ssh --hostname %h
+   ```
+3. `ssh edmac` → a browser opens for Cloudflare Access; authenticate with your **terpmail email** (the only one allowed). You land in the restricted `slfd` account.
+
+```bash
+# once connected:
+cd /Users/Shared/slfd/feedback-distillation
+export HF_HOME=/Users/Shared/slfd/hf_cache HF_HUB_OFFLINE=1   # models are pre-cached; no download/network
+git pull                                                       # get latest main
+tmux new -s slfd                                               # so the run survives disconnects
+
+# cheap-first: NO oMLX, NO teacher load — pure train/eval on the existing labels:
+REUSE_LABELS=1 ABLATION=soft    N_EVAL=1000 EPOCHS=2 ./scripts/run_student_ablation.sh
+REUSE_LABELS=1 ABLATION=verdict N_EVAL=1000 EPOCHS=2 ./scripts/run_student_ablation.sh
+# logit_kd uses a local same-family teacher (also cached): add KD_TEACHER=Qwen/Qwen2.5-0.5B-Instruct
+python -m experiments.transfer_ci \
+  --priv results/ablation/priv_critique/per_step_scores.json \
+  --nogt results/ablation/nogt_critique/per_step_scores.json --n_boot 10000
+
+# push raw JSONs to a branch (this copy is yours; don't touch Edward's repo):
+git checkout -b saksham/macrun-$(date +%m%d); git add results/ && git commit -m "..."; git push -u origin HEAD
+```
+Notes: this copy already has the real `data/labeled/math_{priv,nogt}.jsonl` + eval set, the venv, and the Qwen models cached — so cheap-first needs **no network and no oMLX**. Only *fresh-data* generation needs the oMLX key (`./scripts/run_single_box.sh`, key from Edward); prefer `REUSE_LABELS` to avoid loading the teacher.
+
+(Historical context — the original reorientation + diagnostics — is retained below.)
 
 _Goal: reproduce the privilege × difficulty result with an **official** Gemma checkpoint at scale. Phase 1 (the probe) is below; Phase 2 (the full student run + ablations — the paper result) is at the bottom, now also ready._
 
 ---
 
 ## ⚠️ READ FIRST — reorientation (2026-06-17, after your first end-to-end run)
+> ⏩ **HISTORY — superseded.** This reorientation is complete: the metric was fixed, the re-score ran, and the diagnostics are done (the result is a verified null). **Current marching orders are the Phase B section at the top of this file → `RUNBOOK_PHASE_B.md`.** Kept below as the record of how we got here.
 
 Great first pass — Phase 1 (probe) replicates and the pipeline runs end-to-end. Before we scale, three things, **in this order**:
 
