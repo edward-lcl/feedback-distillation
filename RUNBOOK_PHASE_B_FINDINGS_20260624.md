@@ -531,10 +531,11 @@ teacher labels and ProcessBench-style gold labels under the same student path.
 ## Next Best Move
 
 Do not run BoN yet. Do not scale the equal-weight critique recipe, pure
-rank-only recipe, BCE+rank recipe, or longer BCE recipe. The immediate next
-step is repository hygiene: commit the curated Phase B evidence (small JSONs,
-tables, and docs), leave checkpoints/logs/local data out of git, then integrate
-the latest `origin/main` Mac/MPS fixes on a clean branch.
+rank-only recipe, BCE+rank recipe, or longer BCE recipe. Repository hygiene is
+done: the curated Phase B evidence is committed without checkpoints/logs/local
+data, and the latest `origin/main` Mac/MPS fixes are integrated on
+`saksham/phaseb-capacity-gate-main-integration`. The immediate next step is
+review/merge of that branch, not another run.
 
 Next experiment should change the data distribution, not just run the same loop
 longer:
