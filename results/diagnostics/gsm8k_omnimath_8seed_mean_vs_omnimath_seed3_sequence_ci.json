@@ -1,0 +1,19 @@
+{
+  "model_a": "results/diagnostics/ensembles/gsm8k_omnimath_8seed_mean/per_step_scores.json",
+  "model_b": "results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed3/per_step_scores.json",
+  "dataset": "data/processbench_math_shuffled.jsonl",
+  "max_samples": 1000,
+  "metric": "roc_auc",
+  "gap_model_a_minus_model_b": 0.02031972715524917,
+  "ci95": [
+    0.009671901005097922,
+    0.030862115331953585
+  ],
+  "p_one_sided_model_a_gt_model_b": 0.0001999600079984003,
+  "p_two_sided": 0.0003999200159968006,
+  "n_boot": 5000,
+  "n_boot_valid": 5000,
+  "n_sequences": 1000,
+  "n_steps": 6505,
+  "method": "paired_sequence_cluster_bootstrap"
+}

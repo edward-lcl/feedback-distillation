@@ -1,0 +1,77 @@
+{
+  "student_model": "Qwen/Qwen2.5-3B-Instruct",
+  "eval_dataset": "data/processbench_math_shuffled.jsonl",
+  "max_train_steps": 1000,
+  "max_eval_samples": 400,
+  "batch_size": 2,
+  "seed": 0,
+  "eval_label_counts": {
+    "0": 2362,
+    "1": 227
+  },
+  "cells": [
+    {
+      "name": "priv",
+      "label_path": "data/labeled/math_priv.jsonl",
+      "train": {
+        "roc_auc": 1.0,
+        "pr_auc": 1.0,
+        "f1_at_0p5": 1.0,
+        "precision_at_0p5": 1.0,
+        "recall_at_0p5": 1.0,
+        "pred_error_rate_at_0p5": 0.247,
+        "n_steps": 1000,
+        "n_error_steps": 247,
+        "error_rate": 0.247
+      },
+      "eval": {
+        "roc_auc": 0.5178580087807316,
+        "pr_auc": 0.08715900370466798,
+        "f1_at_0p5": 0.15840386940749698,
+        "precision_at_0p5": 0.0918009810791871,
+        "recall_at_0p5": 0.5770925110132159,
+        "pred_error_rate_at_0p5": 0.5511780610274237,
+        "n_steps": 2589,
+        "n_error_steps": 227,
+        "error_rate": 0.0876786404016995
+      },
+      "train_label_counts": {
+        "0": 753,
+        "1": 247
+      },
+      "seconds": 47.762
+    },
+    {
+      "name": "nogt",
+      "label_path": "data/labeled/math_nogt.jsonl",
+      "train": {
+        "roc_auc": 1.0,
+        "pr_auc": 0.9999999999999999,
+        "f1_at_0p5": 1.0,
+        "precision_at_0p5": 1.0,
+        "recall_at_0p5": 1.0,
+        "pred_error_rate_at_0p5": 0.222,
+        "n_steps": 1000,
+        "n_error_steps": 222,
+        "error_rate": 0.222
+      },
+      "eval": {
+        "roc_auc": 0.5503866282214356,
+        "pr_auc": 0.09207030397481442,
+        "f1_at_0p5": 0.18135245901639344,
+        "precision_at_0p5": 0.10260869565217391,
+        "recall_at_0p5": 0.7797356828193832,
+        "pred_error_rate_at_0p5": 0.6662804171494786,
+        "n_steps": 2589,
+        "n_error_steps": 227,
+        "error_rate": 0.0876786404016995
+      },
+      "train_label_counts": {
+        "0": 778,
+        "1": 222
+      },
+      "seconds": 46.806
+    }
+  ],
+  "priv_minus_nogt_eval_roc_auc": -0.032528619440703954
+}

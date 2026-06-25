@@ -97,6 +97,19 @@ ENSEMBLE_GROUPS = [
             for seed in range(3)
         ],
     ),
+    RunGroup(
+        "GSM8K 1500-step + OmniMath 500-step 7-seed mean score",
+        [
+            *[
+                f"results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed{seed}_ms1500/per_step_scores.json"
+                for seed in range(3)
+            ],
+            *[
+                f"results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed{seed}/per_step_scores.json"
+                for seed in range(4)
+            ],
+        ],
+    ),
 ]
 
 CI_COMPARISONS = [
@@ -130,10 +143,20 @@ CI_COMPARISONS = [
         "GSM8K 1500-step 3-seed mean score",
         "results/diagnostics/qwen_prm800k_vs_gsm8k_ms1500_3seed_mean_sequence_ci.json",
     ),
+    (
+        "GSM8K 1500-step + OmniMath 500-step 7-seed mean score",
+        "Generated no-GT teacher labels, rank loss",
+        "results/diagnostics/ci_gsm1500_omni500_7seed_vs_generated_rank_nogt.json",
+    ),
+    (
+        "Qwen2.5-Math-7B-PRM800K",
+        "GSM8K 1500-step + OmniMath 500-step 7-seed mean score",
+        "results/diagnostics/qwen_prm800k_vs_gsm1500_omni500_7seed_mean_sequence_ci.json",
+    ),
 ]
 
 CALIBRATED_ENSEMBLE_PATH = (
-    "results/diagnostics/math1000_calibrated_threshold_metrics_cal200_eval800_ensembles.json"
+    "results/diagnostics/math1000_calibrated_threshold_metrics_cal200_eval800_ensembles_extended.json"
 )
 
 TRAINING_BUDGET_RUNS = [

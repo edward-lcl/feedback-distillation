@@ -2,7 +2,20 @@
 
 ## Current Jobs
 
-No experiment job is currently running. Both GPUs were idle at the latest check.
+No experiment job is currently running. The `phaseb_ms1500_followup2_20260624_121939`
+four-job 1500-step follow-up grid completed on 2026-06-24:
+
+- `processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed3_ms1500`
+  finished at 12:42.
+- `processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed1_ms1500`
+  finished at 12:46.
+- `processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed2_ms1500`
+  finished at 13:08.
+- `processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed3_ms1500`
+  finished at 13:13.
+
+This batch used `scripts/phaseb_ms1500_followup_jobs.tsv` and
+`scripts/run_gold_scorehead_dual_gpu_queue.sh` with `GPUS=0,1`.
 
 For future independent score-head gates, use
 `scripts/run_gold_scorehead_dual_gpu_queue.sh` with `GPUS=0,1`; it pins one
@@ -38,6 +51,13 @@ Optional score-ensemble diagnostic:
   [0.0097, 0.0309], p=0.0004, but remains below Qwen PRM800K by
   -0.0305 ROC-AUC, 95% CI [-0.0487, -0.0121], p=0.0020. Held-out calibrated
   F1 is 0.3508 versus 0.3855 for Qwen PRM800K.
+- GSM8K 1500-step + OmniMath 500-step 7-seed mean score: ROC-AUC 0.8276,
+  PR-AUC 0.3433, best eval-swept F1 0.4050. It beats the best generated-label
+  baseline by +0.1953 ROC-AUC, 95% CI [0.1742, 0.2161], p=0.0004. Qwen
+  PRM800K is higher by only +0.0101 ROC-AUC, but this gap is not significant
+  under sequence-cluster bootstrap, 95% CI [-0.0082, 0.0276], p=0.2675.
+  Held-out calibrated F1 is 0.3754 versus 0.3855 for Qwen PRM800K; held-out
+  PR-AUC is higher for the ensemble, 0.3413 versus 0.3242.
 
 Training-budget diagnostic:
 
@@ -57,6 +77,13 @@ Training-budget diagnostic:
 - OmniMath gold seed 0 is mixed at 1500 steps: ROC-AUC 0.7539 -> 0.7422
   (not significant, CI includes 0), but fixed F1 0.3052 -> 0.3414 and
   calibrated F1 0.3062 -> 0.3377.
+- Completed follow-up seeds do not make OmniMath-1500 a headline. GSM8K seed 3
+  at 1500 steps is healthy but modest (ROC-AUC 0.7513, PR-AUC 0.2376).
+  OmniMath seed 1 at 1500 steps is healthy (ROC-AUC 0.7834, PR-AUC 0.2608),
+  but OmniMath seed 2 silently collapses (ROC-AUC 0.6551, pred error rate
+  0.0043) and OmniMath seed 3 over-flags with weak ranking (ROC-AUC 0.5704).
+  Treat the completed 1500-step grid as high-variance saturation evidence, not
+  as a replacement for the four-seed 500-step source-specific table.
 
 Paired step bootstrap on the same 6,505 MATH steps:
 
@@ -127,11 +154,18 @@ tail -n 80 phaseb_olympiadbench_to_math1000_scorehead_3b_seed1_20260624.log
 ## Next Decision
 
 - Keep GSM8K longer-training as an appendix/saturation result: the 3-seed mean
-  is strong, but per-seed variance is high and Qwen PRM800K still wins on ROC.
+  is strong, but per-seed variance is high; the fourth 1500-step GSM8K seed is
+  healthy but not a stronger headline.
+- Promote the mixed GSM8K-1500 + OmniMath-500 score average to the strongest
+  appendix diagnostic: it is near-Qwen by ROC within CI and better by PR-AUC,
+  while still slightly behind on held-out calibrated F1.
 - Use the four-seed full-MATH GSM8K/OmniMath table as the main Phase B
   positive result.
 - OlympiadBench is resolved as a boundary/variance diagnostic.
 - Next useful work is polishing the paper-style result section and deciding
   whether to run any additional public PRM baselines beyond Qwen PRM800K.
+- Do not launch another scaling run before committing the curated evidence and
+  merging the latest `origin/main` Mac/MPS hygiene fixes on a clean integration
+  branch.
 - If running more training diagnostics, batch independent jobs through the
   dual-GPU queue rather than serial launch commands.

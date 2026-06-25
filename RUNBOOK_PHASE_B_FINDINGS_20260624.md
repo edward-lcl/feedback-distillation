@@ -6,7 +6,10 @@ log, not a final claims document.
 
 ## Current Status
 
-No experiment job is running now. Both GPUs are idle.
+No experiment job is currently running. The 1500-step follow-up grid
+`phaseb_ms1500_followup2_20260624_121939` completed on 2026-06-24 using
+`scripts/phaseb_ms1500_followup_jobs.tsv` and
+`scripts/run_gold_scorehead_dual_gpu_queue.sh`.
 
 The newest completed gates are the four-seed non-leaky ProcessBench
 cross-config score-head runs:
@@ -234,7 +237,22 @@ only weakly.
       source-specific. Treat this as an appendix/saturation diagnostic, not the
       main claim.
 
-20. Sequence-cluster bootstrap confirms the gap.
+20. Mixed longer-GSM plus OmniMath score averaging is near the public Qwen PRM.
+    - Averaging the three GSM8K 1500-step seeds with the four OmniMath
+      500-step seeds gives ROC-AUC 0.8276, PR-AUC 0.3433, and best eval-swept
+      F1 0.4050.
+    - The mixed seven-member average beats the best generated-label baseline
+      by +0.1953 ROC-AUC, 95% CI [0.1742, 0.2161], p=0.0004.
+    - Qwen PRM800K is higher by only +0.0101 ROC-AUC, but the
+      sequence-cluster CI includes zero: 95% CI [-0.0082, 0.0276], p=0.2675.
+    - On held-out threshold calibration, the mixed average has higher eval
+      PR-AUC than Qwen PRM800K (0.3413 vs 0.3242), but lower calibrated F1
+      (0.3754 vs 0.3855).
+    - Interpretation: this is the strongest appendix diagnostic so far. The
+      later-completed 1500-step follow-up grid was high variance, so this remains
+      a post-hoc score-average diagnostic rather than a clean SOTA claim.
+
+21. Sequence-cluster bootstrap confirms the gap.
     - The earlier paired bootstrap resampled individual steps; this is fast but
       optimistic because steps within one solution are correlated.
     - A stricter paired bootstrap that resamples whole solution sequences still
@@ -247,7 +265,7 @@ only weakly.
       GSM8K seeds 0-3, and +0.1214, +0.1468, +0.1253, and +0.1546 for
       OmniMath seeds 0-3; all two-sided p=0.0010 with 2,000 bootstrap samples.
 
-21. Held-out threshold calibration also favors source-specific gold transfer.
+22. Held-out threshold calibration also favors source-specific gold transfer.
     - Thresholds chosen on the first 200 MATH sequences and evaluated on the
       remaining 800 sequences give calibrated F1 0.2714-0.3166 for GSM8K seeds
       0-3 and 0.3062-0.3316 for OmniMath seeds 0-3.
@@ -255,10 +273,25 @@ only weakly.
     - Generated privileged BCE reaches calibrated F1 0.1673; the best
       generated-label baseline reaches calibrated F1 0.2085.
 
-22. Exact problem-overlap leakage check is clean.
+23. Exact problem-overlap leakage check is clean.
     - GSM8K source train400 vs MATH1000 eval: 0 exact problem overlaps.
     - OmniMath source train400 vs MATH1000 eval: 0 exact problem overlaps.
     - OlympiadBench source train400 vs MATH1000 eval: 0 exact problem overlaps.
+
+24. The completed 1500-step follow-up grid is high-variance saturation evidence.
+    - GSM8K seed 3 at 1500 steps is healthy but not a clear upgrade: ROC-AUC
+      0.7513, PR-AUC 0.2376, best eval-swept F1 0.3213, pred error rate
+      0.0990.
+    - OmniMath seed 1 at 1500 steps is healthy: ROC-AUC 0.7834, PR-AUC
+      0.2608, best eval-swept F1 0.3633.
+    - OmniMath seed 2 at 1500 steps silently collapses at the fixed threshold:
+      ROC-AUC 0.6551, PR-AUC 0.1636, pred error rate 0.0043, with an eval
+      health warning.
+    - OmniMath seed 3 at 1500 steps over-flags and ranks weakly: ROC-AUC
+      0.5704, PR-AUC 0.1287, pred error rate 0.8292.
+    - Mean-score diagnostics remain strong post hoc (e.g. GSM8K-1500 plus
+      OmniMath-500 averaging), but the 1500-step single-source grid should not
+      replace the four-seed 500-step GSM8K/OmniMath main table.
 
 ## Fast Gate Results
 
@@ -498,7 +531,10 @@ teacher labels and ProcessBench-style gold labels under the same student path.
 ## Next Best Move
 
 Do not run BoN yet. Do not scale the equal-weight critique recipe, pure
-rank-only recipe, BCE+rank recipe, or longer BCE recipe.
+rank-only recipe, BCE+rank recipe, or longer BCE recipe. The immediate next
+step is repository hygiene: commit the curated Phase B evidence (small JSONs,
+tables, and docs), leave checkpoints/logs/local data out of git, then integrate
+the latest `origin/main` Mac/MPS fixes on a clean branch.
 
 Next experiment should change the data distribution, not just run the same loop
 longer:

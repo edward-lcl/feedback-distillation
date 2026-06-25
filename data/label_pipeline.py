@@ -146,19 +146,44 @@ def label_file(input_path: str, output_path: str, max_samples: int = None,
     if max_samples:
         lines = lines[:max_samples]
 
-    with open(output_path, "w") as fout:
+    def sample_key(sample: dict) -> str:
+        return sample.get("problem", sample.get("prompt", ""))
+
+    existing_problems = set()
+    if os.path.exists(output_path):
+        with open(output_path, "r") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        existing_problems.add(sample_key(json.loads(line)))
+                    except json.JSONDecodeError:
+                        pass
+        print(f"Resuming: found {len(existing_problems)} existing labels in {output_path}")
+
+    with open(output_path, "a") as fout:
         if use_omlx:
             from concurrent.futures import ThreadPoolExecutor, as_completed
             with ThreadPoolExecutor(max_workers=2) as executor:
-                futures = [executor.submit(process_line, line) for line in lines]
+                futures = []
+                for line in lines:
+                    sample = json.loads(line)
+                    if sample_key(sample) in existing_problems:
+                        continue
+                    futures.append(executor.submit(process_line, line))
+
                 for future in tqdm(as_completed(futures), total=len(futures)):
                     fout.write(json.dumps(future.result()) + "\n")
+                    fout.flush()
             i = len(lines) - 1
         else:
             for i, line in enumerate(tqdm(lines)):
+                sample = json.loads(line)
+                if sample_key(sample) in existing_problems:
+                    continue
                 fout.write(json.dumps(process_line(line)) + "\n")
+                fout.flush()
 
-    print(f"Labeled {min(i+1, max_samples or i+1)} samples → {output_path}")
+    print(f"Finished processing into {output_path}")
 
 
 if __name__ == "__main__":

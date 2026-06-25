@@ -1,0 +1,19 @@
+{
+  "model_a": "results/diagnostics/qwen_prm800k_math1000/per_step_scores.json",
+  "model_b": "results/diagnostics/ensembles/gsm1500_3seed_omni500_4seed_mean/per_step_scores.json",
+  "dataset": "data/processbench_math_shuffled.jsonl",
+  "max_samples": 1000,
+  "metric": "roc_auc",
+  "gap_model_a_minus_model_b": 0.010117626753222052,
+  "ci95": [
+    -0.008191474988747078,
+    0.02759470863909695
+  ],
+  "p_one_sided_model_a_gt_model_b": 0.13377324535092983,
+  "p_two_sided": 0.26754649070185965,
+  "n_boot": 5000,
+  "n_boot_valid": 5000,
+  "n_sequences": 1000,
+  "n_steps": 6505,
+  "method": "paired_sequence_cluster_bootstrap"
+}

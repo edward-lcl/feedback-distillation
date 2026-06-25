@@ -71,6 +71,19 @@ With threshold chosen on the first 200 MATH sequences and evaluated on the
 remaining 800, the same eight-member average reaches calibrated F1 0.3508,
 versus 0.3855 for Qwen PRM800K.
 
+The strongest post-hoc score-average diagnostic combines the three GSM8K
+1500-step seeds with the four OmniMath 500-step seeds. This seven-member
+average reaches 0.8276 ROC-AUC, 0.3433 PR-AUC, and best eval-swept F1 0.4050.
+It beats the best generated-label baseline by +0.1953 ROC-AUC (95% CI
+[0.1742, 0.2161], p=0.0004). Qwen PRM800K is higher by +0.0101 ROC-AUC, but
+the sequence-cluster CI includes zero (95% CI [-0.0082, 0.0276], p=0.2675).
+On the held-out threshold split, the seven-member average has higher eval
+PR-AUC than Qwen (0.3413 vs 0.3242) but lower calibrated F1 (0.3754 vs
+0.3855). Treat this as a strong appendix diagnostic, not as a clean SOTA claim.
+The subsequently completed 1500-step follow-up grid was too high-variance to
+promote: GSM8K seed 3 was healthy but modest, while OmniMath seeds 2-3
+collapsed or over-flagged.
+
 ## Paired Bootstrap Gaps
 
 The main robustness check should use the sequence-cluster bootstrap, which
@@ -114,6 +127,7 @@ reported on the remaining 800 sequences.
 | OmniMath gold seed 1 | 0.3294 | 0.7723 | 0.2606 | 0.2321 |
 | OmniMath gold seed 2 | 0.3148 | 0.7529 | 0.2327 | 0.2056 |
 | OmniMath gold seed 3 | 0.3316 | 0.7855 | 0.2818 | 0.1987 |
+| GSM8K1500+OmniMath500 7-seed mean | 0.3754 | 0.8240 | 0.3413 | 0.0982 |
 | Qwen2.5-Math-7B-PRM800K | 0.3855 | 0.8372 | 0.3242 | 0.1091 |
 | Generated privileged BCE | 0.1673 | 0.5490 | 0.1002 | 0.3212 |
 | Best generated-label baseline | 0.2085 | 0.6314 | 0.1431 | 0.1695 |

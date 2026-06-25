@@ -1,0 +1,17 @@
+{
+  "model_a": "results/ablation/Qwen_Qwen2.5-3B-Instruct_seed0_ms100_lr3e-5_priv_critique/per_step_scores.json",
+  "model_b": "results/ablation/Qwen_Qwen2.5-3B-Instruct_seed0_ms100_lr3e-5_nogt_critique/per_step_scores.json",
+  "metric": "roc_auc",
+  "gap_model_a_minus_model_b": 0.0261686021012134,
+  "ci95": [
+    -0.011219641220946588,
+    0.06366880997948156
+  ],
+  "p_one_sided_model_a_gt_model_b": 0.08799120087991201,
+  "p_two_sided": 0.17598240175982402,
+  "n_boot": 10000,
+  "n_boot_valid": 10000,
+  "n_steps": 2589,
+  "method": "paired_step_bootstrap",
+  "note": "per_step_scores.json has no sequence IDs, so this bootstraps paired step scores rather than clustered sequences."
+}

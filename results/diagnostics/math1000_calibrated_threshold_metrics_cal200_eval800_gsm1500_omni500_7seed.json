@@ -1,0 +1,70 @@
+{
+  "dataset": "data/processbench_math_shuffled.jsonl",
+  "max_samples": 1000,
+  "cal_samples": 200,
+  "method": "threshold_max_f1_on_calibration_sequences_then_eval_on_remaining_sequences",
+  "results": [
+    {
+      "name": "gsm1500_omni500_7seed_mean",
+      "scores": "results/diagnostics/ensembles/gsm1500_3seed_omni500_4seed_mean/per_step_scores.json",
+      "threshold": -0.05228502409798758,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.8240357142857143,
+        "pr_auc": 0.3413438709524371,
+        "f1": 0.3753784056508577,
+        "precision": 0.3639921722113503,
+        "recall": 0.3875,
+        "clean_specificity": 0.9312169312169312,
+        "pred_error_rate": 0.09817483189241115,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.515,
+        "first_error_acc_errs": 0.32708333333333334,
+        "clean_seq_acc": 0.796875,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    },
+    {
+      "name": "qwen_prm800k",
+      "scores": "results/diagnostics/qwen_prm800k_math1000/per_step_scores.json",
+      "threshold": 0.603515625,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.8372003968253968,
+        "pr_auc": 0.32418882053908255,
+        "f1": 0.38549618320610685,
+        "precision": 0.35563380281690143,
+        "recall": 0.42083333333333334,
+        "clean_specificity": 0.9225396825396825,
+        "pred_error_rate": 0.10912584053794429,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.6175,
+        "first_error_acc_errs": 0.40208333333333335,
+        "clean_seq_acc": 0.940625,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    }
+  ]
+}
