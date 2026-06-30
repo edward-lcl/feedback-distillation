@@ -255,6 +255,52 @@ The result reframes a failed privileged-feedback distillation attempt as a super
 For efficient PRM development, this suggests a practical ordering: before scaling students or re-running the same distillation loop, test whether the supervision distribution itself can support the target verifier.
 A practical takeaway is to first run a small diagnostic with format-matched labels before investing in a larger student or a new training recipe.
 
+\section*{References}
+
+\begin{thebibliography}{9}
+
+\bibitem[Zheng et~al.(2024)]{processbench}
+Chujie Zheng, Zhenru Zhang, Beichen Zhang, Runji Lin, Keming Lu, Bowen Yu, Dayiheng Liu, Jingren Zhou, and Junyang Lin.
+\newblock ProcessBench: Identifying process errors in mathematical reasoning.
+\newblock arXiv:2412.06559, 2024.
+
+\bibitem[Wang et~al.(2023)]{mathshepherd}
+Peiyi Wang, Lei Li, Zhihong Shao, Runxin Xu, Damai Dai, Yifei Li, Deli Chen, Yu Wu, and Zhifang Sui.
+\newblock Math-Shepherd: Verify and reinforce LLMs step-by-step without human annotations.
+\newblock arXiv:2312.08935, 2023.
+
+\bibitem[Zhang et~al.(2025)]{qwenprm}
+Zhenru Zhang, Chujie Zheng, Yangzhen Wu, Beichen Zhang, Runji Lin, Bowen Yu, Dayiheng Liu, Jingren Zhou, and Junyang Lin.
+\newblock The lessons of developing process reward models in mathematical reasoning.
+\newblock arXiv:2501.07301, 2025.
+
+\bibitem[Sun et~al.(2025)]{freeprm}
+Lin Sun, Chuang Liu, Xiaofeng Ma, Tao Yang, Weijia Lu, and Ning Wu.
+\newblock FreePRM: Training process reward models without ground truth process labels.
+\newblock arXiv:2506.03570, 2025.
+
+\bibitem[Zhu et~al.(2025)]{retrievalprm}
+Jiachen Zhu, Congmin Zheng, Jianghao Lin, Kounianhua Du, Ying Wen, Yong Yu, Jun Wang, and Weinan Zhang.
+\newblock Retrieval-Augmented Process Reward Model for Generalizable Mathematical Reasoning.
+\newblock arXiv:2502.14361, 2025.
+
+\bibitem[Bai et~al.(2026)]{processlid}
+Langxing Bai, Fan Yin, Jiao Sun, and Kai-Wei Chang.
+\newblock ProcessLID: Step-wise internal reward in LLM reasoning.
+\newblock OpenReview 5O5AlNVAbs, 2026.
+
+\bibitem[Mazumder et~al.(2022)]{dataperf}
+Mark Mazumder et al.
+\newblock DataPerf: Benchmarks for data-centric AI development.
+\newblock arXiv:2207.10062, 2022.
+
+\bibitem[Vapnik and Vashist(2009)]{lupi}
+Vladimir Vapnik and Akshay Vashist.
+\newblock A new learning paradigm: Learning using privileged information.
+\newblock \emph{Neural Networks}, 22(5--6):544--557, 2009.
+
+\end{thebibliography}
+
 \appendix
 
 \section{Additional Result Details}
@@ -389,51 +435,5 @@ BCE, error weight 3, longer training & 0.4782 & 0.4971 & longer BCE degrades/nul
 \caption{Preliminary generated-label ablations on the Qwen2.5-3B score-head path. These ablations are not the main result, but they show that the generated-label weakness is not limited to a single score-head recipe.}
 \label{tab:ablations}
 \end{table}
-
-\section*{References}
-
-\begin{thebibliography}{9}
-
-\bibitem{processbench}
-Chujie Zheng, Zhenru Zhang, Beichen Zhang, Runji Lin, Keming Lu, Bowen Yu, Dayiheng Liu, Jingren Zhou, and Junyang Lin.
-\newblock ProcessBench: Identifying process errors in mathematical reasoning.
-\newblock arXiv:2412.06559, 2024.
-
-\bibitem{mathshepherd}
-Peiyi Wang, Lei Li, Zhihong Shao, Runxin Xu, Damai Dai, Yifei Li, Deli Chen, Yu Wu, and Zhifang Sui.
-\newblock Math-Shepherd: Verify and reinforce LLMs step-by-step without human annotations.
-\newblock arXiv:2312.08935, 2023.
-
-\bibitem{qwenprm}
-Zhenru Zhang, Chujie Zheng, Yangzhen Wu, Beichen Zhang, Runji Lin, Bowen Yu, Dayiheng Liu, Jingren Zhou, and Junyang Lin.
-\newblock The lessons of developing process reward models in mathematical reasoning.
-\newblock arXiv:2501.07301, 2025.
-
-\bibitem{freeprm}
-Lin Sun, Chuang Liu, Xiaofeng Ma, Tao Yang, Weijia Lu, and Ning Wu.
-\newblock FreePRM: Training process reward models without ground truth process labels.
-\newblock arXiv:2506.03570, 2025.
-
-\bibitem{retrievalprm}
-Jiachen Zhu, Congmin Zheng, Jianghao Lin, Kounianhua Du, Ying Wen, Yong Yu, Jun Wang, and Weinan Zhang.
-\newblock Retrieval-Augmented Process Reward Model for Generalizable Mathematical Reasoning.
-\newblock arXiv:2502.14361, 2025.
-
-\bibitem{processlid}
-Langxing Bai, Fan Yin, Jiao Sun, and Kai-Wei Chang.
-\newblock ProcessLID: Step-wise internal reward in LLM reasoning.
-\newblock OpenReview 5O5AlNVAbs, 2026.
-
-\bibitem{dataperf}
-Mark Mazumder et al.
-\newblock DataPerf: Benchmarks for data-centric AI development.
-\newblock arXiv:2207.10062, 2022.
-
-\bibitem{lupi}
-Vladimir Vapnik and Akshay Vashist.
-\newblock A new learning paradigm: Learning using privileged information.
-\newblock \emph{Neural Networks}, 22(5--6):544--557, 2009.
-
-\end{thebibliography}
 
 \end{document}
