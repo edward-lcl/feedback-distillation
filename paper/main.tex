@@ -1,6 +1,6 @@
-\documentclass[11pt]{article}
+\documentclass{article}
 
-\usepackage[margin=1in]{geometry}
+\usepackage[submission]{colm2026_conference}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{microtype}
@@ -9,7 +9,10 @@
 \usepackage{url}
 \usepackage{hyperref}
 \usepackage{pgfplots}
+\usepackage{lineno}
 \pgfplotsset{compat=1.18}
+\definecolor{darkblue}{rgb}{0, 0, 0.5}
+\hypersetup{colorlinks=true, citecolor=darkblue, linkcolor=darkblue, urlcolor=darkblue}
 
 \title{Gold Labels Transfer, Generated Labels Do Not:\\
 A Controlled Diagnosis of Supervision Mismatch in Process Reward Model Distillation}
@@ -18,6 +21,10 @@ A Controlled Diagnosis of Supervision Mismatch in Process Reward Model Distillat
 \date{}
 
 \begin{document}
+\ifcolmsubmission
+\linenumbers
+\fi
+
 \maketitle
 
 \begin{abstract}
