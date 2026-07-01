@@ -1,5 +1,64 @@
 # Handoff — Saksham (GPU box, 2×3090 / 48 GB)
 
+## 2026-06-30 — Phase B is merged; here's the one experiment worth running next
+
+Your `saksham/phaseb-capacity-gate-main-integration` branch is merged into `main`
+(2026-07-01). Your gold-vs-generated result is the strongest positive evidence in the
+project — it's been merged with Henry's teacher-sweet-spot draft into one paper aimed at
+**COLM Efficient Reasoning Workshop, deadline 2026-07-12**
+(`paper/merged_draft.tex`, plan in `PAPER_MERGE_PLAN.md`). Your framing survives basically
+untouched: §6 of the merged paper is your gold-vs-generated result, reframed as the answer
+to a question Henry's draft asked but didn't have evidence for ("is the null a capacity
+problem or a supervision problem?").
+
+**The one thing worth your GPU time before submission: the missing controlled cell.**
+Your own result card already names it — generated teacher labels on the *same*
+GSM8K/OmniMath source problems used by the gold-label rows, holding source-distribution
+fixed and varying only provenance (gold vs.\ generated). Right now the gold-vs-generated
+contrast confounds three things at once (provenance, source distribution, format); this
+is the one experiment that actually isolates one variable.
+
+**Important: this is not ready to just launch — it needs a data-prep step first, and I
+scoped exactly why.** `results/diagnostics/processbench_{gsm8k,omnimath}_gold_train400_steps.jsonl`
+(your existing gold-label training files) only contain the *candidate* solution ProcessBench
+asks a judge to evaluate, with per-step `is_error` gold flags — they do **not** contain a
+reference worked solution. `data/label_pipeline.py` (the tool that calls the Gemma-4
+teacher) needs `{problem, solution, gt_answer, gt_solution}` — it uses `solution` as the
+candidate to label and `gt_solution`/`gt_answer` as what the teacher is privileged with.
+`data/processbench_gsm8k.jsonl` (400 examples, already in the repo) has `gt_answer` but no
+`gt_solution` — same gap for OmniMath, which isn't even downloaded locally
+(`scripts/download_data.py` pulls it from `Qwen/ProcessBench`, config `omnimath`).
+
+So the actual next step is a short glue script, not a training run:
+1. For each of the 400 GSM8K ProcessBench source problems, match it back to
+   `openai/gsm8k` (`main`/`test` split, already referenced in `scripts/download_data.py`)
+   by problem text to recover the official reference solution (GSM8K answers include the
+   full worked steps before the `####` line). OmniMath may not have an equivalently clean
+   reference-solution field — check what `Qwen/ProcessBench`'s omnimath config actually
+   ships before assuming this generalizes; GSM8K alone might be the only source where this
+   is honestly doable without another data source.
+2. Build `{problem, solution: <ProcessBench candidate, steps joined>, gt_answer, gt_solution: <matched GSM8K reference>}`
+   JSONL, one row per source problem.
+3. Run `data.label_pipeline` twice (`--privilege solution` and `--privilege none`) against
+   Edward's Gemma-4 teacher to get `math_priv_gsm8k400.jsonl` / `math_nogt_gsm8k400.jsonl`
+   — this step is cheap/sequential (labeling, not generation) and could run on Edward's Mac
+   rather than your GPU box.
+4. Train with `scripts/run_gold_scorehead_gate.sh TRAIN_DATASET=<the new file>` using the
+   **same defaults** the gold-source runs used (don't reach for the generated-label track's
+   `bce_ew3`/`rank_bal` variants here — apples-to-apples means matching the gold-source
+   recipe, not the best generated-label recipe), `RUN_TAG=generated_priv_gsm8k400_to_math1000`,
+   eval on the existing `data/processbench_math_shuffled.jsonl`.
+5. Compare against `results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed{0..3}`
+   (holds source fixed, varies provenance) and against
+   `results/diagnostics/teacher_bce_priv_to_math1000_qwen3b_seed0` /
+   `generated_rank_nogt_to_math1000_qwen3b_seed0` (holds provenance fixed, varies source).
+
+If step 1 turns out to be more than an afternoon (e.g., OmniMath has no usable reference
+field), GSM8K-only is still a real, publishable single-cell result — don't block on doing
+both sources.
+
+---
+
 **Status: N=1000 RUN COMPLETE & VERIFIED (2026-06-18) — privilege does NOT transfer to the student.** Labeling confirmed to run through the served **Gemma-4** teacher (~32k requests), generation on local `gemma-2-9b`, our threshold-free eval. Result: no-GT student ≥ privileged on `roc_auc` (0.641 vs 0.631) **and** downstream re-rank (0.373 vs 0.349); neither verifier beats majority vote. Teacher-level privilege is still validated — it just doesn't distill into the 1.5B student at this scale. Full numbers: [results/RESULTS.md](results/RESULTS.md). **This is an honest negative — do not report it as "privilege transfers."** Next = the diagnostics (below).
 
 ## ✅ Where we are now → next: **Phase B** (see `RUNBOOK_PHASE_B.md`)
