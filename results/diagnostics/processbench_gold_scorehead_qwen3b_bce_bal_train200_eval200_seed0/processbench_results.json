@@ -1,0 +1,16 @@
+{
+  "f1": 0.27936507936507937,
+  "precision": 0.21782178217821782,
+  "recall": 0.3893805309734513,
+  "first_error_acc": 0.47,
+  "roc_auc": 0.7129462404430799,
+  "pr_auc": 0.22809004058944718,
+  "error_recall": 0.3893805309734513,
+  "clean_specificity": 0.8656462585034014,
+  "pred_error_rate": 0.15671062839410396,
+  "first_error_acc_errs": 0.2743362831858407,
+  "clean_seq_acc": 0.7241379310344828,
+  "n_steps": 1289,
+  "n_error_steps": 113,
+  "warnings": []
+}

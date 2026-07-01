@@ -1,0 +1,17 @@
+{
+  "model_a": "results/diagnostics/processbench_gsm8k_to_math400_scorehead_qwen3b_bce_bal_seed1/per_step_scores.json",
+  "model_b": "results/ablation/Qwen_Qwen2.5-3B-Instruct_seed0_ms100_rank_bal_nogt_critique/per_step_scores.json",
+  "metric": "roc_auc",
+  "gap_model_a_minus_model_b": 0.15543124004957604,
+  "ci95": [
+    0.12333077487267227,
+    0.187974637901245
+  ],
+  "p_one_sided_model_a_gt_model_b": 0.0001999600079984003,
+  "p_two_sided": 0.0003999200159968006,
+  "n_boot": 5000,
+  "n_boot_valid": 5000,
+  "n_steps": 2589,
+  "method": "paired_step_bootstrap",
+  "note": "per_step_scores.json has no sequence IDs, so this bootstraps paired step scores rather than clustered sequences."
+}

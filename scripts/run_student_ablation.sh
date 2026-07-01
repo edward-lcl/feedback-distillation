@@ -27,6 +27,7 @@ GEN_BACKEND="${GEN_BACKEND:-omlx}"
 # thousands of long generations to the teacher (slow; hammers Edward's Mac).
 GEN_OMLX_MODEL="${GEN_OMLX_MODEL:-google/gemma-2-9b-it}"
 GEN_OMLX_URL="${GEN_OMLX_URL:-}"
+GEN_OMLX_API_KEY="${GEN_OMLX_API_KEY:-${OMLX_API_KEY:-}}"
 if [ -z "$GEN_OMLX_URL" ]; then
   case "${OMLX_URL:-}" in
     ""|*localhost*|*127.0.0.1*)
@@ -62,11 +63,12 @@ echo "== 1/4  Data: MATH train problems + ProcessBench MATH eval (shuffled) =="
     --output data/processbench_math_shuffled.jsonl --seed 0
 
 echo "== 2/4  Generate candidate solutions (mix of correct/incorrect) — via GEN endpoint =="
-OMLX_URL="$GEN_OMLX_URL" OMLX_MODEL="$GEN_OMLX_MODEL" \
+OMLX_URL="$GEN_OMLX_URL" OMLX_MODEL="$GEN_OMLX_MODEL" OMLX_API_KEY="$GEN_OMLX_API_KEY" \
 "$PY" -m scripts.generate_solutions --input data/raw/math_train.jsonl \
     --output data/raw/math_sampled.jsonl --backend "$GEN_BACKEND" \
     ${GEN_OMLX_URL:+--omlx_url "$GEN_OMLX_URL"} --k 4 $DEVFLAG
 
+export OMLX_LABEL_MAX_TOKENS="${OMLX_LABEL_MAX_TOKENS:-50}"
 echo "== 3/4  Label twice — privileged (solution) and no-GT — via TEACHER endpoint ($OMLX_URL) =="
 "$PY" -m data.label_pipeline --input data/raw/math_sampled.jsonl \
     --output data/labeled/math_priv.jsonl --use_omlx --omlx_url "$OMLX_URL" --privilege solution

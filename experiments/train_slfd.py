@@ -19,6 +19,7 @@ Usage:
 """
 import argparse
 import json
+import random
 
 import torch
 from models.student import StudentModel
@@ -26,37 +27,16 @@ from training.slfd_trainer import SLFDTrainer
 from data.flatten_labels import flatten_labeled_file, flatten_labeled_records
 
 
-# Ablation -> (loss_flags [LM, hidden, score, logit], score_loss_mode).
-# The score_loss_mode is the B4 distillation-method knob: how much of the
-# teacher's scalar we actually distill.
-#   score_critique / score_only — original: MSE on the exact scalar (point estimate)
-#   verdict — B4c: BCE on the hard binary verdict (correct iff score>=0); drops the
-#             free-text critique entirely (the 1.5B can't reproduce a 26B's prose)
-#   soft    — B4a-offline: BCE on the soft prob p=(score+1)/2 — keeps the teacher's
-#             CONFIDENCE as a distribution instead of collapsing it to a point.
-# (True token-level logit-KL from the teacher needs a LIVE teacher with logit
-#  access — the served teacher exposes none; see RUNBOOK_PHASE_B.md B4a.)
+# Ablation -> (loss_flags [LM, hidden, score, logit], default score_loss).
+# Existing Phase B jobs used --score_loss directly; these names are convenient
+# wrappers for the newer distillation-method arms from main.
 ABLATIONS = {
     "score_critique": ([True, False, True, False], "mse"),
-    "score_only":     ([False, False, True, False], "mse"),
-    "verdict":        ([False, False, True, False], "verdict"),
-    "soft":           ([False, False, True, False], "soft"),
-    # B4a-online: score MSE + soft KL toward a LIVE same-family teacher's critique
-    # distribution (needs --kd_teacher). The soft counterpart of score_critique's
-    # hard token-CE. The served Gemma-4 exposes no logits → use a LOCAL Gemma-2.
-    "logit_kd":       ([False, False, True, True], "mse"),
+    "score_only": ([False, False, True, False], "mse"),
+    "verdict": ([False, False, True, False], "verdict"),
+    "soft": ([False, False, True, False], "soft"),
+    "logit_kd": ([False, False, True, True], "mse"),
 }
-
-
-def set_seed(seed: int):
-    """Seed every RNG so multi-seed retrains are reproducible (D1 rigor)."""
-    import random
-    import numpy as np
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
 
 
 def load_dataset(path: str) -> list[dict]:
@@ -68,6 +48,18 @@ def load_dataset(path: str) -> list[dict]:
     return rows                                        # already flat
 
 
+def set_seed(seed: int) -> None:
+    random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    try:
+        import numpy as np
+        np.random.seed(seed)
+    except Exception:
+        pass
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", required=True,
@@ -77,31 +69,43 @@ def main():
     parser.add_argument("--epochs", type=int, default=2)
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--max_steps", type=int, default=None)
+    parser.add_argument("--seed", type=int, default=0,
+                        help="Seed for LoRA init, data order, and torch RNGs.")
     parser.add_argument("--dev_mode", action="store_true",
                         help="Use smaller models for local Apple Silicon development.")
     parser.add_argument("--train_dtype", choices=["auto", "fp32", "fp16", "bf16"], default="auto",
                         help="Weight precision for training. 'auto' uses bf16 on MPS "
                              "(fp16 NaNs there) and the device default elsewhere.")
+    parser.add_argument("--model_lr", type=float, default=1e-4)
+    parser.add_argument("--score_lr", type=float, default=5e-5)
+    parser.add_argument("--align_lr", type=float, default=1e-6)
+    parser.add_argument("--weight_decay", type=float, default=0.01)
+    parser.add_argument("--lm_weight", type=float, default=1.0)
+    parser.add_argument("--score_weight", type=float, default=1.0)
+    parser.add_argument("--hidden_weight", type=float, default=1.0)
+    parser.add_argument("--score_loss", choices=["mse", "bce", "rank", "bce_rank", "verdict", "soft"],
+                        default=None,
+                        help="Score-head objective. If omitted, the selected ablation chooses it.")
+    parser.add_argument("--error_weight", type=float, default=1.0,
+                        help="Per-sample weight for error steps when --score_loss=bce.")
+    parser.add_argument("--rank_margin", type=float, default=1.0,
+                        help="Margin for pairwise score ranking losses.")
+    parser.add_argument("--balanced_batches", action="store_true",
+                        help="Oversample error/clean examples so each batch contains both classes.")
     parser.add_argument("--ablation", choices=list(ABLATIONS.keys()),
                         default="score_critique",
                         help="score_critique = scorer + NL critique (L_score+L_LM); "
-                             "score_only = scorer alone; verdict = BCE on the hard "
-                             "binary verdict (B4c); soft = BCE on the soft prob "
-                             "p=(score+1)/2, a distribution target (B4a-offline).")
-    parser.add_argument("--seed", type=int, default=None,
-                        help="Seed all RNGs for a reproducible run. Omit for the "
-                             "original stochastic behavior; set per-run for D1 multi-seed.")
+                             "score_only = scorer alone; verdict = hard BCE target; "
+                             "soft = BCE on p=(score+1)/2; logit_kd = score loss + "
+                             "online token-level KD from a local same-family teacher.")
     parser.add_argument("--kd_teacher", default=None,
-                        help="Local HF teacher for online logit-KD (ablation=logit_kd). "
-                             "Use a SAME-FAMILY model so vocabs align (e.g. a Gemma teacher "
-                             "for a Gemma student). In --dev_mode, defaults to the dev teacher.")
+                        help="Local HF teacher for online logit-KD (ablation=logit_kd).")
     parser.add_argument("--kd_temperature", type=float, default=2.0,
-                        help="Softmax temperature for the logit-KD loss (Hinton KD).")
+                        help="Softmax temperature for the logit-KD loss.")
     args = parser.parse_args()
 
-    if args.seed is not None:
-        set_seed(args.seed)
-        print(f"Seeded all RNGs with {args.seed}")
+    set_seed(args.seed)
+    print(f"Seed: {args.seed}")
 
     dataset = load_dataset(args.dataset)
     print(f"Loaded {len(dataset)} per-step training examples from {args.dataset}")
@@ -121,12 +125,12 @@ def main():
     elif use_fp32 and student.model.dtype != torch.float32:
         student.model.float()
         print("Training in float32.")
-    loss_flags, score_loss_mode = ABLATIONS[args.ablation]
-    print(f"Ablation: {args.ablation}  (loss_flags={loss_flags}, score_loss_mode={score_loss_mode})")
 
-    # Online logit-KD needs a LIVE teacher for its logits (offline labels carry
-    # only the scalar + critique text, not a distribution). Everything else is
-    # offline distillation: teacher=None, labels already in the dataset.
+    loss_flags, ablation_score_loss = ABLATIONS[args.ablation]
+    score_loss = args.score_loss or ablation_score_loss
+    trainer_score_loss = "bce" if score_loss == "verdict" else score_loss
+    print(f"Ablation: {args.ablation}  (loss_flags={loss_flags}, score_loss={score_loss})")
+
     teacher = None
     if loss_flags[3]:
         from models.teacher import TeacherModel
@@ -134,12 +138,23 @@ def main():
         sv = getattr(student.tokenizer, "vocab_size", None)
         tv = getattr(teacher.tokenizer, "vocab_size", None)
         if sv is not None and tv is not None and sv != tv:
-            print(f"⚠️  vocab mismatch (student {sv} vs teacher {tv}) — logit-KD truncates to "
-                  f"min-vocab, which corrupts the signal. Use a SAME-FAMILY teacher "
-                  f"(e.g. Gemma-2-2B for a Gemma student).")
+            print(f"WARNING: vocab mismatch (student {sv} vs teacher {tv}); "
+                  "logit-KD truncates to min-vocab and may corrupt the signal. "
+                  "Use a same-family teacher/student pair.")
+
+    # teacher=None for offline distillation; labels are already in the dataset.
     trainer = SLFDTrainer(student, teacher=teacher, dataset=dataset,
-                          loss_flags=loss_flags, score_loss_mode=score_loss_mode,
-                          kd_temperature=args.kd_temperature, dev_mode=args.dev_mode)
+                          loss_flags=loss_flags, dev_mode=args.dev_mode,
+                          model_lr=args.model_lr, score_lr=args.score_lr,
+                          align_lr=args.align_lr, weight_decay=args.weight_decay,
+                          lm_weight=args.lm_weight,
+                          score_weight=args.score_weight,
+                          hidden_weight=args.hidden_weight,
+                          score_loss=trainer_score_loss,
+                          error_weight=args.error_weight,
+                          rank_margin=args.rank_margin,
+                          balanced_batches=args.balanced_batches,
+                          kd_temperature=args.kd_temperature)
 
     summary = trainer.train(epochs=args.epochs, batch_size=args.batch_size, max_steps=args.max_steps)
     trainer.save_checkpoint(args.checkpoint)

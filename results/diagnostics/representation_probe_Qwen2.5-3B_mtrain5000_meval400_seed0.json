@@ -1,0 +1,77 @@
+{
+  "student_model": "Qwen/Qwen2.5-3B-Instruct",
+  "eval_dataset": "data/processbench_math_shuffled.jsonl",
+  "max_train_steps": 5000,
+  "max_eval_samples": 400,
+  "batch_size": 2,
+  "seed": 0,
+  "eval_label_counts": {
+    "0": 2362,
+    "1": 227
+  },
+  "cells": [
+    {
+      "name": "priv",
+      "label_path": "data/labeled/math_priv.jsonl",
+      "train": {
+        "roc_auc": 0.9947000351058212,
+        "pr_auc": 0.9783711687238764,
+        "f1_at_0p5": 0.9272175890826384,
+        "precision_at_0p5": 0.8679914833215047,
+        "recall_at_0p5": 0.9951179820992677,
+        "pred_error_rate_at_0p5": 0.2818,
+        "n_steps": 5000,
+        "n_error_steps": 1229,
+        "error_rate": 0.2458
+      },
+      "eval": {
+        "roc_auc": 0.5497245297235599,
+        "pr_auc": 0.09160093487885222,
+        "f1_at_0p5": 0.16020671834625322,
+        "precision_at_0p5": 0.09957173447537473,
+        "recall_at_0p5": 0.40969162995594716,
+        "pred_error_rate_at_0p5": 0.36075704905368866,
+        "n_steps": 2589,
+        "n_error_steps": 227,
+        "error_rate": 0.0876786404016995
+      },
+      "train_label_counts": {
+        "0": 3771,
+        "1": 1229
+      },
+      "seconds": 260.33
+    },
+    {
+      "name": "nogt",
+      "label_path": "data/labeled/math_nogt.jsonl",
+      "train": {
+        "roc_auc": 0.9970303844515872,
+        "pr_auc": 0.9878299794716441,
+        "f1_at_0p5": 0.9370400654129191,
+        "precision_at_0p5": 0.8863109048723898,
+        "recall_at_0p5": 0.9939288811795317,
+        "pred_error_rate_at_0p5": 0.2586,
+        "n_steps": 5000,
+        "n_error_steps": 1153,
+        "error_rate": 0.2306
+      },
+      "eval": {
+        "roc_auc": 0.5558867084192818,
+        "pr_auc": 0.09517924743752292,
+        "f1_at_0p5": 0.1729106628242075,
+        "precision_at_0p5": 0.10335917312661498,
+        "recall_at_0p5": 0.5286343612334802,
+        "pred_error_rate_at_0p5": 0.4484356894553882,
+        "n_steps": 2589,
+        "n_error_steps": 227,
+        "error_rate": 0.0876786404016995
+      },
+      "train_label_counts": {
+        "0": 3847,
+        "1": 1153
+      },
+      "seconds": 253.32
+    }
+  ],
+  "priv_minus_nogt_eval_roc_auc": -0.006162178695721887
+}

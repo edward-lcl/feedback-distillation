@@ -1,0 +1,17 @@
+{
+  "model_a": "results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed0/per_step_scores.json",
+  "model_b": "results/diagnostics/generated_rank_nogt_to_math1000_qwen3b_seed0/per_step_scores.json",
+  "metric": "roc_auc",
+  "gap_model_a_minus_model_b": 0.12130912078047909,
+  "ci95": [
+    0.09499873954524704,
+    0.148444234705434
+  ],
+  "p_one_sided_model_a_gt_model_b": 0.0001999600079984003,
+  "p_two_sided": 0.0003999200159968006,
+  "n_boot": 5000,
+  "n_boot_valid": 5000,
+  "n_steps": 6505,
+  "method": "paired_step_bootstrap",
+  "note": "per_step_scores.json has no sequence IDs, so this bootstraps paired step scores rather than clustered sequences."
+}

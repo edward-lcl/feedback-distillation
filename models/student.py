@@ -71,11 +71,38 @@ class StudentModel:
                 target_modules="all-linear", task_type="CAUSAL_LM",
             )
             self.model = get_peft_model(self.model, lora_cfg)
+            if hasattr(self.model, "gradient_checkpointing_enable"):
+                self.model.gradient_checkpointing_enable()
             self.model.print_trainable_parameters()
 
         self.score_head = nn.Linear(hidden_dim, 1).to(self.device).to(torch.float32)
         self.student_frozen = False
         print(f"StudentModel loaded: {model_name} on {self.device} (LoRA={'on' if use_lora else 'off'})")
+
+    def _backbone_model(self):
+        """Return the decoder backbone so score probes avoid LM logits/all layers."""
+        model = self.model.module if hasattr(self.model, "module") else self.model
+        # PeftModelForCausalLM -> LoraModel -> wrapped AutoModelForCausalLM -> backbone.
+        base_model = getattr(model, "base_model", None)
+        wrapped = getattr(base_model, "model", None) if base_model is not None else None
+        if wrapped is not None and hasattr(wrapped, "model"):
+            return wrapped.model
+        # AutoModelForCausalLM -> backbone.
+        if hasattr(model, "model"):
+            return model.model
+        return None
+
+    def _last_hidden_state(self, inputs: dict) -> torch.Tensor:
+        backbone = self._backbone_model()
+        if backbone is not None:
+            out = backbone(**inputs, return_dict=True)
+            return out.last_hidden_state
+        out = self.model(
+            **inputs,
+            output_hidden_states=True,
+            return_dict=True,
+        )
+        return out.hidden_states[-1]
 
     def _generate(self, prompt: str, max_new_tokens: int = 150) -> str:
         max_length = MPS_SAFE_MAX_LENGTH if is_mps() else 1024
@@ -106,9 +133,101 @@ class StudentModel:
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         if inputs["input_ids"].shape[1] > ml:
             inputs = {k: v[:, -ml:] for k, v in inputs.items()}
-        out = self.model(**inputs, output_hidden_states=True, return_dict=True)
-        last_hidden = out.hidden_states[-1][:, -1, :].to(torch.float32)
+        hidden = self._last_hidden_state(inputs)
+        last_hidden = hidden[:, -1, :].to(self.device, dtype=torch.float32)
         return self.score_head(last_hidden).squeeze(-1)
+
+    def _iter_step_last_hidden(
+        self,
+        step_inputs: list[tuple[str, str, str]],
+        batch_size: int = 16,
+    ):
+        """Yield batched step-boundary hidden states for score/probe heads."""
+        ml = MPS_SAFE_MAX_LENGTH if is_mps() else 1024
+        pad_id = self.tokenizer.pad_token_id
+        if pad_id is None:
+            pad_id = self.tokenizer.eos_token_id
+
+        for start in range(0, len(step_inputs), batch_size):
+            chunk = step_inputs[start:start + batch_size]
+            encoded = []
+            for problem, solution_prefix, step_text in chunk:
+                prompt = self.STEP_EVAL_PROMPT.format(
+                    problem=problem,
+                    solution_prefix=solution_prefix,
+                    step_text=step_text,
+                )
+                ids = self.tokenizer(
+                    prompt,
+                    return_tensors="pt",
+                    add_special_tokens=True,
+                )["input_ids"][0]
+                if ids.numel() > ml:
+                    ids = ids[-ml:]
+                encoded.append(ids)
+
+            max_len = max(int(ids.numel()) for ids in encoded)
+            input_ids = torch.full(
+                (len(encoded), max_len),
+                pad_id,
+                dtype=encoded[0].dtype,
+            )
+            attention_mask = torch.zeros_like(input_ids)
+            last_indices = []
+            for row, ids in enumerate(encoded):
+                input_ids[row, :ids.numel()] = ids
+                attention_mask[row, :ids.numel()] = 1
+                last_indices.append(int(ids.numel()) - 1)
+
+            inputs = {
+                "input_ids": input_ids.to(self.device),
+                "attention_mask": attention_mask.to(self.device),
+            }
+            position_ids = attention_mask.long().cumsum(dim=-1) - 1
+            position_ids.masked_fill_(attention_mask == 0, 0)
+            inputs["position_ids"] = position_ids.to(self.device)
+            hidden = self._last_hidden_state(inputs)
+            row_idx = torch.arange(len(encoded), device=hidden.device)
+            col_idx = torch.tensor(last_indices, device=hidden.device)
+            last_hidden = hidden[row_idx, col_idx, :].to(self.device, dtype=torch.float32)
+            yield last_hidden
+
+    def score_steps(
+        self,
+        step_inputs: list[tuple[str, str, str]],
+        batch_size: int = 16,
+    ) -> torch.Tensor:
+        """Vectorized score_step for exploratory evaluation/diagnostics.
+
+        Each item is (problem, solution_prefix, step_text). This preserves the
+        prompt and tail-truncation convention, but padded batched bf16 inference
+        can slightly perturb rankings versus the exact serial score_step path.
+        Use batch_size=1 for headline metrics.
+        """
+        if not step_inputs:
+            return torch.empty(0, dtype=torch.float32, device=self.device)
+
+        logits = []
+        for last_hidden in self._iter_step_last_hidden(step_inputs, batch_size):
+            logits.append(self.score_head(last_hidden).squeeze(-1))
+
+        return torch.cat(logits, dim=0)
+
+    def step_representations(
+        self,
+        step_inputs: list[tuple[str, str, str]],
+        batch_size: int = 16,
+    ) -> torch.Tensor:
+        """Return CPU step-boundary hidden states for cheap downstream probes."""
+        if not step_inputs:
+            hidden_dim = self.model.config.hidden_size
+            return torch.empty((0, hidden_dim), dtype=torch.float32)
+        with torch.no_grad():
+            reps = [
+                last_hidden.detach().cpu()
+                for last_hidden in self._iter_step_last_hidden(step_inputs, batch_size)
+            ]
+        return torch.cat(reps, dim=0)
 
     def evaluate_step(
         self,
@@ -137,8 +256,8 @@ class StudentModel:
         inputs = self.tokenizer(response, return_tensors="pt").to(self.device)
         if inputs["input_ids"].shape[1] > sh_max_length:
             inputs = {k: v[:, -sh_max_length:] for k, v in inputs.items()}
-        out = self.model(**inputs, output_hidden_states=True, return_dict=True)
-        last_hidden = out.hidden_states[-1][:, -1, :].to(torch.float32)
+        hidden = self._last_hidden_state(inputs)
+        last_hidden = hidden[:, -1, :].to(self.device, dtype=torch.float32)
         score_logit = self.score_head(last_hidden).squeeze(-1)  # grad flows here
 
         return feedback, score_val, score_logit
@@ -152,29 +271,42 @@ class StudentModel:
         teacher_score: float,   # actual score, not hardcoded
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Build (input_ids, labels, attention_mask) for L_feedback_LM loss."""
-        full_text = (
-            f"Problem: {problem}\n"
-            f"Steps so far:\n{solution_prefix}\n"
-            f"Current step: {step_text}\n\n"
-            f"Score: {teacher_score:.2f}\nFeedback: {teacher_feedback}"
-        )
         ml = MPS_SAFE_MAX_LENGTH if is_mps() else 512
-        enc = self.tokenizer(full_text, return_tensors="pt", padding=True, truncation=True, max_length=ml)
-        input_ids = enc["input_ids"]
-        attention_mask = enc["attention_mask"]
 
-        # Only supervise on feedback token span
+        # Only supervise on feedback token span. Tokenize the prefix and
+        # feedback separately so long reasoning prefixes cannot right-truncate
+        # away every supervised token and produce an all-ignore NaN LM loss.
         prefix_text = (
             f"Problem: {problem}\n"
             f"Steps so far:\n{solution_prefix}\n"
             f"Current step: {step_text}\n\n"
             f"Score: {teacher_score:.2f}\nFeedback: "
         )
-        prefix_ids = self.tokenizer(prefix_text, return_tensors="pt")["input_ids"]
-        prefix_len = prefix_ids.shape[1]
+        prefix_ids = self.tokenizer(prefix_text, return_tensors="pt", add_special_tokens=True)["input_ids"][0]
+        feedback_ids = self.tokenizer(
+            teacher_feedback or " ",
+            return_tensors="pt",
+            add_special_tokens=False,
+        )["input_ids"][0]
+
+        if feedback_ids.numel() == 0:
+            feedback_ids = torch.tensor(
+                [self.tokenizer.eos_token_id],
+                dtype=prefix_ids.dtype,
+            )
+
+        if feedback_ids.numel() >= ml:
+            feedback_ids = feedback_ids[: ml - 1]
+
+        keep_prefix = max(1, ml - int(feedback_ids.numel()))
+        if prefix_ids.numel() > keep_prefix:
+            prefix_ids = prefix_ids[-keep_prefix:]
+
+        input_ids = torch.cat([prefix_ids, feedback_ids], dim=0).unsqueeze(0)
+        attention_mask = torch.ones_like(input_ids)
 
         labels = input_ids.clone()
-        labels[:, :prefix_len] = -100
+        labels[:, : prefix_ids.numel()] = -100
         return input_ids, labels, attention_mask
 
     def freeze(self):

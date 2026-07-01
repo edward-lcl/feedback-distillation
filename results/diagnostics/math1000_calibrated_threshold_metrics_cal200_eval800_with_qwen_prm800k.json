@@ -1,0 +1,349 @@
+{
+  "dataset": "data/processbench_math_shuffled.jsonl",
+  "max_samples": 1000,
+  "cal_samples": 200,
+  "method": "threshold_max_f1_on_calibration_sequences_then_eval_on_remaining_sequences",
+  "results": [
+    {
+      "name": "qwen_prm800k",
+      "scores": "results/diagnostics/qwen_prm800k_math1000/per_step_scores.json",
+      "threshold": 0.603515625,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.8372003968253968,
+        "pr_auc": 0.32418882053908255,
+        "f1": 0.38549618320610685,
+        "precision": 0.35563380281690143,
+        "recall": 0.42083333333333334,
+        "clean_specificity": 0.9225396825396825,
+        "pred_error_rate": 0.10912584053794429,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.6175,
+        "first_error_acc_errs": 0.40208333333333335,
+        "clean_seq_acc": 0.940625,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    },
+    {
+      "name": "gsm_seed0",
+      "scores": "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed0/per_step_scores.json",
+      "threshold": 1.7054122686386108,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.745239417989418,
+        "pr_auc": 0.23389561476428883,
+        "f1": 0.31661971830985913,
+        "precision": 0.21698841698841698,
+        "recall": 0.5854166666666667,
+        "clean_specificity": 0.7853968253968254,
+        "pred_error_rate": 0.24879923150816521,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.41875,
+        "first_error_acc_errs": 0.3416666666666667,
+        "clean_seq_acc": 0.534375,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    },
+    {
+      "name": "gsm_seed1",
+      "scores": "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed1/per_step_scores.json",
+      "threshold": 4.757819652557373,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.7706781305114638,
+        "pr_auc": 0.21524862779937953,
+        "f1": 0.29766693483507645,
+        "precision": 0.24246395806028834,
+        "recall": 0.3854166666666667,
+        "clean_specificity": 0.8776719576719577,
+        "pred_error_rate": 0.14658981748318925,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.46,
+        "first_error_acc_errs": 0.3,
+        "clean_seq_acc": 0.7,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    },
+    {
+      "name": "gsm_seed2",
+      "scores": "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed2/per_step_scores.json",
+      "threshold": 1.2013522386550903,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.7516649029982363,
+        "pr_auc": 0.22613084618393856,
+        "f1": 0.2969094922737307,
+        "precision": 0.20195195195195195,
+        "recall": 0.5604166666666667,
+        "clean_specificity": 0.7750264550264551,
+        "pred_error_rate": 0.2559077809798271,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.38125,
+        "first_error_acc_errs": 0.3229166666666667,
+        "clean_seq_acc": 0.46875,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    },
+    {
+      "name": "gsm_seed3",
+      "scores": "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed3/per_step_scores.json",
+      "threshold": -0.1950128674507141,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.7232733686067021,
+        "pr_auc": 0.19396303365057813,
+        "f1": 0.2714420358152686,
+        "precision": 0.1753958587088916,
+        "recall": 0.6,
+        "clean_specificity": 0.7134391534391534,
+        "pred_error_rate": 0.3154658981748319,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.395,
+        "first_error_acc_errs": 0.34375,
+        "clean_seq_acc": 0.471875,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    },
+    {
+      "name": "omni_seed0",
+      "scores": "results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed0/per_step_scores.json",
+      "threshold": -1.3624379634857178,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.7482830687830688,
+        "pr_auc": 0.22919152223003922,
+        "f1": 0.3062401678028317,
+        "precision": 0.204625087596356,
+        "recall": 0.6083333333333333,
+        "clean_specificity": 0.7597883597883598,
+        "pred_error_rate": 0.2741594620557157,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.3475,
+        "first_error_acc_errs": 0.33958333333333335,
+        "clean_seq_acc": 0.359375,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    },
+    {
+      "name": "omni_seed1",
+      "scores": "results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed1/per_step_scores.json",
+      "threshold": 1.2557470798492432,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.7722548500881835,
+        "pr_auc": 0.2605702340579138,
+        "f1": 0.3293838862559242,
+        "precision": 0.23013245033112584,
+        "recall": 0.5791666666666667,
+        "clean_specificity": 0.8031746031746032,
+        "pred_error_rate": 0.23208453410182517,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.3875,
+        "first_error_acc_errs": 0.3333333333333333,
+        "clean_seq_acc": 0.46875,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    },
+    {
+      "name": "omni_seed2",
+      "scores": "results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed2/per_step_scores.json",
+      "threshold": 1.9975931644439697,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.7528888888888889,
+        "pr_auc": 0.23271474658123656,
+        "f1": 0.31483870967741934,
+        "precision": 0.22803738317757008,
+        "recall": 0.5083333333333333,
+        "clean_specificity": 0.8251851851851851,
+        "pred_error_rate": 0.20557156580211336,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.3575,
+        "first_error_acc_errs": 0.26458333333333334,
+        "clean_seq_acc": 0.496875,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    },
+    {
+      "name": "omni_seed3",
+      "scores": "results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed3/per_step_scores.json",
+      "threshold": 0.9768990874290466,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.7854545855379189,
+        "pr_auc": 0.28182532067041055,
+        "f1": 0.33157199471598414,
+        "precision": 0.24274661508704062,
+        "recall": 0.5229166666666667,
+        "clean_specificity": 0.8342857142857143,
+        "pred_error_rate": 0.19865513928914505,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.39875,
+        "first_error_acc_errs": 0.32708333333333334,
+        "clean_seq_acc": 0.50625,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    },
+    {
+      "name": "teacher_bce_priv",
+      "scores": "results/diagnostics/teacher_bce_priv_to_math1000_qwen3b_seed0/per_step_scores.json",
+      "threshold": -3.236863613128662,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.5489722222222222,
+        "pr_auc": 0.10016853786298605,
+        "f1": 0.16728624535315986,
+        "precision": 0.1076555023923445,
+        "recall": 0.375,
+        "clean_specificity": 0.6842328042328042,
+        "pred_error_rate": 0.3212295869356388,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.37,
+        "first_error_acc_errs": 0.22291666666666668,
+        "clean_seq_acc": 0.590625,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    },
+    {
+      "name": "generated_rank_nogt",
+      "scores": "results/diagnostics/generated_rank_nogt_to_math1000_qwen3b_seed0/per_step_scores.json",
+      "threshold": 3.280695915222168,
+      "calibration": {
+        "start_seq": 0,
+        "end_seq": 200,
+        "n_steps": 1300,
+        "n_error_steps": 114
+      },
+      "evaluation": {
+        "start_seq": 200,
+        "end_seq": 1000,
+        "roc_auc": 0.6313796296296296,
+        "pr_auc": 0.14308587837728196,
+        "f1": 0.20851688693098386,
+        "precision": 0.16099773242630386,
+        "recall": 0.29583333333333334,
+        "clean_specificity": 0.8433862433862434,
+        "pred_error_rate": 0.16945244956772335,
+        "n_steps": 5205,
+        "n_error_steps": 480,
+        "first_error_acc": 0.43,
+        "first_error_acc_errs": 0.1875,
+        "clean_seq_acc": 0.79375,
+        "n_sequences": 800,
+        "n_error_sequences": 480,
+        "n_clean_sequences": 320,
+        "seq_offset": 200
+      }
+    }
+  ]
+}

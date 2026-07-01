@@ -1,0 +1,38 @@
+{
+  "student_model": "Qwen/Qwen2.5-3B-Instruct",
+  "dataset": "data/processbench_math_shuffled.jsonl",
+  "train_samples": 200,
+  "eval_samples": 200,
+  "batch_size": 2,
+  "seed": 0,
+  "train_label_counts": {
+    "0": 1186,
+    "1": 114
+  },
+  "eval_label_counts": {
+    "0": 1176,
+    "1": 113
+  },
+  "train": {
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "f1_at_0p5": 1.0,
+    "precision_at_0p5": 1.0,
+    "recall_at_0p5": 1.0,
+    "pred_error_rate_at_0p5": 0.0876923076923077,
+    "n_steps": 1300,
+    "n_error_steps": 114,
+    "error_rate": 0.0876923076923077
+  },
+  "eval": {
+    "roc_auc": 0.6307793028715911,
+    "pr_auc": 0.13009246900920374,
+    "f1_at_0p5": 0.17834394904458598,
+    "precision_at_0p5": 0.13930348258706468,
+    "recall_at_0p5": 0.24778761061946902,
+    "pred_error_rate_at_0p5": 0.15593483320403415,
+    "n_steps": 1289,
+    "n_error_steps": 113,
+    "error_rate": 0.08766485647788984
+  }
+}

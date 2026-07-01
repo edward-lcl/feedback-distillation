@@ -1,0 +1,19 @@
+{
+  "model_a": "results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed0/per_step_scores.json",
+  "model_b": "results/diagnostics/teacher_bce_priv_to_math1000_qwen3b_seed0/per_step_scores.json",
+  "dataset": "data/processbench_math_shuffled.jsonl",
+  "max_samples": 1000,
+  "metric": "roc_auc",
+  "gap_model_a_minus_model_b": 0.20332065004035854,
+  "ci95": [
+    0.1756962399131605,
+    0.2315581860435823
+  ],
+  "p_one_sided_model_a_gt_model_b": 0.0004997501249375312,
+  "p_two_sided": 0.0009995002498750624,
+  "n_boot": 2000,
+  "n_boot_valid": 2000,
+  "n_sequences": 1000,
+  "n_steps": 6505,
+  "method": "paired_sequence_cluster_bootstrap"
+}

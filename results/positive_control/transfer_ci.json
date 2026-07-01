@@ -1,0 +1,4 @@
+Bootstrap CI (N=10000) for Model A - Model B ROC AUC gap:
+Mean Difference: 0.0481
+95% CI: [0.0200, 0.0767]
+Result: SIGNIFICANT. The CI does not include 0.

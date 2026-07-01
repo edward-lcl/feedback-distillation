@@ -1,0 +1,18 @@
+{
+  "f1": 0.32541133455210236,
+  "precision": 0.2233375156838143,
+  "recall": 0.5993265993265994,
+  "first_error_acc": 0.392,
+  "roc_auc": 0.7869349332722703,
+  "pr_auc": 0.2877028142685357,
+  "best_f1": 0.33798103736754037,
+  "best_f1_threshold": 1.175707459449768,
+  "error_recall": 0.5993265993265994,
+  "clean_specificity": 0.790559972931822,
+  "pred_error_rate": 0.24504227517294389,
+  "first_error_acc_errs": 0.3569023569023569,
+  "clean_seq_acc": 0.4433497536945813,
+  "n_steps": 6505,
+  "n_error_steps": 594,
+  "warnings": []
+}
