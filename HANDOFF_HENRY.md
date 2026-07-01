@@ -2,6 +2,58 @@
 
 _Updated 2026-06-16. Async-friendly, no compute needed. Paper: https://www.overleaf.com/2555239245xpdcmsxkrzgx · Dashboard: https://feedback-distillation.exe.xyz_
 
+## 2026-06-30 — your draft is the spine of a merged paper now; here's the status
+
+Quick catch-up since your last context (2026-06-18): while you were heads-down, Saksham
+ran a second, independent track (`saksham/phaseb-capacity-gate-main-integration`, merged
+into `main` 2026-07-01) on a **Qwen2.5-3B** verifier, asking a different question — is the
+student-transfer null (your §2.7) a capacity problem or a supervision problem? He found
+that under the *identical* training/eval path, ProcessBench-style gold labels (GSM8K,
+OmniMath) train a *competent* verifier (0.73–0.79 ROC-AUC), while our generated teacher
+labels stay weak (0.55–0.63) at that scale too — pointing at supervision
+distribution/format mismatch, not raw capacity, as the reason your null doesn't distill.
+He wrote this up as its own paper (`colm2026_prm_mismatch_overleaf__2_.pdf`, targeting the
+**COLM Efficient Reasoning Workshop, deadline 2026-07-12**), with no idea your draft
+existed in the form it's in now.
+
+Separately, someone finally ran the **B3 positive control** your own §2.7 "Boundary of the
+claim" paragraph named as a prerequisite (2026-06-22): a student trained on a deliberately
+weak teacher scores significantly worse than one trained on Gemma-4 (+0.05 ROC-AUC, 95% CI
+excluding zero). That closes the "is the pipeline just insensitive" gap you flagged.
+
+**Verdict on the two drafts, for what it's worth: yours is the stronger paper** — it has
+the one real, significant, mechanistically-explained positive result in the whole project
+(the sweet spot). Saksham's is a strong, complementary diagnostic that happens to answer
+exactly what your own draft said it needed. So rather than pick one, we merged them:
+**`paper/merged_draft.tex`** (compiles clean via `tectonic`) keeps your Related Work and
+§2.1–2.5 (sweet spot) essentially verbatim — just the two known typos fixed — leads with
+it as the paper's spine exactly as you framed it, and extends your §2.6/§2.7 with the
+positive control (finally in prose, not just a log entry) and a new section presenting
+Saksham's mismatch result as the answer to your own "capacity or supervision?" question.
+Plan doc with the full section-by-section mapping: `PAPER_MERGE_PLAN.md`.
+
+**What's actually left for you:**
+- ☐ **Table consolidation** — still not done. You flagged this yourself on 2026-06-16 and
+  it's more relevant now, not less: the merged draft is up to 10 tables. Your call on
+  which to fold (Tables 1+2 GSM8K/MATH conditions was your original suggestion; the new
+  Phase B tables in §6 have the same "too many small tables" problem).
+- ☐ **Prose/editorial pass across the merge seam** — I (Edward, with an agent) stitched
+  the sections together mechanically; it needs a human read for tone and transitions,
+  especially the "Our position" paragraph (now three contributions, not two) and the
+  Conclusion.
+- ☐ **Confirm the framing decisions** — sweet spot leads, null+positive-control is
+  §5, mismatch diagnosis is §6, shared Limitations at the end. Push back if you'd
+  structure it differently.
+- ☐ **Venue** — this is now explicitly targeting COLM ER (2026-07-12), not the flexible
+  "COLM/AAAI/workshop" framing from your original brief. Says something about how much
+  editorial latitude there is on length/formatting; check the CFR before a final pass.
+- ☐ **Getting it to you** — `paper/merged_draft.tex` and `PAPER_MERGE_PLAN.md` exist
+  locally right now, not yet pushed anywhere you can see them. Ask Edward for the current
+  location (git branch or Overleaf) before you start editing.
+
+Everything below this point is your original context (2026-06-16 through 2026-06-18) —
+still accurate for your section, kept for reference.
+
 Your Overleaf draft is already strong (Related Work, the position, and the GSM8K/MATH/cross-family results are in). This runbook covers what's **changed** since you drafted it, and what's left to land.
 
 ## 2026-06-17 — status sync (your draft is in `main`)
