@@ -14,8 +14,8 @@
 \definecolor{darkblue}{rgb}{0, 0, 0.5}
 \hypersetup{colorlinks=true, citecolor=darkblue, linkcolor=darkblue, urlcolor=darkblue}
 
-\title{Format-Matched Process Supervision Transfers Better:\\
-A Controlled Diagnosis of Supervision Mismatch in Process Reward Model Distillation}
+\title{Source and Format Matter in Process Reward Model Distillation:\\
+A Controlled Diagnosis of Supervision Mismatch}
 
 \author{Anonymous Authors}
 \date{}
@@ -30,13 +30,14 @@ A Controlled Diagnosis of Supervision Mismatch in Process Reward Model Distillat
 \begin{abstract}
 Process reward models (PRMs) are commonly trained from automatically generated step-level supervision, but when a small verifier fails it is often unclear whether the bottleneck is student capacity, the training recipe, or the supervision itself.
 This distinction matters for efficient reasoning systems: if supervision distribution is the bottleneck, then scaling student compute or searching over nearby training recipes is wasteful until the data problem is addressed.
-We study this question under a controlled setting that holds the student architecture, optimization path, and evaluation benchmark fixed while varying the source and format of process supervision.
+We study this question under a controlled setting that holds the student architecture, optimization path, and evaluation benchmark fixed while varying the source, annotation provenance, and format of process supervision.
 Using the same Qwen2.5-3B score-head verifier and full ProcessBench-MATH evaluation, ProcessBench-style labels from non-MATH source splits transfer reliably to MATH: GSM8K-source supervision reaches 0.7515 mean ROC-AUC over four seeds, and OmniMath-source supervision reaches 0.7694.
+OlympiadBench-source supervision is high-variance, spanning 0.5854--0.7163 over two seeds, which shows that format match alone is not sufficient.
 In contrast, generated teacher-label supervision is markedly weaker under the same evaluation path: the best generated-label baseline reaches 0.6324 ROC-AUC, and a privileged-teacher-label BCE baseline reaches only 0.5503.
 Sequence-cluster bootstrap tests over whole MATH solutions show that every GSM8K and OmniMath ProcessBench-source seed significantly beats both generated-label baselines.
-We further show that the failure is not explained by the score-head machinery alone: a matched ProcessBench-gold diagnostic reaches 0.7129 ROC-AUC, while frozen-representation probes trained on generated teacher labels remain weak.
-Our comparison does not isolate human-curated versus generated provenance, because provenance, source distribution, and label format vary together.
-The narrower conclusion is practical: for small PRM distillation, a cheap format-matched diagnostic can reveal supervision mismatch before investing in larger students or broader recipe searches.
+We further show that the failure is not explained by the score-head machinery alone: a matched ProcessBench-label diagnostic reaches 0.7129 ROC-AUC, while frozen-representation probes trained on generated teacher labels remain weak.
+Our comparison does not isolate annotation provenance, because provenance, source distribution, and label format vary together.
+The narrower conclusion is practical: for small PRM distillation, a cheap source- and format-matched diagnostic can reveal supervision mismatch before investing in larger students or broader recipe searches.
 \end{abstract}
 
 \section{Introduction}
@@ -47,7 +48,7 @@ This raises a practical question for efficient reasoning systems: when a distill
 If supervision distribution is the primary bottleneck, then scaling student compute or searching over nearby training recipes is wasteful until the data problem is addressed.
 
 We investigate this question with a controlled ablation.
-We fix the verifier architecture, training path, and evaluation benchmark, and vary the source and format of step-level supervision.
+We fix the verifier architecture, training path, and evaluation benchmark, and vary the source, annotation provenance, and format of step-level supervision.
 The student is a Qwen2.5-3B model with a lightweight score head.
 The target benchmark is full ProcessBench-MATH, evaluated over 1,000 shuffled solutions containing 6,505 reasoning steps and 594 error steps.
 We compare ProcessBench-style supervision from non-MATH source splits against generated teacher labels from a privileged/no-ground-truth labeling pipeline.
@@ -55,7 +56,7 @@ We compare ProcessBench-style supervision from non-MATH source splits against ge
 The same 3B verifier that learns a transferable ProcessBench-MATH scorer from GSM8K or OmniMath ProcessBench-style labels remains weak when trained on generated teacher labels.
 This contrast is not a state-of-the-art PRM claim: a public Qwen2.5-Math-7B-PRM800K baseline is stronger on the same split.
 Instead, the contribution is diagnostic.
-Under a fixed student and fixed optimizer, supervision compatibility accounts for a large difference in transfer quality.
+Under a fixed student and fixed optimizer, supervision compatibility accounts for a large difference in transfer quality, but compatibility is not binary: the high-variance OlympiadBench transfer shows that source distribution still matters even when the annotation format matches.
 This suggests that some failed PRM distillation runs should be treated as data-distribution failures rather than as evidence that the student or recipe is inherently too small.
 
 As a secondary finding, we show that teacher-level privilege does not reliably transfer into student-level verification, traceable to high symmetric label churn between privileged and non-privileged generated labels.
@@ -111,12 +112,13 @@ Training source & Seeds & ROC-AUC & PR-AUC & Best F1 & Fixed F1 \\
 \midrule
 GSM8K ProcessBench labels $\rightarrow$ MATH1000 & 0--3 & 0.7515 (0.7256--0.7760) & 0.2188 (0.1935--0.2317) & 0.3144 & 0.2503 \\
 OmniMath ProcessBench labels $\rightarrow$ MATH1000 & 0--3 & 0.7694 (0.7539--0.7869) & 0.2524 (0.2277--0.2877) & 0.3276 & 0.3055 \\
+OlympiadBench ProcessBench labels $\rightarrow$ MATH1000 & 0--1 & 0.6509 (0.5854--0.7163) & 0.1619 (0.1209--0.2029) & 0.2384 & 0.1938 \\
 Generated privileged teacher labels, BCE & 0 & 0.5503 & 0.0992 & 0.1803 & 0.0000 \\
 Generated no-GT teacher labels, rank loss & 0 & 0.6324 & 0.1418 & 0.2221 & 0.2151 \\
 Qwen2.5-Math-7B-PRM800K public baseline & 0 & 0.8379 & 0.3254 & 0.3991 & 0.3953 \\
 \bottomrule
 \end{tabular}}
-\caption{Full ProcessBench-MATH transfer results on the same 1,000 MATH solutions. Parentheses show seed ranges. Best F1 is threshold-swept on the evaluation slice and is included only as a diagnostic.}
+\caption{Full ProcessBench-MATH transfer results on the same 1,000 MATH solutions. Parentheses show seed ranges for multi-seed rows. Best F1 is threshold-swept on the evaluation slice and is included only as a diagnostic.}
 \label{tab:main}
 \end{table}
 
@@ -130,7 +132,7 @@ Qwen2.5-Math-7B-PRM800K public baseline & 0 & 0.8379 & 0.3254 & 0.3991 & 0.3953 
     ymin=0.45,
     ymax=0.90,
     ylabel={ROC-AUC on MATH1000},
-    symbolic x coords={GSM8K PB,OmniMath PB,Priv gen,NoGT gen,Qwen PRM},
+    symbolic x coords={GSM8K PB,OmniMath PB,Olympiad PB,Priv gen,NoGT gen,Qwen PRM},
     xtick=data,
     x tick label style={rotate=25,anchor=east,font=\small},
     nodes near coords,
@@ -143,13 +145,14 @@ Qwen2.5-Math-7B-PRM800K public baseline & 0 & 0.8379 & 0.3254 & 0.3991 & 0.3953 
 \addplot coordinates {
     (GSM8K PB,0.7515)
     (OmniMath PB,0.7694)
+    (Olympiad PB,0.6509)
     (Priv gen,0.5503)
     (NoGT gen,0.6324)
     (Qwen PRM,0.8379)
 };
 \end{axis}
 \end{tikzpicture}
-\caption{Main transfer pattern: with the same evaluation path, ProcessBench-style source labels transfer much better than generated teacher labels. Qwen PRM800K is an external calibration baseline, not a matched training recipe.}
+\caption{Main transfer pattern: with the same evaluation path, GSM8K and OmniMath ProcessBench-style source labels transfer much better than generated teacher labels. OlympiadBench has 0.6509 mean ROC-AUC but spans 0.5854--0.7163 across two seeds, showing that format match alone is insufficient. Qwen PRM800K is an external calibration baseline, not a matched training recipe.}
 \label{fig:main-roc}
 \end{figure}
 
@@ -164,21 +167,22 @@ It reaches 0.8379 ROC-AUC and remains stronger than any single 500-step ProcessB
 This confirms that our result should not be framed as state-of-the-art PRM performance.
 The central observation is instead a supervised-data compatibility mismatch: under the same small-student path, compatible ProcessBench-style supervision transfers while the current generated teacher labels do not.
 
-\subsection{The source distribution still matters}
+\subsection{Source distribution matters despite format match}
 
 The transfer result is not a blanket claim that any non-MATH process labels transfer cleanly to MATH.
 OlympiadBench is high-variance in our runs: two seeds give 0.5854 and 0.7163 ROC-AUC on full MATH1000.
 One seed is significantly below the best generated-label baseline, while the other is significantly above it.
-We therefore treat OlympiadBench as a boundary diagnostic rather than as a third headline source.
-The pattern supports a source-distribution view: ProcessBench-style supervision can transfer, but the source split still matters.
+We therefore include OlympiadBench in the main table, but we do not count it as evidence for reliable transfer.
+The pattern supports a source-distribution view: ProcessBench-style supervision can transfer, but matched annotation format does not by itself guarantee transfer.
 
 \subsection{Threshold calibration agrees with the ranking result}
 
 Fixed-threshold F1 is fragile for score-head verifiers.
 To avoid choosing a threshold on the same examples used for reporting, we choose thresholds on the first 200 MATH solutions and evaluate on the remaining 800.
 Under this held-out calibration protocol, GSM8K ProcessBench-source seeds reach calibrated F1 between 0.2714 and 0.3166, and OmniMath ProcessBench-source seeds reach 0.3062 to 0.3316.
+OlympiadBench again splits across seeds, reaching 0.1900 and 0.2784.
 The generated privileged BCE baseline reaches 0.1673, and the best generated-label baseline reaches 0.2085.
-The calibrated-threshold view therefore matches the threshold-free conclusion: ProcessBench-source verifiers remain well above generated-label baselines.
+The calibrated-threshold view therefore matches the threshold-free conclusion for the reliable source splits: GSM8K and OmniMath ProcessBench-source verifiers remain well above generated-label baselines.
 
 \section{Analysis}
 
@@ -191,7 +195,7 @@ This is not a benchmark claim because train and evaluation data come from the sa
 
 Frozen-representation probes tell the same story.
 Class-balanced logistic probes on frozen Qwen2.5-3B step-boundary embeddings trained on generated teacher labels transfer weakly to ProcessBench-MATH, around 0.52--0.56 ROC-AUC.
-The corresponding ProcessBench-gold diagnostic reaches 0.6308 ROC-AUC.
+The corresponding matched ProcessBench-label diagnostic reaches 0.6308 ROC-AUC.
 This suggests that the failure is not merely that the student representation cannot expose the target; the supervision distribution is doing meaningful work (Table~\ref{tab:diagnostics}).
 The frozen-probe gap is smaller than the full score-head gap, so we treat it as a supporting diagnostic rather than a standalone explanation.
 
@@ -247,23 +251,22 @@ The privileged-label experiments are also related to learning using privileged i
 
 This study is diagnostic rather than prescriptive.
 We evaluate one main student architecture and score-head training path, so a different student family or a substantially different distillation objective may narrow the gap.
-The main comparison varies several properties at once: ProcessBench-style source labels differ from generated teacher labels in provenance, source problem distribution, and format compatibility with the MATH evaluation.
-Therefore, this paper should not be read as isolating human-curated versus generated provenance.
-The missing controlled cell is generated teacher labels on the same GSM8K/OmniMath source problems used by the ProcessBench-style training rows.
+We do not isolate human curation from source distribution or label format, because all three vary together in the main comparison.
+A follow-up experiment would generate teacher labels on the same GSM8K/OmniMath source problems used by the ProcessBench-style rows, testing whether format and distribution rather than annotation provenance account for the gap.
 The generated-label baselines are the strongest checkpoints from our preliminary ablations, but they are not an exhaustive search over all possible teacher prompting and label-format choices.
 They also use fewer seeds than the ProcessBench-source runs.
 We therefore cannot rule out that additional generated-label seeds might reduce the gap, although the breadth of the preliminary ablations makes a pure unlucky-seed explanation less likely.
 The ProcessBench-source labels share the evaluation benchmark's annotation format, so part of their advantage may come from format compatibility with the evaluation benchmark.
 Finally, while the public Qwen2.5-Math-7B-PRM800K baseline anchors the scale of the result, we do not compare against every recent PRM baseline under the same data budget.
 The efficiency claim is also diagnostic rather than a downstream deployment claim: we do not show that the generated-label verifiers beat majority vote in Best-of-N search.
-Instead, the practical claim is that a small format-matched diagnostic can reveal whether the supervision distribution is likely to support the target verifier before larger student or recipe sweeps.
+Instead, the practical claim is that a small source- and format-matched diagnostic can reveal whether the supervision distribution is likely to support the target verifier before larger student or recipe sweeps.
 
 \section{Conclusion}
 
 Under a fixed 3B verifier, training path, and ProcessBench-MATH evaluation, compatible ProcessBench-style supervision transfers much better than the generated teacher labels tested here.
-The result reframes a failed privileged-feedback distillation attempt as a supervision-format and distribution diagnosis.
+The result reframes a failed privileged-feedback distillation attempt as a supervision-source, format, and distribution diagnosis.
 For efficient PRM development, this suggests a practical ordering: before scaling students or re-running the same distillation loop, test whether the supervision distribution itself can support the target verifier.
-A practical takeaway is to first run a small diagnostic with format-matched labels before investing in a larger student or a new training recipe.
+A practical takeaway is to first run a small diagnostic with source- and format-matched labels before investing in a larger student or a new training recipe.
 
 \section*{References}
 
@@ -327,10 +330,10 @@ The matched ProcessBench score-head diagnostic shows that the training path can 
 \toprule
 Diagnostic & Condition & ROC-AUC \\
 \midrule
-Score head, matched ProcessBench-MATH 200/200 & Gold labels & 0.7129 \\
+Score head, matched ProcessBench-MATH 200/200 & ProcessBench labels & 0.7129 \\
 Frozen probe, generated teacher labels & Privileged & 0.5497 \\
 Frozen probe, generated teacher labels & No-GT & 0.5559 \\
-Frozen probe, ProcessBench-gold 200/200 & Gold labels & 0.6308 \\
+Frozen probe, matched ProcessBench labels 200/200 & ProcessBench labels & 0.6308 \\
 \bottomrule
 \end{tabular}
 \caption{Diagnostics showing that the score-head and frozen representation can expose the target when labels are distribution-matched.}
