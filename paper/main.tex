@@ -33,7 +33,7 @@ This distinction matters for efficient reasoning systems: if supervision distrib
 We study this question under a controlled setting that holds the student architecture, optimization path, and evaluation benchmark fixed while varying the source, annotation provenance, and format of process supervision.
 Using the same Qwen2.5-3B score-head verifier and full ProcessBench-MATH evaluation, ProcessBench-style labels from non-MATH source splits transfer reliably to MATH: GSM8K-source supervision reaches 0.7515 mean ROC-AUC over four seeds, and OmniMath-source supervision reaches 0.7694.
 OlympiadBench-source supervision is high-variance, spanning 0.5854--0.7163 over two seeds, which shows that format match alone is not sufficient.
-In contrast, generated teacher-label supervision is markedly weaker under the same evaluation path: the best generated-label baseline reaches 0.6324 ROC-AUC, and a privileged-teacher-label BCE baseline reaches only 0.5503.
+In contrast, generated teacher-label supervision is markedly weaker under the same evaluation path: a 4-seed generated no-GT rank-loss baseline reaches a mean 0.5908 ROC-AUC, and a privileged-teacher-label BCE baseline reaches a mean 0.5292 ROC-AUC.
 Sequence-cluster bootstrap tests over whole MATH solutions show that every GSM8K and OmniMath ProcessBench-source seed significantly beats both generated-label baselines.
 We further show that the failure is not explained by the score-head machinery alone: a matched ProcessBench-label diagnostic reaches 0.7129 ROC-AUC, while frozen-representation probes trained on generated teacher labels remain weak.
 Our comparison does not isolate annotation provenance, because provenance, source distribution, and label format vary together.
@@ -113,8 +113,8 @@ Training source & Seeds & ROC-AUC & PR-AUC & Best F1 & Fixed F1 \\
 GSM8K ProcessBench labels $\rightarrow$ MATH1000 & 0--3 & 0.7515 (0.7256--0.7760) & 0.2188 (0.1935--0.2317) & 0.3144 & 0.2503 \\
 OmniMath ProcessBench labels $\rightarrow$ MATH1000 & 0--3 & 0.7694 (0.7539--0.7869) & 0.2524 (0.2277--0.2877) & 0.3276 & 0.3055 \\
 OlympiadBench ProcessBench labels $\rightarrow$ MATH1000 & 0--1 & 0.6509 (0.5854--0.7163) & 0.1619 (0.1209--0.2029) & 0.2384 & 0.1938 \\
-Generated privileged teacher labels, BCE & 0 & 0.5503 & 0.0992 & 0.1803 & 0.0000 \\
-Generated no-GT teacher labels, rank loss & 0 & 0.6324 & 0.1418 & 0.2221 & 0.2151 \\
+Generated privileged teacher labels, BCE & 0--3 & 0.5292 (0.4771--0.5883) & 0.0925 (0.0826--0.1045) & 0.1832 & 0.1089 \\
+Generated no-GT teacher labels, rank loss & 0--3 & 0.5908 (0.5390--0.6755) & 0.1187 (0.0911--0.1672) & 0.2046 & 0.1830 \\
 Qwen2.5-Math-7B-PRM800K public baseline & 0 & 0.8379 & 0.3254 & 0.3991 & 0.3953 \\
 \bottomrule
 \end{tabular}}
@@ -146,8 +146,8 @@ Qwen2.5-Math-7B-PRM800K public baseline & 0 & 0.8379 & 0.3254 & 0.3991 & 0.3953 
     (GSM8K PB,0.7515)
     (OmniMath PB,0.7694)
     (Olympiad PB,0.6509)
-    (Priv gen,0.5503)
-    (NoGT gen,0.6324)
+    (Priv gen,0.5292)
+    (NoGT gen,0.5908)
     (Qwen PRM,0.8379)
 };
 \end{axis}
@@ -266,6 +266,8 @@ Instead, the practical claim is that a small source- and format-matched diagnost
 Under a fixed 3B verifier, training path, and ProcessBench-MATH evaluation, compatible ProcessBench-style supervision transfers much better than the generated teacher labels tested here.
 The result reframes a failed privileged-feedback distillation attempt as a supervision-source, format, and distribution diagnosis.
 For efficient PRM development, this suggests a practical ordering: before scaling students or re-running the same distillation loop, test whether the supervision distribution itself can support the target verifier.
+In our setup, one 500-step LoRA diagnostic required approximately 0.3 GPU-hours on a single GPU, whereas the preliminary generated-label recipe sweep used approximately 15 GPU-hours across 50 runs.
+This makes the diagnostic useful as an early gate before broader recipe or student-scaling sweeps.
 A practical takeaway is to first run a small diagnostic with source- and format-matched labels before investing in a larger student or a new training recipe.
 
 \section*{References}
