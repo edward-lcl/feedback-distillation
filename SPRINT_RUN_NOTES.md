@@ -12,11 +12,11 @@
 
 ## 2. Generated-Label Seeds (GPU)
 *Done.*
-- Privileged BCE (error weight 3): seeds 0-3 completed.
-- No-GT rank-only (balanced batches): seeds 0-3 completed.
+- Privileged BCE (error weight 3): canonical seed 0 plus seeds 1-3 completed.
+- No-GT rank-only (balanced batches): canonical seed 0 plus seeds 1-3 completed.
 
 ### Results / Contingency Tracking
-- Privileged BCE 4-seed aggregate: ROC-AUC 0.5292 (0.4771-0.5883), PR-AUC 0.0925 (0.0826-0.1045), best F1 0.1832 (0.1721-0.1969).
-- No-GT rank-only 4-seed aggregate: ROC-AUC 0.5908 (0.5390-0.6755), PR-AUC 0.1187 (0.0911-0.1672), best F1 0.2046 (0.1838-0.2509).
+- Privileged BCE 4-seed aggregate: ROC-AUC 0.5475 (0.5007-0.5883), PR-AUC 0.0966 (0.0881-0.1045), best F1 0.1853 (0.1750-0.1969).
+- No-GT rank-only 4-seed aggregate: ROC-AUC 0.6062 (0.5390-0.6755), PR-AUC 0.1254 (0.0911-0.1672), best F1 0.2142 (0.1870-0.2509).
 - Both generated-label conditions remain below the GSM8K+OmniMath 8-seed ProcessBench-label ensemble; ROC-AUC gaps are +0.2570 vs privileged BCE and +0.1749 vs no-GT rank-only.
 - Tables regenerated in `paper/generated/`; `paper/main.tex` already reports the 0-3 seed aggregates.

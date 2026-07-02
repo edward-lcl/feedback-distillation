@@ -45,15 +45,21 @@ MAIN_GROUPS = [
     RunGroup(
         "Generated privileged teacher labels, BCE",
         [
-            f"results/ablation/Qwen_Qwen2.5-3B-Instruct_seed{seed}_ms500_priv_bce_ew3/processbench_results.json"
-            for seed in range(4)
+            "results/diagnostics/teacher_bce_priv_to_math1000_qwen3b_seed0/processbench_results.json",
+            *[
+                f"results/ablation/Qwen_Qwen2.5-3B-Instruct_seed{seed}_ms500_priv_bce_ew3/processbench_results.json"
+                for seed in range(1, 4)
+            ],
         ],
     ),
     RunGroup(
         "Generated no-GT teacher labels, rank loss",
         [
-            f"results/ablation/Qwen_Qwen2.5-3B-Instruct_seed{seed}_ms500_nogt_rank_bal/processbench_results.json"
-            for seed in range(4)
+            "results/diagnostics/generated_rank_nogt_to_math1000_qwen3b_seed0/processbench_results.json",
+            *[
+                f"results/ablation/Qwen_Qwen2.5-3B-Instruct_seed{seed}_ms500_nogt_rank_bal/processbench_results.json"
+                for seed in range(1, 4)
+            ],
         ],
     ),
 ]
