@@ -11,9 +11,12 @@
 - **Overleaf Hygiene:** *Done.* Verified no anonymity violations (Phase A, Phase B, feedback-distillation, paths, etc.) exist in `main.tex`.
 
 ## 2. Generated-Label Seeds (GPU)
-*Pending GPU availability.*
-- Privileged BCE (error weight 3): seeds 0-3
-- No-GT rank-only (balanced batches): seeds 0-3
+*Done.*
+- Privileged BCE (error weight 3): seeds 0-3 completed.
+- No-GT rank-only (balanced batches): seeds 0-3 completed.
 
 ### Results / Contingency Tracking
-*To be filled out based on seed variance.*
+- Privileged BCE 4-seed aggregate: ROC-AUC 0.5292 (0.4771-0.5883), PR-AUC 0.0925 (0.0826-0.1045), best F1 0.1832 (0.1721-0.1969).
+- No-GT rank-only 4-seed aggregate: ROC-AUC 0.5908 (0.5390-0.6755), PR-AUC 0.1187 (0.0911-0.1672), best F1 0.2046 (0.1838-0.2509).
+- Both generated-label conditions remain below the GSM8K+OmniMath 8-seed ProcessBench-label ensemble; ROC-AUC gaps are +0.2570 vs privileged BCE and +0.1749 vs no-GT rank-only.
+- Tables regenerated in `paper/generated/`; `paper/main.tex` already reports the 0-3 seed aggregates.
