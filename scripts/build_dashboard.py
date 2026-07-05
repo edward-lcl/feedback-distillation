@@ -123,11 +123,33 @@ PATH_TO_SUBMISSION = [
 OVERLEAF_URL = "https://www.overleaf.com/7588472223rycxtnntqhqm#f07fa2"  # combined paper (Slack 2026-07-01)
 LINKS = [
     ("Paper (Overleaf)", OVERLEAF_URL),
+    ("Framing doctrine (PAPER_FRAMING.md)", "https://github.com/edward-lcl/feedback-distillation/blob/main/PAPER_FRAMING.md"),
     ("Research roadmap", "https://github.com/edward-lcl/feedback-distillation/blob/main/RESEARCH_ROADMAP.md"),
     ("Phase B runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/RUNBOOK_PHASE_B.md"),
     ("Saksham runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_SAKSHAM.md"),
     ("Henry runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_HENRY.md"),
     ("Repo", "https://github.com/edward-lcl/feedback-distillation"),
+]
+
+# Frontier reading list — mirrors PAPER_FRAMING.md (doctrine lives there; this
+# renders it). action in {must-cite, nice, watch}. Updated 2026-07-05 scan.
+FRONTIER = [
+    ("must-cite", "OPSD — On-Policy Self-Distillation (arXiv:2601.18734)",
+     "2026's 'privileged teacher' means THIS (successful, on-policy, policy-level). One paragraph must differentiate: we distill privileged step-error LABELS, off-policy, into an answer-blind VERIFIER — our null confirms, not contradicts, their off-policy-mismatch premise."),
+    ("must-cite", "Position-Weighted OPSD (arXiv:2605.21606)",
+     "Nearest 2026 relative of 'where are privileged-teacher signals unreliable' — token-level where ours is step-label-level."),
+    ("must-cite", "Noise-aware PRM training (arXiv:2601.12748)",
+     "Reviewers will ask 'would label denoising rescue the student?' Pre-empt: our gold-matched control isolates distribution/format, not noise."),
+    ("nice", "Rethinking On-Policy Distillation (arXiv:2604.13016)",
+     "Off-policy/distribution-mismatched supervision fails where on-policy succeeds — our null, predicted from the policy side."),
+    ("nice", "Strong Teacher Not Needed (arXiv:2605.23857)",
+     "Teacher strength ≠ student gains; supports the positive-control logic."),
+    ("nice", "Adaptive Generate-Rank-Verify (arXiv:2605.17609) · Trust-but-Verify survey (arXiv:2508.16665)",
+     "Costly-verification framing: the sweet spot as a verification-budget allocation rule."),
+    ("nice", "uPRM (arXiv:2605.10158) · Scan (arXiv:2509.16548)",
+     "Unsupervised/denoised PRM alternatives — the 'fix the labels' line our diagnosis is differentiated from."),
+    ("watch", "PRMBench (arXiv:2501.03124)",
+     "ProcessBench-only eval reads narrow by mid-2026; companion numbers are the first cut under time pressure."),
 ]
 # ------------------------------------------------------------------------------
 
@@ -554,6 +576,10 @@ a:hover{text-decoration:underline}
         f"<li>{_gpill(s)}<div class='ptext'><span class='pwho'>{who}:</span> {t}</div></li>"
         for s, who, t in PATH_TO_SUBMISSION)
     links_html = "".join(f"<a href='{u}' target='_blank'>{html.escape(n)} ↗</a>" for n, u in LINKS)
+    frontier_html = "".join(
+        f"<tr><td><span class='pill {'done' if a == 'must-cite' else ('now' if a == 'nice' else 'queued')}'>{a}</span></td>"
+        f"<td><b>{html.escape(t)}</b></td><td class=small>{html.escape(r)}</td></tr>"
+        for a, t, r in FRONTIER)
 
     bakeoff_html = bakeoff_rows_dark()
     student_html = student_results_html()
@@ -682,6 +708,9 @@ a:hover{text-decoration:underline}
 
 <div class="section-label">Docs &amp; runbooks</div>
 <div class="card"><div class="links">{links_html}</div></div>
+
+<div class="section-label">Frontier — related papers &amp; positioning (mirrors PAPER_FRAMING.md)</div>
+<div class="card"><table class="cond-table"><tr><th>action</th><th>paper</th><th>why it matters to US</th></tr>{frontier_html}</table></div>
 
 <div class="section-label" id="next">Bulletproofing &amp; open items</div>
 <div class="card"><ul class="status-list">{bullets_html}</ul></div>
