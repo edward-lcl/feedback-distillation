@@ -5,11 +5,11 @@
 \toprule
 Training source & Seeds & ROC-AUC & PR-AUC & Best F1 & Fixed F1 & Pred error rate \\
 \midrule
-GSM8K ProcessBench gold -> MATH1000 & 0-3 & 0.7515 (0.7256-0.7760) & 0.2188 (0.1935-0.2317) & 0.3144 (0.2864-0.3413) & 0.2503 (0.2137-0.2747) & 0.5111 (0.2949-0.7259) \\
-OmniMath ProcessBench gold -> MATH1000 & 0-3 & 0.7694 (0.7539-0.7869) & 0.2524 (0.2277-0.2877) & 0.3276 (0.3145-0.3385) & 0.3055 (0.2830-0.3254) & 0.2920 (0.1797-0.3791) \\
+GSM8K ProcessBench labels -> MATH1000 & 0-3 & 0.7515 (0.7256-0.7760) & 0.2188 (0.1935-0.2317) & 0.3144 (0.2864-0.3413) & 0.2503 (0.2137-0.2747) & 0.5111 (0.2949-0.7259) \\
+OmniMath ProcessBench labels -> MATH1000 & 0-3 & 0.7694 (0.7539-0.7869) & 0.2524 (0.2277-0.2877) & 0.3276 (0.3145-0.3385) & 0.3055 (0.2830-0.3254) & 0.2920 (0.1797-0.3791) \\
 Qwen2.5-Math-7B-PRM800K public baseline & 0 & 0.8379 & 0.3254 & 0.3991 & 0.3953 & 0.1436 \\
-Generated privileged teacher labels, BCE & 0 & 0.5503 & 0.0992 & 0.1803 & 0.0000 & 0.0000 \\
-Generated no-GT teacher labels, rank loss & 0 & 0.6324 & 0.1418 & 0.2221 & 0.2151 & 0.3819 \\
+Generated privileged teacher labels, BCE & 0-3 & 0.5475 (0.5007-0.5883) & 0.0966 (0.0881-0.1045) & 0.1853 (0.1750-0.1969) & 0.1089 (0.0000-0.1941) & 0.2903 (0.0000-0.5345) \\
+Generated no-GT teacher labels, rank loss & 0-3 & 0.6062 (0.5390-0.6755) & 0.1254 (0.0911-0.1672) & 0.2142 (0.1870-0.2509) & 0.1918 (0.1721-0.2151) & 0.7341 (0.3819-0.9397) \\
 \bottomrule
 \end{tabular}
 \caption{Full ProcessBench-MATH transfer results. Parentheses show seed ranges.}

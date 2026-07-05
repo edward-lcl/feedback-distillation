@@ -1,9 +1,9 @@
 | Model A | Model B | ROC-AUC gap | 95% CI | p |
 | --- | --- | ---: | --- | ---: |
-| GSM8K gold seed 0, 1500 steps | GSM8K gold seed 0, 500 steps | +0.0506 | [0.0288, 0.0722] | 0.0004 |
-| OmniMath gold seed 0, 1500 steps | OmniMath gold seed 0, 500 steps | -0.0119 | [-0.0299, 0.0065] | 0.2016 |
-| GSM8K gold seed 1, 1500 steps | GSM8K gold seed 1, 500 steps | +0.0351 | [0.0197, 0.0498] | 0.0004 |
-| GSM8K gold seed 2, 1500 steps | GSM8K gold seed 2, 500 steps | -0.0622 | [-0.0801, -0.0444] | 0.0004 |
-| GSM8K gold seed 0, 1500 steps | Generated no-GT teacher labels, rank loss | +0.1619 | [0.1393, 0.1842] | 0.0004 |
-| Qwen2.5-Math-7B-PRM800K | GSM8K gold seed 0, 1500 steps | +0.0435 | [0.0222, 0.0647] | 0.0004 |
-| GSM8K gold seed 0, 1500 steps | OmniMath gold seed 3, 500 steps | +0.0074 | [-0.0109, 0.0256] | 0.4395 |
+| GSM8K ProcessBench label seed 0, 1500 steps | GSM8K ProcessBench label seed 0, 500 steps | +0.0506 | [0.0288, 0.0722] | 0.0004 |
+| OmniMath ProcessBench label seed 0, 1500 steps | OmniMath ProcessBench label seed 0, 500 steps | -0.0119 | [-0.0299, 0.0065] | 0.2016 |
+| GSM8K ProcessBench label seed 1, 1500 steps | GSM8K ProcessBench label seed 1, 500 steps | +0.0351 | [0.0197, 0.0498] | 0.0004 |
+| GSM8K ProcessBench label seed 2, 1500 steps | GSM8K ProcessBench label seed 2, 500 steps | -0.0622 | [-0.0801, -0.0444] | 0.0004 |
+| GSM8K ProcessBench label seed 0, 1500 steps | Generated no-GT teacher labels, rank loss | +0.1619 | [0.1393, 0.1842] | 0.0004 |
+| Qwen2.5-Math-7B-PRM800K | GSM8K ProcessBench label seed 0, 1500 steps | +0.0435 | [0.0222, 0.0647] | 0.0004 |
+| GSM8K ProcessBench label seed 0, 1500 steps | OmniMath ProcessBench label seed 3, 500 steps | +0.0074 | [-0.0109, 0.0256] | 0.4395 |

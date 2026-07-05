@@ -25,14 +25,14 @@ class BudgetRun:
 
 MAIN_GROUPS = [
     RunGroup(
-        "GSM8K ProcessBench gold -> MATH1000",
+        "GSM8K ProcessBench labels -> MATH1000",
         [
             f"results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed{seed}/processbench_results.json"
             for seed in range(4)
         ],
     ),
     RunGroup(
-        "OmniMath ProcessBench gold -> MATH1000",
+        "OmniMath ProcessBench labels -> MATH1000",
         [
             f"results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed{seed}/processbench_results.json"
             for seed in range(4)
@@ -44,17 +44,29 @@ MAIN_GROUPS = [
     ),
     RunGroup(
         "Generated privileged teacher labels, BCE",
-        ["results/diagnostics/teacher_bce_priv_to_math1000_qwen3b_seed0/processbench_results.json"],
+        [
+            "results/diagnostics/teacher_bce_priv_to_math1000_qwen3b_seed0/processbench_results.json",
+            *[
+                f"results/ablation/Qwen_Qwen2.5-3B-Instruct_seed{seed}_ms500_priv_bce_ew3/processbench_results.json"
+                for seed in range(1, 4)
+            ],
+        ],
     ),
     RunGroup(
         "Generated no-GT teacher labels, rank loss",
-        ["results/diagnostics/generated_rank_nogt_to_math1000_qwen3b_seed0/processbench_results.json"],
+        [
+            "results/diagnostics/generated_rank_nogt_to_math1000_qwen3b_seed0/processbench_results.json",
+            *[
+                f"results/ablation/Qwen_Qwen2.5-3B-Instruct_seed{seed}_ms500_nogt_rank_bal/processbench_results.json"
+                for seed in range(1, 4)
+            ],
+        ],
     ),
 ]
 
 BOUNDARY_GROUPS = [
     RunGroup(
-        "OlympiadBench ProcessBench gold -> MATH1000",
+        "OlympiadBench ProcessBench labels -> MATH1000",
         [
             f"results/diagnostics/processbench_olympiadbench_to_math1000_scorehead_qwen3b_bce_bal_seed{seed}/processbench_results.json"
             for seed in range(2)
@@ -125,7 +137,7 @@ CI_COMPARISONS = [
     ),
     (
         "GSM8K+OmniMath 8-seed mean score",
-        "OmniMath gold seed 3",
+        "OmniMath ProcessBench label seed 3",
         "results/diagnostics/gsm8k_omnimath_8seed_mean_vs_omnimath_seed3_sequence_ci.json",
     ),
     (
@@ -161,42 +173,42 @@ CALIBRATED_ENSEMBLE_PATH = (
 
 TRAINING_BUDGET_RUNS = [
     BudgetRun(
-        "GSM8K gold seed 0",
+        "GSM8K ProcessBench label seed 0",
         "500",
         "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed0/processbench_results.json",
     ),
     BudgetRun(
-        "GSM8K gold seed 0",
+        "GSM8K ProcessBench label seed 0",
         "1500",
         "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed0_ms1500/processbench_results.json",
     ),
     BudgetRun(
-        "GSM8K gold seed 1",
+        "GSM8K ProcessBench label seed 1",
         "500",
         "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed1/processbench_results.json",
     ),
     BudgetRun(
-        "GSM8K gold seed 1",
+        "GSM8K ProcessBench label seed 1",
         "1500",
         "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed1_ms1500/processbench_results.json",
     ),
     BudgetRun(
-        "GSM8K gold seed 2",
+        "GSM8K ProcessBench label seed 2",
         "500",
         "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed2/processbench_results.json",
     ),
     BudgetRun(
-        "GSM8K gold seed 2",
+        "GSM8K ProcessBench label seed 2",
         "1500",
         "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed2_ms1500/processbench_results.json",
     ),
     BudgetRun(
-        "OmniMath gold seed 0",
+        "OmniMath ProcessBench label seed 0",
         "500",
         "results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed0/processbench_results.json",
     ),
     BudgetRun(
-        "OmniMath gold seed 0",
+        "OmniMath ProcessBench label seed 0",
         "1500",
         "results/diagnostics/processbench_omnimath_to_math1000_scorehead_qwen3b_bce_bal_seed0_ms1500/processbench_results.json",
     ),
@@ -204,38 +216,38 @@ TRAINING_BUDGET_RUNS = [
 
 TRAINING_BUDGET_CI_COMPARISONS = [
     (
-        "GSM8K gold seed 0, 1500 steps",
-        "GSM8K gold seed 0, 500 steps",
+        "GSM8K ProcessBench label seed 0, 1500 steps",
+        "GSM8K ProcessBench label seed 0, 500 steps",
         "results/diagnostics/gsm8k_seed0_ms1500_vs_ms500_sequence_ci.json",
     ),
     (
-        "OmniMath gold seed 0, 1500 steps",
-        "OmniMath gold seed 0, 500 steps",
+        "OmniMath ProcessBench label seed 0, 1500 steps",
+        "OmniMath ProcessBench label seed 0, 500 steps",
         "results/diagnostics/omnimath_seed0_ms1500_vs_ms500_sequence_ci.json",
     ),
     (
-        "GSM8K gold seed 1, 1500 steps",
-        "GSM8K gold seed 1, 500 steps",
+        "GSM8K ProcessBench label seed 1, 1500 steps",
+        "GSM8K ProcessBench label seed 1, 500 steps",
         "results/diagnostics/gsm8k_seed1_ms1500_vs_ms500_sequence_ci.json",
     ),
     (
-        "GSM8K gold seed 2, 1500 steps",
-        "GSM8K gold seed 2, 500 steps",
+        "GSM8K ProcessBench label seed 2, 1500 steps",
+        "GSM8K ProcessBench label seed 2, 500 steps",
         "results/diagnostics/gsm8k_seed2_ms1500_vs_ms500_sequence_ci.json",
     ),
     (
-        "GSM8K gold seed 0, 1500 steps",
+        "GSM8K ProcessBench label seed 0, 1500 steps",
         "Generated no-GT teacher labels, rank loss",
         "results/diagnostics/gsm8k_seed0_ms1500_vs_best_generated_rank_nogt_sequence_ci.json",
     ),
     (
         "Qwen2.5-Math-7B-PRM800K",
-        "GSM8K gold seed 0, 1500 steps",
+        "GSM8K ProcessBench label seed 0, 1500 steps",
         "results/diagnostics/qwen_prm800k_vs_gsm8k_seed0_ms1500_sequence_ci.json",
     ),
     (
-        "GSM8K gold seed 0, 1500 steps",
-        "OmniMath gold seed 3, 500 steps",
+        "GSM8K ProcessBench label seed 0, 1500 steps",
+        "OmniMath ProcessBench label seed 3, 500 steps",
         "results/diagnostics/gsm8k_seed0_ms1500_vs_omnimath_seed3_sequence_ci.json",
     ),
 ]
@@ -585,7 +597,7 @@ def main() -> None:
         "phase_b_ensemble_table.md": ensemble_markdown_table(ENSEMBLE_GROUPS),
         "phase_b_ensemble_table.tex": ensemble_latex_table(
             ENSEMBLE_GROUPS,
-            "Optional score-averaging diagnostic over saved gold-source verifier scores.",
+            "Optional score-averaging diagnostic over saved ProcessBench-source verifier scores.",
             "tab:phase-b-score-ensembles",
         ),
         "phase_b_ensemble_ci_table.md": ci_markdown_table(CI_COMPARISONS),
@@ -605,7 +617,7 @@ def main() -> None:
         "phase_b_training_budget_table.md": budget_markdown_table(TRAINING_BUDGET_RUNS),
         "phase_b_training_budget_table.tex": budget_latex_table(
             TRAINING_BUDGET_RUNS,
-            "Seed-0 training-budget diagnostic for source-specific gold supervision.",
+            "Seed-0 training-budget diagnostic for source-specific ProcessBench-style supervision.",
             "tab:phase-b-training-budget",
         ),
         "phase_b_training_budget_ci_table.md": ci_markdown_table(

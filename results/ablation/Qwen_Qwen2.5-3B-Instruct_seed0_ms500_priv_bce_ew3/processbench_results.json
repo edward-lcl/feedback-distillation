@@ -1,0 +1,20 @@
+{
+  "f1": 0.0,
+  "precision": 0.0,
+  "recall": 0.0,
+  "first_error_acc": 0.406,
+  "roc_auc": 0.4770501496097842,
+  "pr_auc": 0.0826373960957593,
+  "best_f1": 0.17214493196758907,
+  "best_f1_threshold": -2.9156992435455322,
+  "error_recall": 0.0,
+  "clean_specificity": 1.0,
+  "pred_error_rate": 0.0,
+  "first_error_acc_errs": 0.0,
+  "clean_seq_acc": 1.0,
+  "n_steps": 6505,
+  "n_error_steps": 594,
+  "warnings": [
+    "SILENT COLLAPSE: predicts 'error' on only 0.0% of steps (recall\u22480.00). F1/first_error_acc are MEANINGLESS here \u2014 the cell banks the error-free base rate for free. Compare cells on roc_auc/pr_auc, and check the score-head threshold/calibration before trusting any gap."
+  ]
+}
