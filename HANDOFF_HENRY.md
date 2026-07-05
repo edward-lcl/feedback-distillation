@@ -1,6 +1,43 @@
 # Handoff — Henry (research / analysis + paper)
 
-_Updated 2026-06-16. Async-friendly, no compute needed. Paper: https://www.overleaf.com/2555239245xpdcmsxkrzgx · Dashboard: https://feedback-distillation.exe.xyz_
+_Async-friendly, no compute needed. Paper: the COMBINED Overleaf (link from Edward's Slack, 2026-07-01) · Dashboard: https://feedback-distillation.exe.xyz_
+
+## 2026-07-05 — submission sprint: your concrete list (deadline **Jul 19 AoE**, extended from Jul 12)
+
+**Read `PAPER_FRAMING.md` first — it's doctrine** (framing, must-cites, and a
+drop-in Related Work paragraph are all in there; your agents should follow it
+too). Then, in priority order:
+
+1. **Port the 4-seed generated-label numbers into the combined Overleaf** (they
+   are merged to `main`, PR #28): Table 5 generated rows become 4-seed
+   aggregates — priv BCE **0.5475 (0.5007–0.5883)**, no-GT rank **0.6062
+   (0.5390–0.6755)** (`paper/generated/phase_b_main_table.tex` has the exact
+   rows) — update the abstract's "0.55–0.63" accordingly, rewrite the "seed and
+   scale asymmetry" limitation (it's now largely closed), and add the
+   run-to-run variance footnote (seed-0 rerun 0.477 vs canonical 0.550, both
+   degenerate `pred_error_rate=0` — evidence for §6.4 instability, disclose it).
+2. **OPSD differentiation paragraph + 3 must-cites into Related Work** — copy
+   from `PAPER_FRAMING.md` §terminology. Without it, 2026 reviewers will read
+   our null as contradicting the on-policy privileged-distillation wave.
+3. **COLM template port.** The current PDF is plain `article` class — NOT the
+   required COLM submission format. Reuse the style block from Saksham's
+   standalone `paper/main.tex` (`\usepackage[submission]{colm2026_conference}`,
+   natbib ordering already fixed there). Watch the page count after reflow:
+   limit is 4–10 pages MAIN TEXT (refs excluded), we're at exactly 10 now.
+4. **Efficiency framing promotion:** the 0.3 vs 15 GPU-hours sentence moves
+   from the conclusion into the abstract + intro (CFP topic 1 is literally our
+   pitch — see `PAPER_FRAMING.md` §framing-rules).
+5. **Hold slots for incoming results:** same-source GSM8K cell (labels done,
+   Saksham training on his cluster — lands in §6.1 as the missing controlled
+   cell), possibly the format-rerender cell and a gold-3B best-of-N figure.
+   Draft the §6.1 sentence structure now so the numbers drop in.
+6. **Mechanical pass:** Table 2 OlympiadBench row shows dashes but reports
+   Δ=−0.03 (explain or show values) · title/abstract tighten (abstract is
+   ~280 words of packed CIs) · refs cleanup ([3],[4],[10] "et al." → full
+   author lists; [9] year; [11] bare OpenReview id) · length trim.
+
+Supplementary zip (anonymized artifacts promised in Appendix A/C) is Edward's;
+submission target ~Jul 18. Ping Edward for Overleaf access issues.
 
 ## 2026-06-30 — your draft is the spine of a merged paper now; here's the status
 

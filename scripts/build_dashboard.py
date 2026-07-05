@@ -26,13 +26,13 @@ OVERVIEW = [
     ("Why it was revived",
      "The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <b>June 2026</b> with a shift to <b>step-level reasoning evaluation</b> over final-answer accuracy. Target: a publishable result for the <b>COLM workshop (~early July)</b> — flexible; quality over the date."),
     ("Where we are today",
-     "<b>Verified N=1000 run + diagnostics are in.</b> Teacher-level privilege is validated (sweet spot; +0.07 for the Gemma-4 labeler), but it <b>does NOT transfer into the 1.5B student</b>. The diagnostics make it mechanistic: priv vs no-GT labels differ on ~31% of steps but <b>nearly symmetrically</b> (1001 vs 956) — the teacher's gain is real but <b>diffuse</b>; distilled, the two students are <b>statistically indistinguishable</b> verifiers (paired McNemar p=0.14), neither beating majority vote. Clean honest null: <i>a real teacher gap doesn't distill because it's diffuse.</i> Next: re-run the paired test at N=1000, and <b>Phase B</b> — make the student actually beat majority vote."),
+     "<b>SUBMISSION SPRINT — COLM 2026 Efficient Reasoning workshop, deadline July 19 AoE.</b> The two papers are merged into one 12-page draft (<code>paper/slfd_colm_er.pdf</code>): the teacher sweet spot (§4), the verified transfer null with a <b>positive control</b> ruling out pipeline insensitivity (§5), and the <b>supervision-mismatch diagnosis</b> (§6) — format-matched ProcessBench gold labels train a competent 3B verifier (0.75–0.77 ROC-AUC) while our generated teacher labels stay weak (0.48–0.68 across a 4-seed sweep, merged 2026-07-05). Running now: the <b>same-source GSM8K missing cell</b> (generated labels on the gold rows' exact source problems, labeling locally on Edward's Mac) — the one experiment that isolates provenance from source distribution."),
 ]
 
 RESEARCH_Q = ("The research question",
     "Does distilling a teacher's <b>step-level score + natural-language critique</b> — and its <b>privileged</b> (answer-aware) judgment — into a small answer-blind student make it better at catching reasoning-step errors? <b>Finding:</b> privilege has a <b>tractability sweet spot</b> — it helps only where the teacher both <i>needs</i> the reference (can't self-verify) and can <i>use</i> it; and only <b>rich</b> privilege works (a worked solution, not a bare answer).")
 
-PHASE = "Null is verified + diagnosed: real teacher privilege (+0.07) is diffuse (~31% labels churn symmetrically) and does NOT distill — students indistinguishable (p=0.14). Next: paired test @ N=1000 + Phase B (student must beat majority vote)."
+PHASE = "SUBMISSION SPRINT → COLM 2026 Efficient Reasoning workshop, deadline JULY 19 AoE. Paper is merged & mostly there (sweet spot + verified null w/ positive control + mismatch diagnosis). In flight: same-source GSM8K cell (labeling on Edward's Mac → Saksham trains on Lambda), 4-seed numbers → Overleaf, COLM template port, length trim."
 
 RUNS = [  # (label, state) state in {running, done, queued}
     ("Teacher bake-off (5 models, N=30)", "done"),
@@ -41,7 +41,11 @@ RUNS = [  # (label, state) state in {running, done, queued}
     ("Threshold-free re-score (ROC/PR-AUC) — no-GT ≥ priv", "done"),
     ("Scaled run N=1000 — Gemma-4 labeling, BoN re-rank (no transfer)", "done"),
     ("Diagnostics: Gemma-4 probe (+0.07) · label agreement (~31% churn) · paired BoN (p=0.14)", "done"),
-    ("Re-run paired BoN @ N=1000 + Phase B: student to beat majority vote", "queued"),
+    ("Positive control — weak-vs-strong teacher, +0.050 ROC-AUC [0.021, 0.078], pipeline IS sensitive", "done"),
+    ("Phase B mismatch diagnosis — gold 0.75–0.77 vs generated 0.48–0.68 under identical 3B path", "done"),
+    ("4-seed generated-label sweep (priv BCE 0.5475 · no-GT rank 0.6062) — merged PR #28", "done"),
+    ("Same-source GSM8K cell — Gemma-4 labeling the gold rows' exact 400 problems (local)", "running"),
+    ("Gold-3B downstream best-of-N vs majority vote (§6 downstream validation)", "queued"),
 ]
 
 DECISIONS = [
@@ -60,12 +64,12 @@ DECISIONS = [
 ]
 
 TASKS = [  # who, track, status (active|blocked|queued|done), next action
-    ("Edward", "Trainer + analysis", "active",
-     "Diagnostics done &amp; verified: the null is mechanistic (real +0.07 teacher gap, diffuse/symmetric label churn, indistinguishable students). Propagated everywhere. All Phase-B tooling now BUILT &amp; smoke-tested for the team: D1 rigor (train_slfd --seed + experiments.transfer_ci clustered paired bootstrap CI on the priv−nogt roc_auc gap) and the full distillation-method ablation set — ABLATION=verdict (hard BCE), soft (distribution BCE), and logit_kd (online soft KL toward a LOCAL same-family teacher, since the served Gemma-4 exposes no logits). Now design the capacity/boundary sweep + positive control."),
+    ("Edward", "Integration + submission", "active",
+     "Same-source GSM8K labeling running locally (priv + no-GT on the gold rows' exact 400 problems → data/labeled/math_{priv,nogt}_gsm8k400_steps.jsonl). PR #28 merged (4-seed sweep + COLM-styled standalone tex). Then: review Overleaf port of 4-seed numbers, length trim to COLM 10pp, supplementary zip (anonymized artifacts promised in Appendix A/C), submit by ~Jul 18."),
     ("Saksham", "GPU pipeline", "active",
-     "Phase A diagnostics complete (label agreement, paired BoN, Gemma-4 probe; math_verify wired in — nice). NEXT (cheap-first, no new labeling): (1) re-run paired BoN @ N=1000 + report the McNemar p (B0/B0b), (2) strong-vs-weak-teacher positive control (B3) — is the pipeline even sensitive to teacher quality? THEN spend compute: scale data + capacity sweep so the PRM beats majority vote (B1/B2). Distillation-method ablation (B4) is the mechanism slot if those don't open the gap. Runbook: RUNBOOK_PHASE_B.md · roadmap: RESEARCH_ROADMAP.md."),
-    ("Henry", "Research / paper", "active",
-    "✓ Related Work · ✓ 3-tier sweet-spot results + mechanism + significance (+0.05 [0.010, 0.093]) · ✓ full draft compiles. NEW: §2.7 is now a VERIFIED NEGATIVE (no transfer) — ☐ rewrite §2.7 with the N=1000 numbers (no-GT ≥ priv) · ☐ reframe contribution so it doesn't imply the distillation works (teacher sweet-spot is the headline; student null + diagnosis is honest secondary) · ☐ fix '+0.5'→'+0.05' typo (§2.3, still present) · ☐ consolidate the 6 tables · ☐ flip cases + OlympiadBench cell. See HANDOFF_HENRY.md."),
+     "When the same-source labeled data lands (branch incoming): train the missing cell on Lambda — scripts/run_gold_scorehead_gate.sh TRAIN_DATASET=data/labeled/math_priv_gsm8k400_steps.jsonl (and no-GT), SAME gold-source recipe (not bce_ew3/rank_bal), eval on processbench_math_shuffled, RUN_TAG=generated_priv_gsm8k400_to_math1000. Also: one-sentence explanation of the seed-0 rerun divergence (0.477 vs canonical 0.550) for the variance footnote. Optional if time: gold-3B downstream best-of-N vs majority vote."),
+    ("Henry", "Paper", "active",
+     "Port into the combined Overleaf: 4-seed generated-label aggregates into Table 5 + abstract (0.5475 priv / 0.6062 no-GT, ranges), updated seed-asymmetry limitation, efficiency sentence (0.3 vs 15 GPU-hours), run-to-run variance footnote. Then: COLM template port (reuse Saksham's main.tex style block), tighten title + abstract, fix Table 2 OlympiadBench dash/delta, reference cleanup ([3][4][10] et-al, [9] year)."),
 ]
 
 HOW_WE_WORK = [
@@ -84,19 +88,22 @@ BULLETPROOFING = [
     ("done", "Gemma-4 privilege probe: +0.07 solution gap — the actual labeling teacher's labels genuinely differ (null is not 'identical labels')."),
     ("done", "Label agreement: priv vs no-GT differ on ~31% of steps but symmetrically (1001 vs 956) — the teacher gain is diffuse, not directional."),
     ("done", "Same-pool paired BoN: students statistically indistinguishable (McNemar p=0.14) — but N=200 is underpowered; re-run @ N=1000."),
-    ("todo", "Phase B: scale data + larger student base so the PRM beats majority vote (gating for impact)."),
-    ("todo", "Boundary: capacity (0.5/1.5/7B) + data-scale sweep + strong-vs-weak-teacher positive control + seeds/CIs."),
-    ("todo", "Distillation method (B4): logit/KL loss is wired-but-disabled (vocab mismatch) — try distribution distillation w/ a Gemma-family student + structured-verdict critique. Mechanism slot if capacity/data don't open the gap."),
-    ("todo", "Statistical rigor: the N=1000 null is 0.641 vs 0.631 roc_auc on ONE seed — not 'validated' until a bootstrap CI + multi-seed retrain, and the student clears MV."),
-    ("idea", "Does a stronger teacher extend the sweet spot upward on OlympiadBench?"),
+    ("done", "Positive control: weak-teacher student 0.575 vs 0.625 (+0.050 [0.021, 0.078], p=0.001) — pipeline detects teacher quality; the privilege null is not insensitivity."),
+    ("done", "Transfer null now has a CI: priv−no-GT = −0.010 ROC-AUC, 95% CI [−0.025, 0.005] (paired bootstrap, 10k resamples)."),
+    ("done", "Generated-label seed asymmetry closed: 4-seed sweep (priv BCE 0.5475 [0.50–0.59] · no-GT rank 0.6062 [0.54–0.68]); gap vs gold survives EVERY seed (best generated 0.676 < worst gold 0.726)."),
+    ("todo", "Same-source GSM8K cell (RUNNING): generated labels on the gold rows' exact problems — isolates provenance from source distribution; §6's admitted 'highest-value next experiment'."),
+    ("todo", "Gold-3B downstream best-of-N vs majority vote — §6 currently step-level only (admitted limitation)."),
+    ("todo", "Seed-0 variance footnote: rerun diverged 0.477 vs canonical 0.550 (both degenerate, pred_error_rate=0) — disclose, don't bury; it evidences §6.4 BCE instability."),
+    ("idea", "Does a stronger teacher extend the sweet spot upward on OlympiadBench? (post-submission)"),
 ]
 
 MILESTONES = [
     ("done", "Teacher/dataset/privilege locked; sweet spot verified (GSM8K·MATH·OlympiadBench)"),
-    ("done", "Student pipeline built: trainer fixed + ablation + best-of-N verifier (smoke-tested)"),
-    ("done", "Verified N=1000 null + diagnosed (real teacher gap is diffuse, doesn't distill)"),
-    ("now", "Phase B: make the student beat majority vote (data scale + bigger base) + re-run paired BoN @ N=1000"),
-    ("then", "Map the transfer boundary (capacity/data sweep + positive control) → paper"),
+    ("done", "Verified N=1000 null + diagnosed (diffuse gap) + positive control (pipeline IS sensitive)"),
+    ("done", "Phase B mismatch diagnosis: gold labels train a competent 3B verifier, generated labels don't (4 seeds)"),
+    ("done", "Papers merged into one COLM draft (paper/slfd_colm_er.pdf, 2026-07-04)"),
+    ("now", "Same-source GSM8K cell + Overleaf number port + COLM template + trim"),
+    ("then", "Submit COLM 2026 Efficient Reasoning — DEADLINE JULY 19 AoE (notification Jul 31)"),
 ]
 
 # Path to submission — granular, owner-tagged, so everyone (esp. Saksham) has line of sight.
@@ -105,21 +112,44 @@ PATH_TO_SUBMISSION = [
     ("done", "Edward", "Full pipeline built &amp; smoke-tested (probe → student ablation → best-of-N verifier); runbooks written."),
     ("done", "Saksham", "N=1000 run complete &amp; verified (Gemma-4 labeling): privilege does NOT transfer to the 1.5B student — no-GT ≥ priv on roc_auc + downstream; neither beats majority vote."),
     ("done", "Saksham", "Phase A diagnostics: Gemma-4 probe (+0.07) · label agreement (~31% churn, symmetric) · paired BoN (p=0.14, n.s.). math_verify wired into answer-matching."),
-    ("now", "Saksham", "Cheap-first: paired BoN @ N=1000 + McNemar p (B0/B0b) and the strong-vs-weak-teacher positive control (B3); THEN data + capacity sweep to beat majority vote (B1/B2); B4 distillation-method is the mechanism slot. Runbook: RUNBOOK_PHASE_B.md."),
-    ("now", "Edward", "Built &amp; smoke-tested all Phase-B tooling: D1 (--seed + experiments.transfer_ci paired bootstrap CI) and the full B4 method set (ABLATION=verdict/soft/logit_kd; logit_kd does online KL vs a local same-family teacher). Now design the capacity/data sweep + positive control."),
-    ("next", "Edward", "Baselines (Math-Shepherd PRM, self-critique); distribution-matched eval; seeds/CIs on teacher gap + transfer null."),
-    ("now", "Henry", "§2.7 = VERIFIED NEGATIVE + now a mechanism: real +0.07 teacher gap is diffuse (~31% symmetric label churn) → indistinguishable students (p=0.14). Write it as an honest, mechanistic null. ✓ flip cases in; ☐ consolidate 6 tables · ☐ '+0.5'→'+0.05' typo · ☐ contribution reframe. See HANDOFF_HENRY.md / RESULTS.md."),
-    ("then", "Team", "Submit — COLM (early July) / AAAI / workshop. Quality over the date."),
+    ("done", "Saksham", "Phase B complete: positive control (B3) + gold-vs-generated mismatch diagnosis + 4-seed generated-label sweep (PR #28, merged). Standalone draft already on the COLM style."),
+    ("done", "Team", "Two papers combined into one 12-page draft (paper/slfd_colm_er.pdf) — sweet spot §4 + verified null §5 + mismatch diagnosis §6."),
+    ("now", "Edward", "Same-source GSM8K labeling running locally (no tunnel — data ships to Saksham, not endpoint access). Then: supplementary zip (anonymized artifacts, full per-seed table), final review, submit."),
+    ("now", "Saksham", "Train the same-source cell on Lambda when the labeled branch lands (gold-source recipe, RUN_TAG=generated_priv_gsm8k400_to_math1000); explain seed-0 rerun divergence for the footnote; optional: gold-3B downstream BoN."),
+    ("now", "Henry", "Port 4-seed numbers + variance footnote + efficiency sentence into the combined Overleaf; COLM template port; trim to 10pp main text; Table 2 OlympiadBench dash fix; reference cleanup."),
+    ("then", "Team", "Submit COLM 2026 Efficient Reasoning — DEADLINE JULY 19 AoE (extended from Jul 12; notification Jul 31; non-archival, dual-submission OK)."),
 ]
 
-OVERLEAF_URL = "https://www.overleaf.com/2555239245xpdcmsxkrzgx"
+OVERLEAF_URL = "https://www.overleaf.com/7588472223rycxtnntqhqm#f07fa2"  # combined paper (Slack 2026-07-01)
 LINKS = [
     ("Paper (Overleaf)", OVERLEAF_URL),
+    ("Framing doctrine (PAPER_FRAMING.md)", "https://github.com/edward-lcl/feedback-distillation/blob/main/PAPER_FRAMING.md"),
     ("Research roadmap", "https://github.com/edward-lcl/feedback-distillation/blob/main/RESEARCH_ROADMAP.md"),
     ("Phase B runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/RUNBOOK_PHASE_B.md"),
     ("Saksham runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_SAKSHAM.md"),
     ("Henry runbook", "https://github.com/edward-lcl/feedback-distillation/blob/main/HANDOFF_HENRY.md"),
     ("Repo", "https://github.com/edward-lcl/feedback-distillation"),
+]
+
+# Frontier reading list — mirrors PAPER_FRAMING.md (doctrine lives there; this
+# renders it). action in {must-cite, nice, watch}. Updated 2026-07-05 scan.
+FRONTIER = [
+    ("must-cite", "OPSD — On-Policy Self-Distillation (arXiv:2601.18734)",
+     "2026's 'privileged teacher' means THIS (successful, on-policy, policy-level). One paragraph must differentiate: we distill privileged step-error LABELS, off-policy, into an answer-blind VERIFIER — our null confirms, not contradicts, their off-policy-mismatch premise."),
+    ("must-cite", "Position-Weighted OPSD (arXiv:2605.21606)",
+     "Nearest 2026 relative of 'where are privileged-teacher signals unreliable' — token-level where ours is step-label-level."),
+    ("must-cite", "Noise-aware PRM training (arXiv:2601.12748)",
+     "Reviewers will ask 'would label denoising rescue the student?' Pre-empt: our gold-matched control isolates distribution/format, not noise."),
+    ("nice", "Rethinking On-Policy Distillation (arXiv:2604.13016)",
+     "Off-policy/distribution-mismatched supervision fails where on-policy succeeds — our null, predicted from the policy side."),
+    ("nice", "Strong Teacher Not Needed (arXiv:2605.23857)",
+     "Teacher strength ≠ student gains; supports the positive-control logic."),
+    ("nice", "Adaptive Generate-Rank-Verify (arXiv:2605.17609) · Trust-but-Verify survey (arXiv:2508.16665)",
+     "Costly-verification framing: the sweet spot as a verification-budget allocation rule."),
+    ("nice", "uPRM (arXiv:2605.10158) · Scan (arXiv:2509.16548)",
+     "Unsupervised/denoised PRM alternatives — the 'fix the labels' line our diagnosis is differentiated from."),
+    ("watch", "PRMBench (arXiv:2501.03124)",
+     "ProcessBench-only eval reads narrow by mid-2026; companion numbers are the first cut under time pressure."),
 ]
 # ------------------------------------------------------------------------------
 
@@ -546,6 +576,10 @@ a:hover{text-decoration:underline}
         f"<li>{_gpill(s)}<div class='ptext'><span class='pwho'>{who}:</span> {t}</div></li>"
         for s, who, t in PATH_TO_SUBMISSION)
     links_html = "".join(f"<a href='{u}' target='_blank'>{html.escape(n)} ↗</a>" for n, u in LINKS)
+    frontier_html = "".join(
+        f"<tr><td><span class='pill {'done' if a == 'must-cite' else ('now' if a == 'nice' else 'queued')}'>{a}</span></td>"
+        f"<td><b>{html.escape(t)}</b></td><td class=small>{html.escape(r)}</td></tr>"
+        for a, t, r in FRONTIER)
 
     bakeoff_html = bakeoff_rows_dark()
     student_html = student_results_html()
@@ -674,6 +708,9 @@ a:hover{text-decoration:underline}
 
 <div class="section-label">Docs &amp; runbooks</div>
 <div class="card"><div class="links">{links_html}</div></div>
+
+<div class="section-label">Frontier — related papers &amp; positioning (mirrors PAPER_FRAMING.md)</div>
+<div class="card"><table class="cond-table"><tr><th>action</th><th>paper</th><th>why it matters to US</th></tr>{frontier_html}</table></div>
 
 <div class="section-label" id="next">Bulletproofing &amp; open items</div>
 <div class="card"><ul class="status-list">{bullets_html}</ul></div>

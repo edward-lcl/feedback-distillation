@@ -1,5 +1,35 @@
 # Handoff — Saksham (GPU box, 2×3090 / 48 GB)
 
+## 2026-07-05 — same-source data is READY; train it on your cluster
+
+**Deadline correction: COLM Efficient Reasoning is now 2026-07-19 AoE** (extended
+from Jul 12). Non-archival, double-blind. Framing for anything you or your agents
+write: **`PAPER_FRAMING.md` is doctrine** — read it before touching paper text.
+
+The data-prep + labeling steps below (your steps 1–3) are **done** — they ran
+locally on Edward's Mac against the local Gemma-4 teacher (no tunnel/endpoint
+needed; that's why the oMLX URL request was closed without re-exposing the key):
+
+- Input: `data/gsm8k400_for_labeling.jsonl` (400/400 ProcessBench GSM8K problems
+  matched to `openai/gsm8k` references; builder: `scripts/build_gsm8k400_labeling_input.py`)
+- Labels: `data/labeled/math_{priv,nogt}_gsm8k400.jsonl` + flattened
+  `..._steps.jsonl` (runner: `scripts/run_gsm8k400_same_source_labeling.sh`,
+  branch `data/same-source-gsm8k400` — check Slack for status)
+
+**Your move (step 4 of your own plan):** on your cluster, per condition,
+seeds 0–3 to match the gold rows:
+`scripts/run_gold_scorehead_gate.sh TRAIN_DATASET=data/labeled/math_priv_gsm8k400_steps.jsonl`
+(and `math_nogt_...`), **gold-source recipe** — not `bce_ew3`/`rank_bal` —
+`RUN_TAG=generated_{priv,nogt}_gsm8k400_to_math1000`, eval on
+`data/processbench_math_shuffled.jsonl`. Push raw JSONs to a branch.
+
+Also needed from you (short): one sentence on why your seed-0 rerun diverged
+from the canonical checkpoint (0.477 vs 0.550 priv BCE) — hardware/config/seed?
+It becomes the run-to-run variance footnote. And if cluster time allows, the
+**format-rerender cell** (generated labels re-rendered into ProcessBench-style
+format, one training run) completes the provenance×format 2×2 — see
+`PAPER_FRAMING.md` §experiments.
+
 ## 2026-06-30 — Phase B is merged; here's the one experiment worth running next
 
 Your `saksham/phaseb-capacity-gate-main-integration` branch is merged into `main`
