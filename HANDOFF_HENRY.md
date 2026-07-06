@@ -2,6 +2,54 @@
 
 _Async-friendly, no compute needed. Paper: the COMBINED Overleaf (link from Edward's Slack, 2026-07-01) · Dashboard: https://feedback-distillation.exe.xyz_
 
+## 2026-07-05 (later) — same-source cell landed; item 5's slots now have numbers
+
+The same-source GSM8K control is done and verified (PR #30). Good news for your
+workload: **Saksham already drafted the paper text in `paper/main.tex`** (the
+standalone draft) — abstract sentence, methods paragraph, §6 "Same-source GSM8K
+control" paragraph, table rows, bootstrap-table rows. Your job is copy-adapt
+into the combined Overleaf, not compose. He also already did your old item 1
+there (4-seed aggregates + deleted the seed-asymmetry limitation) — mirror
+those edits.
+
+The numbers (artifacts: `results/diagnostics/generated_{priv,nogt}_gsm8k400_to_math1000_qwen3b_bce_bal_seed{0-3}/`,
+tables: `paper/generated/same_source_gsm8k400_table.{md,tex}`):
+gold 0.7515 (0.7256–0.7760) vs same-source generated no-GT 0.6183 (0.5849–0.6614)
+vs priv 0.5494 (0.4680–0.6371); weakest gold seed beats best generated no-GT
+seed +0.0642 [0.0445, 0.0831], p=0.0004.
+
+Three NEW items beyond the copy-adapt:
+
+**A. §5 in-cell null sentence (new, connects §5↔§6 — add after the transfer
+null discussion).** Draft:
+> The same-source control (§6.1) reproduces this dissociation under matched
+> conditions: on the same 400 GSM8K problems, the privileged teacher's labels
+> are more accurate at the teacher level (first-error exact match 0.800 vs
+> 0.752), yet the student trained on them is significantly weaker than the
+> no-GT-trained student (0.5494 vs 0.6183 mean ROC-AUC; paired
+> sequence-cluster bootstrap gap +0.0242, 95% CI [0.0135, 0.0344], p=0.0004).
+
+**B. GSM8K privilege reconciliation footnote (pre-empts a reviewer catch).**
+§4 says the teacher privilege gap is ≈0 on GSM8K (N=50 probe, F1 protocol);
+the same-source labeling run measured priv 0.800 vs no-GT 0.752 first-error
+match at N=400. Not a contradiction — different protocol and metric — but the
+paper must say so before a reviewer does. Draft footnote (attach to the §4
+GSM8K claim):
+> The ≈0 GSM8K gap is measured on the N=50 teacher probe under the step-F1
+> protocol of §4. In the larger same-source labeling run (N=400, §6.1), the
+> privileged teacher shows a +0.048 first-error exact-match advantage; the
+> sweet-spot claim concerns where privilege is large, and both measurements
+> agree it is small on GSM8K relative to MATH (+0.10–0.13).
+
+**C. HOLD the §5 downstream BoN numbers.** The paired BoN diagnostic quoted in
+§5 (0.375 vs 0.340, McNemar n.s.) was graded without `math_verify` installed
+(silent string-match fallback on symbolic MATH answers — grading regression
+found 2026-07-05). A regraded rerun with cached pools is running on Edward's
+box (`results/bon_paired_regrade/`); swap in its numbers when they land, plus
+possibly a gold-3B BoN + BoN-vs-N figure from Saksham's cluster
+(`results/bon_gold3b/`, `experiments/bon_curve.py` emits pgfplots coordinates).
+Don't tighten any prose around the old numbers meanwhile.
+
 ## 2026-07-05 — submission sprint: your concrete list (deadline **Jul 19 AoE**, extended from Jul 12)
 
 **Read `PAPER_FRAMING.md` first — it's doctrine** (framing, must-cites, and a
