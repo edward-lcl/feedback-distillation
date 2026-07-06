@@ -26,13 +26,13 @@ OVERVIEW = [
     ("Why it was revived",
      "The earlier version stalled (CLEAR + TinyLlama; weak scorers, gibberish on math). Revived <b>June 2026</b> with a shift to <b>step-level reasoning evaluation</b> over final-answer accuracy. Target: a publishable result for the <b>COLM workshop (~early July)</b> — flexible; quality over the date."),
     ("Where we are today",
-     "<b>SUBMISSION SPRINT — COLM 2026 Efficient Reasoning workshop, deadline July 19 AoE.</b> The two papers are merged into one 12-page draft (<code>paper/slfd_colm_er.pdf</code>): the teacher sweet spot (§4), the verified transfer null with a <b>positive control</b> ruling out pipeline insensitivity (§5), and the <b>supervision-mismatch diagnosis</b> (§6) — format-matched ProcessBench gold labels train a competent 3B verifier (0.75–0.77 ROC-AUC) while our generated teacher labels stay weak (0.48–0.68 across a 4-seed sweep, merged 2026-07-05). Running now: the <b>same-source GSM8K missing cell</b> (generated labels on the gold rows' exact source problems, labeling locally on Edward's Mac) — the one experiment that isolates provenance from source distribution."),
+     "<b>SUBMISSION SPRINT — COLM 2026 Efficient Reasoning workshop, deadline July 19 AoE.</b> The merged draft's three claims are all data-complete: teacher sweet spot (§4), verified transfer null with positive control (§5), supervision-mismatch diagnosis (§6). The <b>same-source GSM8K cell is DONE</b> (PR #30): holding the gold rows' exact 400 source problems fixed, generated labels stay weak — gold 0.7515 vs generated no-GT 0.6183 / priv 0.5494 ROC-AUC (4 seeds) — so source distribution alone is ruled out. Bonus: the §5 null reproduces <i>inside</i> the controlled cell (better teacher labels → significantly worse student, p=0.0004). Now in flight: the <b>format-rerender cell</b> (data ready, PR #31) to split rendering from label content, and a <b>BoN regrade</b> after a math_verify grading regression surfaced (pre-Jul-6 BoN numbers superseded, incl. the paper's §5 downstream diagnostic)."),
 ]
 
 RESEARCH_Q = ("The research question",
     "Does distilling a teacher's <b>step-level score + natural-language critique</b> — and its <b>privileged</b> (answer-aware) judgment — into a small answer-blind student make it better at catching reasoning-step errors? <b>Finding:</b> privilege has a <b>tractability sweet spot</b> — it helps only where the teacher both <i>needs</i> the reference (can't self-verify) and can <i>use</i> it; and only <b>rich</b> privilege works (a worked solution, not a bare answer).")
 
-PHASE = "SUBMISSION SPRINT → COLM 2026 Efficient Reasoning workshop, deadline JULY 19 AoE. Paper is merged & mostly there (sweet spot + verified null w/ positive control + mismatch diagnosis). In flight: same-source GSM8K cell (labeling on Edward's Mac → Saksham trains on Lambda), 4-seed numbers → Overleaf, COLM template port, length trim."
+PHASE = "SUBMISSION SPRINT → COLM 2026 Efficient Reasoning workshop, deadline JULY 19 AoE. All three claims data-complete; same-source cell DONE (PR #30). In flight: format-rerender cell (data ready, PR #31 → Saksham's cluster), BoN regrade (math_verify grading regression — paper's downstream numbers get replaced), Overleaf number port, COLM template port, length trim."
 
 RUNS = [  # (label, state) state in {running, done, queued}
     ("Teacher bake-off (5 models, N=30)", "done"),
@@ -44,8 +44,10 @@ RUNS = [  # (label, state) state in {running, done, queued}
     ("Positive control — weak-vs-strong teacher, +0.050 ROC-AUC [0.021, 0.078], pipeline IS sensitive", "done"),
     ("Phase B mismatch diagnosis — gold 0.75–0.77 vs generated 0.48–0.68 under identical 3B path", "done"),
     ("4-seed generated-label sweep (priv BCE 0.5475 · no-GT rank 0.6062) — merged PR #28", "done"),
-    ("Same-source GSM8K cell — Gemma-4 labeling the gold rows' exact 400 problems (local)", "running"),
-    ("Gold-3B downstream best-of-N vs majority vote (§6 downstream validation)", "queued"),
+    ("Same-source GSM8K cell — gold 0.7515 vs generated no-GT 0.6183 / priv 0.5494 (4 seeds, PR #30)", "done"),
+    ("1.5B paired BoN regrade — math_verify grading fix, cached pool + BoN-vs-N curve (Edward's Mac)", "running"),
+    ("Format-rerender cell — generated labels in exact gold convention (data ready, PR #31 → cluster)", "queued"),
+    ("Gold-3B downstream best-of-N vs majority vote (tooling ready; checkpoints live on Saksham's cluster)", "queued"),
 ]
 
 DECISIONS = [
@@ -60,16 +62,16 @@ DECISIONS = [
     ("PRM eval metric", "Threshold-free (ROC-AUC / PR-AUC) — not F1 at a fixed cutoff",
      "F1/first_error_acc move with score-head calibration: a silent cell collapses F1 to ~0 while banking the ~0.44 error-free base rate on first_error_acc. Compare cells on AUC + the split (error_recall / pred_error_rate)."),
     ("Student transfer (Phase 2/3)", "NEGATIVE + diagnosed — real teacher gap is diffuse, doesn't distill",
-     "no-GT ≥ priv on roc_auc (0.641 vs 0.631) AND paired downstream (0.375 vs 0.340, McNemar p=0.14, n.s.); neither beats majority vote. Mechanism: priv vs no-GT labels differ on ~31% of steps but symmetrically (1001 vs 956) — gain is real (+0.07 teacher) but diffuse. Gating issue: student must first beat majority vote (Phase B)."),
+     "no-GT ≥ priv on roc_auc (0.641 vs 0.631) AND paired downstream (n.s.); neither beats majority vote. Now reproduced INSIDE the same-source cell: teacher first-error match 0.800 (priv) vs 0.752 (no-GT) on the same 400 problems, yet the priv-trained student is significantly worse (no-GT +0.0242, p=0.0004). CAVEAT: all downstream BoN numbers pre-2026-07-06 were graded without math_verify (silent fallback) — regrade running; don't quote the old ones."),
 ]
 
 TASKS = [  # who, track, status (active|blocked|queued|done), next action
     ("Edward", "Integration + submission", "active",
-     "Same-source GSM8K labeling running locally (priv + no-GT on the gold rows' exact 400 problems → data/labeled/math_{priv,nogt}_gsm8k400_steps.jsonl). PR #28 merged (4-seed sweep + COLM-styled standalone tex). Then: review Overleaf port of 4-seed numbers, length trim to COLM 10pp, supplementary zip (anonymized artifacts promised in Appendix A/C), submit by ~Jul 18."),
+     "Merge PR #30 (same-source results, verified) and PR #31 (format-rerender data + BoN tooling — stacked on #30). BoN regrade running on the Mac (results/bon_paired_regrade). Then: review Overleaf ports, length trim to COLM 10pp, supplementary zip (anonymized artifacts promised in Appendix A/C), submit by ~Jul 18."),
     ("Saksham", "GPU pipeline", "active",
-     "When the same-source labeled data lands (branch incoming): train the missing cell on Lambda — scripts/run_gold_scorehead_gate.sh TRAIN_DATASET=data/labeled/math_priv_gsm8k400_steps.jsonl (and no-GT), SAME gold-source recipe (not bce_ew3/rank_bal), eval on processbench_math_shuffled, RUN_TAG=generated_priv_gsm8k400_to_math1000. Also: one-sentence explanation of the seed-0 rerun divergence (0.477 vs canonical 0.550) for the variance footnote. Optional if time: gold-3B downstream best-of-N vs majority vote."),
+     "Two cluster jobs, recipes in HANDOFF_SAKSHAM.md: (1) format-rerender cells — run_gold_scorehead_gate.sh on data/labeled/math_{priv,nogt}_gsm8k400_pbformat_steps.jsonl, seeds 0–3, RUN_TAG=..._pbformat_to_math1000...; (2) gold-3B downstream BoN — the gold checkpoints only exist on the cluster; pip install math-verify FIRST. Still owed: the one-sentence seed-0 divergence explanation (variance footnote). Lit review: route cites through PAPER_FRAMING.md's must-cite table."),
     ("Henry", "Paper", "active",
-     "Port into the combined Overleaf: 4-seed generated-label aggregates into Table 5 + abstract (0.5475 priv / 0.6062 no-GT, ranges), updated seed-asymmetry limitation, efficiency sentence (0.3 vs 15 GPU-hours), run-to-run variance footnote. Then: COLM template port (reuse Saksham's main.tex style block), tighten title + abstract, fix Table 2 OlympiadBench dash/delta, reference cleanup ([3][4][10] et-al, [9] year)."),
+     "Overleaf ports (Saksham pre-drafted most text in paper/main.tex — copy-adapt): 4-seed aggregates (0.5475/0.6062), same-source control table + paragraph, OPSD differentiation paragraph (drop-in in PAPER_FRAMING.md), efficiency sentence, §5 in-cell null sentence, GSM8K privilege reconciliation footnote (drafts in HANDOFF_HENRY.md). HOLD the §5 downstream BoN numbers — regrade in flight replaces them. Then: COLM template port, tighten title/abstract, Table 2 OlympiadBench dash, reference cleanup."),
 ]
 
 HOW_WE_WORK = [
@@ -91,8 +93,10 @@ BULLETPROOFING = [
     ("done", "Positive control: weak-teacher student 0.575 vs 0.625 (+0.050 [0.021, 0.078], p=0.001) — pipeline detects teacher quality; the privilege null is not insensitivity."),
     ("done", "Transfer null now has a CI: priv−no-GT = −0.010 ROC-AUC, 95% CI [−0.025, 0.005] (paired bootstrap, 10k resamples)."),
     ("done", "Generated-label seed asymmetry closed: 4-seed sweep (priv BCE 0.5475 [0.50–0.59] · no-GT rank 0.6062 [0.54–0.68]); gap vs gold survives EVERY seed (best generated 0.676 < worst gold 0.726)."),
-    ("todo", "Same-source GSM8K cell (RUNNING): generated labels on the gold rows' exact problems — isolates provenance from source distribution; §6's admitted 'highest-value next experiment'."),
-    ("todo", "Gold-3B downstream best-of-N vs majority vote — §6 currently step-level only (admitted limitation)."),
+    ("done", "Same-source GSM8K cell: gold 0.7515 vs generated 0.6183/0.5494 with source problems held fixed (all 8 cells healthy, no collapse; weakest gold seed beats best generated seed +0.0642 [0.0445, 0.0831], p=0.0004) — source distribution ruled out as sole explanation (PR #30)."),
+    ("done", "Transfer null reproduced in-cell: on the same 400 problems the priv teacher is better (first-error 0.800 vs 0.752) but its student is significantly worse (no-GT +0.0242 [0.0135, 0.0344], p=0.0004) — cleanest §5 evidence yet."),
+    ("todo", "Format-rerender cell (data ready, PR #31): generated labels in the exact gold convention — splits label rendering from label content; Saksham trains."),
+    ("todo", "BoN grading regression: math_verify was never installed, answers_match silently string-matched symbolic MATH answers — ALL pre-Jul-6 BoN numbers superseded (incl. the paper's §5 downstream diagnostic); 1.5B regrade running, gold-3B BoN queued on cluster."),
     ("todo", "Seed-0 variance footnote: rerun diverged 0.477 vs canonical 0.550 (both degenerate, pred_error_rate=0) — disclose, don't bury; it evidences §6.4 BCE instability."),
     ("idea", "Does a stronger teacher extend the sweet spot upward on OlympiadBench? (post-submission)"),
 ]
@@ -102,7 +106,8 @@ MILESTONES = [
     ("done", "Verified N=1000 null + diagnosed (diffuse gap) + positive control (pipeline IS sensitive)"),
     ("done", "Phase B mismatch diagnosis: gold labels train a competent 3B verifier, generated labels don't (4 seeds)"),
     ("done", "Papers merged into one COLM draft (paper/slfd_colm_er.pdf, 2026-07-04)"),
-    ("now", "Same-source GSM8K cell + Overleaf number port + COLM template + trim"),
+    ("done", "Same-source GSM8K cell: gap survives with source problems held fixed (PR #30)"),
+    ("now", "Format-rerender cell + BoN regrade/gold-3B + Overleaf number port + COLM template + trim"),
     ("then", "Submit COLM 2026 Efficient Reasoning — DEADLINE JULY 19 AoE (notification Jul 31)"),
 ]
 
@@ -114,9 +119,10 @@ PATH_TO_SUBMISSION = [
     ("done", "Saksham", "Phase A diagnostics: Gemma-4 probe (+0.07) · label agreement (~31% churn, symmetric) · paired BoN (p=0.14, n.s.). math_verify wired into answer-matching."),
     ("done", "Saksham", "Phase B complete: positive control (B3) + gold-vs-generated mismatch diagnosis + 4-seed generated-label sweep (PR #28, merged). Standalone draft already on the COLM style."),
     ("done", "Team", "Two papers combined into one 12-page draft (paper/slfd_colm_er.pdf) — sweet spot §4 + verified null §5 + mismatch diagnosis §6."),
-    ("now", "Edward", "Same-source GSM8K labeling running locally (no tunnel — data ships to Saksham, not endpoint access). Then: supplementary zip (anonymized artifacts, full per-seed table), final review, submit."),
-    ("now", "Saksham", "Train the same-source cell on Lambda when the labeled branch lands (gold-source recipe, RUN_TAG=generated_priv_gsm8k400_to_math1000); explain seed-0 rerun divergence for the footnote; optional: gold-3B downstream BoN."),
-    ("now", "Henry", "Port 4-seed numbers + variance footnote + efficiency sentence into the combined Overleaf; COLM template port; trim to 10pp main text; Table 2 OlympiadBench dash fix; reference cleanup."),
+    ("done", "Team", "Same-source GSM8K control complete (labels: Edward's Mac; training: Saksham's cluster, seeds 0–3 both conditions, all cells healthy): gold 0.7515 vs generated no-GT 0.6183 / priv 0.5494 — source distribution ruled out as sole explanation (PR #30)."),
+    ("now", "Edward", "Merge PR #30 + #31; babysit the BoN regrade run; then supplementary zip (anonymized artifacts, full per-seed table), final review, submit."),
+    ("now", "Saksham", "Cluster: format-rerender cells (pbformat data, gold-source recipe, seeds 0–3) + gold-3B downstream BoN (install math-verify first — grading regression). Seed-0 divergence sentence for the footnote. Recipes in HANDOFF_SAKSHAM.md."),
+    ("now", "Henry", "Overleaf ports (4-seed + same-source + OPSD paragraph + efficiency + reconciliation footnote — drafts in HANDOFF_HENRY.md, much pre-written in paper/main.tex); HOLD §5 BoN numbers for the regrade; COLM template port; trim to 10pp; Table 2 dash fix; refs cleanup."),
     ("then", "Team", "Submit COLM 2026 Efficient Reasoning — DEADLINE JULY 19 AoE (extended from Jul 12; notification Jul 31; non-archival, dual-submission OK)."),
 ]
 
