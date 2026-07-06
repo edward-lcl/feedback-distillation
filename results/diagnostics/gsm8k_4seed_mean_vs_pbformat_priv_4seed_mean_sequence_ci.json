@@ -1,0 +1,19 @@
+{
+  "model_a": "results/diagnostics/ensembles/gsm8k_4seed_mean/per_step_scores.json",
+  "model_b": "results/diagnostics/ensembles/pbformat_priv_gsm8k400_4seed_mean/per_step_scores.json",
+  "dataset": "data/processbench_math_shuffled.jsonl",
+  "max_samples": 1000,
+  "metric": "roc_auc",
+  "gap_model_a_minus_model_b": 0.004448255850285074,
+  "ci95": [
+    -0.00796599100662064,
+    0.017204888810802184
+  ],
+  "p_one_sided_model_a_gt_model_b": 0.2491501699660068,
+  "p_two_sided": 0.4983003399320136,
+  "n_boot": 5000,
+  "n_boot_valid": 5000,
+  "n_sequences": 1000,
+  "n_steps": 6505,
+  "method": "paired_sequence_cluster_bootstrap"
+}

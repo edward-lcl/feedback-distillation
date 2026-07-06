@@ -45,7 +45,7 @@ that's fine and disclosed (run-to-run variance footnote already exists); the
 old numbers were invalid anyway, so THIS run defines the replacement.
 
 
-## 2026-07-05 (later) — format-rerender cell: DATA READY, train it
+## 2026-07-05 (later) — format-rerender cell COMPLETE
 
 The follow-up you named in your own results write-up is prepped. Your same-source
 labels re-rendered into the exact ProcessBench gold-label convention — first
@@ -57,16 +57,29 @@ byte-identical to the `_steps.jsonl` files you already trained; error rate now
 0.093 priv / 0.082 no-GT vs gold's 0.099):
 
 - Data: `data/labeled/math_{priv,nogt}_gsm8k400_pbformat_steps.jsonl`
-  (builder: `scripts/rerender_labels_processbench_format.py`, this branch)
-- Train exactly like the same-source cells, seeds 0–3 per condition:
-  `scripts/run_gold_scorehead_gate.sh TRAIN_DATASET=data/labeled/math_priv_gsm8k400_pbformat_steps.jsonl`
-  (and `math_nogt_...`), `RUN_TAG=generated_{priv,nogt}_gsm8k400_pbformat_to_math1000_qwen3b_bce_bal_seed{N}`,
-  eval on `data/processbench_math_shuffled.jsonl`. Push raw JSONs to a branch.
+  (builder: `scripts/rerender_labels_processbench_format.py`).
+- Training completed on Saksham's cluster with the same-source BCE recipe,
+  seeds 0-3 per condition, eval on `data/processbench_math_shuffled.jsonl`.
 
-Readout: if these recover most of the gold gap (→0.70+), the §6 diagnosis
-sharpens to **label rendering/convention**; if they stay ~0.55–0.62, it sharpens
-to **label content quality**. Either answer strengthens the paper — report it
-straight. Context worth knowing: the rerendered teacher first-error position
+| Training source | Seeds | ROC-AUC | PR-AUC |
+| --- | --- | ---: | ---: |
+| Same-source generated priv BCE, raw | 0-3 | 0.5494 (0.4680-0.6371) | 0.0985 (0.0809-0.1235) |
+| Same-source generated priv BCE, PB-format | 0-3 | 0.6762 (0.5869-0.7891) | 0.1761 (0.1175-0.2811) |
+| Same-source generated no-GT BCE, raw | 0-3 | 0.6183 (0.5849-0.6614) | 0.1152 (0.1049-0.1314) |
+| Same-source generated no-GT BCE, PB-format | 0-3 | 0.7366 (0.7011-0.7555) | 0.2478 (0.2266-0.2722) |
+
+Mean-score artifacts: PB-format priv 0.7789 ROC-AUC / 0.2436 PR-AUC;
+PB-format no-GT 0.7599 ROC-AUC / 0.2883 PR-AUC.
+
+Sequence-cluster bootstrap: PB-format no-GT 4-seed mean beats raw no-GT
+4-seed mean by +0.1262 ROC-AUC, 95% CI [0.1043, 0.1476], p=0.0004.
+PB-format priv 4-seed mean beats raw priv 4-seed mean by +0.2070, 95% CI
+[0.1831, 0.2305], p=0.0004. GSM8K gold 4-seed mean is statistically tied
+with PB-format priv (gold minus PB-format +0.0044, 95% CI [-0.0080, 0.0172],
+p=0.4983).
+
+Readout: these recover most of the gold gap, so the §6 diagnosis sharpens to
+**raw label rendering/convention**. Context worth knowing: the rerendered teacher first-error position
 matches gold on 294/400 (priv) / 285/400 (no-GT) solutions, so ~27% of
 solutions carry a wrong or missing error position even after re-rendering.
 
@@ -147,10 +160,10 @@ gold-source BCE recipe, Qwen2.5-3B score head, eval on
 
 Key bootstrap: even the weakest GSM8K gold seed beats the best same-source
 generated no-GT seed by +0.0642 ROC-AUC, 95% CI [0.0445, 0.0831], p=0.0004.
-The conclusion for the paper: source distribution alone does not explain the
-generated-label gap on GSM8K. Provenance and generated-label format/semantics
-remain coupled, so the **format-rerender cell** is now the clean follow-up for
-the provenance×format 2×2 — see `PAPER_FRAMING.md` §experiments.
+The conclusion for the paper at that point: source distribution alone did not
+explain the generated-label gap on GSM8K. Superseded by the completed
+format-rerender cell above: raw label format/convention explains much of the
+same-source gap, while provenance and residual label content remain coupled.
 
 Still needed from you (short): one sentence on why your seed-0 rerun diverged
 from the canonical checkpoint (0.477 vs 0.550 priv BCE) — hardware/config/seed?

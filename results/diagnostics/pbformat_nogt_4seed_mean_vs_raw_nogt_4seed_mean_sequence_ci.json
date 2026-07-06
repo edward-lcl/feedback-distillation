@@ -1,0 +1,19 @@
+{
+  "model_a": "results/diagnostics/ensembles/pbformat_nogt_gsm8k400_4seed_mean/per_step_scores.json",
+  "model_b": "results/diagnostics/ensembles/raw_nogt_gsm8k400_4seed_mean/per_step_scores.json",
+  "dataset": "data/processbench_math_shuffled.jsonl",
+  "max_samples": 1000,
+  "metric": "roc_auc",
+  "gap_model_a_minus_model_b": 0.12619300299195954,
+  "ci95": [
+    0.10429620912789185,
+    0.14759387777615068
+  ],
+  "p_one_sided_model_a_gt_model_b": 0.0001999600079984003,
+  "p_two_sided": 0.0003999200159968006,
+  "n_boot": 5000,
+  "n_boot_valid": 5000,
+  "n_sequences": 1000,
+  "n_steps": 6505,
+  "method": "paired_sequence_cluster_bootstrap"
+}

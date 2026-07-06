@@ -1,0 +1,35 @@
+\begin{table}[t]
+\centering
+\small
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llrrrrr}
+\toprule
+Training source & Seeds & ROC-AUC & PR-AUC & Best F1 & Fixed F1 & Pred error rate \\
+\midrule
+GSM8K ProcessBench gold $\rightarrow$ MATH1000 & 0--3 & 0.7515 (0.7256--0.7760) & 0.2188 (0.1935--0.2317) & 0.3144 & 0.2503 & 0.5111 \\
+Same-source generated priv BCE, raw $\rightarrow$ MATH1000 & 0--3 & 0.5494 (0.4680--0.6371) & 0.0985 (0.0809--0.1235) & 0.1931 & 0.1741 & 0.4696 \\
+Same-source generated priv BCE, PB-format $\rightarrow$ MATH1000 & 0--3 & 0.6762 (0.5869--0.7891) & 0.1761 (0.1175--0.2811) & 0.2554 & 0.2385 & 0.5121 \\
+Same-source generated no-GT BCE, raw $\rightarrow$ MATH1000 & 0--3 & 0.6183 (0.5849--0.6614) & 0.1152 (0.1049--0.1314) & 0.2168 & 0.2088 & 0.4629 \\
+Same-source generated no-GT BCE, PB-format $\rightarrow$ MATH1000 & 0--3 & 0.7366 (0.7011--0.7555) & 0.2478 (0.2266--0.2722) & 0.3215 & 0.3120 & 0.1703 \\
+\bottomrule
+\end{tabular}}
+\caption{Format-rerender same-source GSM8K diagnostic. PB-format rows use the same Gemma-4 labels re-rendered into the ProcessBench first-error convention with binary scores and literal feedback. Parentheses show seed ranges.}
+\label{tab:format-rerender-gsm8k}
+\end{table}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llrl}
+\toprule
+Model A & Model B & ROC-AUC gap & 95\% CI ($p$) \\
+\midrule
+PB-format no-GT 4-seed mean & Raw no-GT 4-seed mean & $+0.1262$ & $[0.1043, 0.1476]$ ($0.0004$) \\
+PB-format priv 4-seed mean & Raw priv 4-seed mean & $+0.2070$ & $[0.1831, 0.2305]$ ($0.0004$) \\
+GSM8K gold 4-seed mean & PB-format priv 4-seed mean & $+0.0044$ & $[-0.0080, 0.0172]$ ($0.4983$) \\
+GSM8K gold 4-seed mean & PB-format no-GT 4-seed mean & $+0.0232$ & $[0.0113, 0.0351]$ ($0.0004$) \\
+\bottomrule
+\end{tabular}
+\caption{Sequence-cluster bootstrap checks for the format-rerender diagnostic using 5{,}000 resamples over whole MATH solutions.}
+\label{tab:format-rerender-bootstrap}
+\end{table}
