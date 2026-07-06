@@ -100,8 +100,9 @@ Verify survey (arXiv:2508.16665).
    TOOLING READY 2026-07-05 (`experiments.bon_paired --scores_file` +
    `experiments.bon_curve`); needs Saksham's cluster (only home of the gold-3B
    checkpoints). NOTE: all BoN numbers produced before 2026-07-06 were graded
-   without `math_verify` installed (silent fallback) — superseded; regrade in
-   flight on Edward's box for the 1.5B pair.
+   without `math_verify` installed (silent fallback) — superseded; 1.5B regrade
+   reassigned to Saksham's cluster 2026-07-06 (retrain-from-committed-data
+   recipe in HANDOFF_SAKSHAM.md) to free Edward's Mac.
 4. PRMBench companion numbers (arXiv:2501.03124) — first thing to cut.
 
 ## Where things live

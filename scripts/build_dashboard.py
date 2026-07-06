@@ -45,7 +45,7 @@ RUNS = [  # (label, state) state in {running, done, queued}
     ("Phase B mismatch diagnosis — gold 0.75–0.77 vs generated 0.48–0.68 under identical 3B path", "done"),
     ("4-seed generated-label sweep (priv BCE 0.5475 · no-GT rank 0.6062) — merged PR #28", "done"),
     ("Same-source GSM8K cell — gold 0.7515 vs generated no-GT 0.6183 / priv 0.5494 (4 seeds, PR #30)", "done"),
-    ("1.5B paired BoN regrade — math_verify grading fix, cached pool + BoN-vs-N curve (Edward's Mac)", "running"),
+    ("1.5B paired BoN regrade — math_verify grading fix; reassigned to Saksham's cluster (retrain from committed data)", "queued"),
     ("Format-rerender cell — generated labels in exact gold convention (data ready, PR #31 → cluster)", "queued"),
     ("Gold-3B downstream best-of-N vs majority vote (tooling ready; checkpoints live on Saksham's cluster)", "queued"),
 ]
@@ -69,7 +69,7 @@ TASKS = [  # who, track, status (active|blocked|queued|done), next action
     ("Edward", "Integration + submission", "active",
      "Merge PR #30 (same-source results, verified) and PR #31 (format-rerender data + BoN tooling — stacked on #30). BoN regrade running on the Mac (results/bon_paired_regrade). Then: review Overleaf ports, length trim to COLM 10pp, supplementary zip (anonymized artifacts promised in Appendix A/C), submit by ~Jul 18."),
     ("Saksham", "GPU pipeline", "active",
-     "Two cluster jobs, recipes in HANDOFF_SAKSHAM.md: (1) format-rerender cells — run_gold_scorehead_gate.sh on data/labeled/math_{priv,nogt}_gsm8k400_pbformat_steps.jsonl, seeds 0–3, RUN_TAG=..._pbformat_to_math1000...; (2) gold-3B downstream BoN — the gold checkpoints only exist on the cluster; pip install math-verify FIRST. Still owed: the one-sentence seed-0 divergence explanation (variance footnote). Lit review: route cites through PAPER_FRAMING.md's must-cite table."),
+     "Three cluster jobs, recipes in HANDOFF_SAKSHAM.md: (0) 1.5B BoN regrade — replaces the paper's §5 downstream numbers, install math-verify first; (1) format-rerender cells — run_gold_scorehead_gate.sh on data/labeled/math_{priv,nogt}_gsm8k400_pbformat_steps.jsonl, seeds 0–3, RUN_TAG=..._pbformat_to_math1000...; (2) gold-3B downstream BoN (checkpoints only exist on the cluster). Still owed: the one-sentence seed-0 divergence explanation (variance footnote). Lit review: route cites through PAPER_FRAMING.md's must-cite table."),
     ("Henry", "Paper", "active",
      "Overleaf ports (Saksham pre-drafted most text in paper/main.tex — copy-adapt): 4-seed aggregates (0.5475/0.6062), same-source control table + paragraph, OPSD differentiation paragraph (drop-in in PAPER_FRAMING.md), efficiency sentence, §5 in-cell null sentence, GSM8K privilege reconciliation footnote (drafts in HANDOFF_HENRY.md). HOLD the §5 downstream BoN numbers — regrade in flight replaces them. Then: COLM template port, tighten title/abstract, Table 2 OlympiadBench dash, reference cleanup."),
 ]
@@ -120,7 +120,7 @@ PATH_TO_SUBMISSION = [
     ("done", "Saksham", "Phase B complete: positive control (B3) + gold-vs-generated mismatch diagnosis + 4-seed generated-label sweep (PR #28, merged). Standalone draft already on the COLM style."),
     ("done", "Team", "Two papers combined into one 12-page draft (paper/slfd_colm_er.pdf) — sweet spot §4 + verified null §5 + mismatch diagnosis §6."),
     ("done", "Team", "Same-source GSM8K control complete (labels: Edward's Mac; training: Saksham's cluster, seeds 0–3 both conditions, all cells healthy): gold 0.7515 vs generated no-GT 0.6183 / priv 0.5494 — source distribution ruled out as sole explanation (PR #30)."),
-    ("now", "Edward", "Merge PR #30 + #31; babysit the BoN regrade run; then supplementary zip (anonymized artifacts, full per-seed table), final review, submit."),
+    ("now", "Edward", "PRs #30/#31/#33 merged; Mac freed (BoN regrade → Saksham). Next: supplementary zip (anonymized artifacts, full per-seed table), final review, submit."),
     ("now", "Saksham", "Cluster: format-rerender cells (pbformat data, gold-source recipe, seeds 0–3) + gold-3B downstream BoN (install math-verify first — grading regression). Seed-0 divergence sentence for the footnote. Recipes in HANDOFF_SAKSHAM.md."),
     ("now", "Henry", "Overleaf ports (4-seed + same-source + OPSD paragraph + efficiency + reconciliation footnote — drafts in HANDOFF_HENRY.md, much pre-written in paper/main.tex); HOLD §5 BoN numbers for the regrade; COLM template port; trim to 10pp; Table 2 dash fix; refs cleanup."),
     ("then", "Team", "Submit COLM 2026 Efficient Reasoning — DEADLINE JULY 19 AoE (extended from Jul 12; notification Jul 31; non-archival, dual-submission OK)."),

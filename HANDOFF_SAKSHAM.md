@@ -1,5 +1,50 @@
 # Handoff — Saksham (GPU box, 2×3090 / 48 GB)
 
+## 2026-07-06 — BoN regrade moved to YOUR cluster (Edward's Mac needed for other work)
+
+The 1.5B paired-BoN regrade that was running on Edward's box is now yours —
+the local run was stopped ~4% in, nothing to salvage. Why it exists: the box
+venv never had `math_verify` installed, so `answers_match` silently
+string-matched symbolic MATH answers — every BoN number before 2026-07-06
+(incl. the paper's §5 downstream diagnostic 0.375/0.340) is invalid. This
+regrade REPLACES a paper number, so it outranks the gold-3B BoN in priority
+order: (1) pbformat cells, (2) this regrade, (3) gold-3B BoN — or interleave,
+they share the candidate-pool step below only if you want them to.
+
+`pip install math-verify` first. Then, everything you need is on main:
+
+1. Retrain the two 1.5B verifiers (data is committed; ~fast on a 3090):
+   `python -m experiments.train_slfd --dataset data/labeled/math_priv.jsonl \
+     --ablation score_critique --epochs 2 --batch_size 2 \
+     --student_model Qwen/Qwen2.5-1.5B-Instruct --checkpoint checkpoints/priv_critique_cluster.pt`
+   (and `math_nogt.jsonl` → `nogt_critique_cluster.pt`). Gate them with
+   `experiments.run_processbench` — expect ROC-AUC ≈ 0.63/0.64 (the b0v2
+   numbers); if a cell collapses (pred_error_rate ≈ 0), retrain before BoN.
+2. Generate ONE shared pool with your vLLM generator (N=8, t=0.8, 1000
+   problems, `data/processbench_math_shuffled.jsonl`) via
+   `experiments.bon_paired --generate_only --candidates_file
+   results/bon_paired_cluster/pool_n8_t0.8.jsonl`. Generator model is your
+   call — gemma-3-4b-it class keeps it closest to the original protocol; say
+   which one in the PR.
+3. Score both verifiers on the SAME pool:
+   `python -m experiments.bon_paired --dataset data/processbench_math_shuffled.jsonl \
+     --priv checkpoints/priv_critique_cluster.pt --nogt checkpoints/nogt_critique_cluster.pt \
+     --student_model Qwen/Qwen2.5-1.5B-Instruct --n 8 --max_samples 1000 \
+     --candidates_file results/bon_paired_cluster/pool_n8_t0.8.jsonl \
+     --scores_file results/bon_paired_cluster/scored_pool.jsonl \
+     --results_dir results/bon_paired_cluster`
+4. `python -m experiments.bon_curve --scores_file results/bon_paired_cluster/scored_pool.jsonl \
+     --ns 1 2 4 8 --out results/bon_paired_cluster/bon_curve.json`
+5. Push `results/bon_paired_cluster/` raw JSONs to a branch. These become the
+   paper's §5 downstream numbers (Henry is holding the slot); expected story
+   is unchanged (neither 1.5B verifier beats majority vote) but now the
+   grading is real. Report whatever comes out.
+
+Note the retrained checkpoints won't be bit-identical to the Mac's b0v2 pair —
+that's fine and disclosed (run-to-run variance footnote already exists); the
+old numbers were invalid anyway, so THIS run defines the replacement.
+
+
 ## 2026-07-05 (later) — format-rerender cell: DATA READY, train it
 
 The follow-up you named in your own results write-up is prepped. Your same-source
@@ -43,7 +88,7 @@ locally we only have the eval JSONs.
 this. `scripts/generate_solutions.py::answers_match` silently falls back to
 string/numeric matching when `math_verify` is missing, which mis-grades
 symbolic MATH answers. (Every BoN number produced before 2026-07-06 was graded
-under that fallback — Edward's box is re-running the 1.5B pair now; treat old
+under that fallback — the 1.5B regrade is item 1 above on YOUR cluster now; treat old
 BoN JSONs as superseded.)
 
 Recipe (one seed is fine for the headline, seed 0):
