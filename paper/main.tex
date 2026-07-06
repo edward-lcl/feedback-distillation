@@ -55,13 +55,19 @@ The student is a Qwen2.5-3B model with a lightweight score head.
 The target benchmark is full ProcessBench-MATH, evaluated over 1,000 shuffled solutions containing 6,505 reasoning steps and 594 error steps.
 We compare ProcessBench-style supervision from non-MATH source splits against generated teacher labels from a privileged/no-ground-truth labeling pipeline.
 
-The same 3B verifier that learns a transferable ProcessBench-MATH scorer from GSM8K or OmniMath ProcessBench-style labels remains weak when trained on generated teacher labels.
+The same 3B verifier that learns a transferable ProcessBench-MATH scorer from GSM8K or OmniMath ProcessBench-style labels remains weak when trained on raw generated teacher labels.
 This contrast is not a state-of-the-art PRM claim: a public Qwen2.5-Math-7B-PRM800K baseline is stronger on the same split.
 Instead, the contribution is diagnostic.
 Under a fixed student and fixed optimizer, supervision compatibility accounts for a large difference in transfer quality, but compatibility is not binary: the high-variance OlympiadBench transfer shows that source distribution still matters even when the annotation format matches.
 This suggests that some failed PRM distillation runs should be treated as data-distribution failures rather than as evidence that the student or recipe is inherently too small.
 
 As a secondary finding, we show that teacher-level privilege does not reliably transfer into student-level verification, traceable to high symmetric label churn between privileged and non-privileged generated labels.
+
+\paragraph{Contributions.}
+First, we provide a controlled transfer diagnostic showing that ProcessBench-style GSM8K and OmniMath source labels train useful small MATH verifiers under a fixed Qwen2.5-3B score-head path, while raw generated teacher labels do not.
+Second, a same-source GSM8K rerun removes source distribution as the sole explanation for the generated-label gap.
+Third, a format-rerender control shows that much of the raw generated-label failure comes from label rendering/convention mismatch rather than from student capacity alone.
+The resulting recommendation is data-centric: before scaling a verifier or sweeping nearby recipes, run a small source- and format-matched diagnostic to test whether the supervision distribution is compatible with the target evaluation.
 
 \section{Experimental Setup}
 
@@ -94,7 +100,7 @@ For the same-source GSM8K control, the candidate solutions are the ProcessBench 
 
 \paragraph{Uncertainty.}
 Because multiple steps come from the same solution, the primary significance test resamples whole MATH solutions rather than individual steps.
-We use a paired sequence-cluster bootstrap with 2,000 samples for ROC-AUC gaps.
+We use a paired sequence-cluster bootstrap with 2,000 samples for the older generated-baseline ROC-AUC gaps and 5,000 samples for the same-source GSM8K and format-rerender mean-score comparisons.
 These intervals quantify evaluation-sampling uncertainty for fixed checkpoints; they do not include training-seed variance for the one-seed generated-label baselines.
 
 \section{Results}
@@ -137,34 +143,33 @@ Qwen2.5-Math-7B-PRM800K public baseline & 0 & 0.8379 & 0.3254 & 0.3991 & 0.3953 
     width=\textwidth,
     height=5.1cm,
     ymin=0.45,
-    ymax=0.90,
+    ymax=0.82,
     ylabel={ROC-AUC on MATH1000},
-    symbolic x coords={GSM8K PB,OmniMath PB,Olympiad PB,Priv gen,NoGT gen,Qwen PRM},
+    symbolic x coords={GSM8K gold,Raw priv,PB priv,Raw noGT,PB noGT},
     xtick=data,
     x tick label style={rotate=25,anchor=east,font=\small},
     nodes near coords,
     nodes near coords style={font=\scriptsize,rotate=90,anchor=west},
-    bar width=13pt,
-    enlarge x limits=0.12,
+    bar width=18pt,
+    enlarge x limits=0.18,
     ymajorgrids=true,
     grid style={draw=gray!25},
 ]
 \addplot coordinates {
-    (GSM8K PB,0.7515)
-    (OmniMath PB,0.7694)
-    (Olympiad PB,0.6509)
-    (Priv gen,0.5475)
-    (NoGT gen,0.6062)
-    (Qwen PRM,0.8379)
+    (GSM8K gold,0.7515)
+    (Raw priv,0.5494)
+    (PB priv,0.6762)
+    (Raw noGT,0.6183)
+    (PB noGT,0.7366)
 };
 \end{axis}
 \end{tikzpicture}
-\caption{Main transfer pattern: with the same evaluation path, GSM8K and OmniMath ProcessBench-style source labels transfer much better than generated teacher labels. OlympiadBench has 0.6509 mean ROC-AUC but spans 0.5854--0.7163 across two seeds, showing that format match alone is insufficient. Qwen PRM800K is an external calibration baseline, not a matched training recipe.}
+\caption{Same-source GSM8K diagnostic: holding source problems, student, training recipe, and MATH1000 evaluation fixed, raw Gemma-4 generated labels remain far below ProcessBench gold labels; re-rendering those same labels into the ProcessBench first-error convention recovers most of the no-GT gap. This makes label convention a primary failure mode, while the remaining gap reflects residual label-content and provenance differences.}
 \label{fig:main-roc}
 \end{figure}
 
-Figure~\ref{fig:main-roc} visualizes the same ranking pattern.
-The contrast is large enough that it is unlikely to be an artifact of evaluation sampling.
+Figure~\ref{fig:main-roc} visualizes the most controlled diagnostic cell, while Table~\ref{tab:main} places it inside the broader cross-source transfer pattern.
+The broader gold-vs-raw-generated contrast is large enough that it is unlikely to be an artifact of evaluation sampling.
 Every GSM8K and OmniMath ProcessBench-source seed significantly beats the privileged generated-label BCE baseline under sequence-cluster bootstrap.
 Against the best generated-label baseline overall, the sequence-cluster ROC-AUC gaps range from +0.0930 to +0.1546 across the eight GSM8K/OmniMath seeds, with two-sided $p=0.0010$ in all cases.
 The PR-AUC gaps are proportionally larger, which is important because error steps are sparse: only 594 of 6,505 MATH evaluation steps are labeled as errors.
@@ -172,7 +177,7 @@ The PR-AUC gaps are proportionally larger, which is important because error step
 The public Qwen2.5-Math-7B-PRM800K checkpoint is included as an external calibration point, not as a matched training recipe.
 It reaches 0.8379 ROC-AUC and remains stronger than any single 500-step ProcessBench-source seed.
 This confirms that our result should not be framed as state-of-the-art PRM performance.
-The central observation is instead a supervised-data compatibility mismatch: under the same small-student path, compatible ProcessBench-style supervision transfers while the current generated teacher labels do not.
+The central observation is instead a supervised-data compatibility mismatch: under the same small-student path, compatible ProcessBench-style supervision transfers, raw generated teacher labels do not, and convention-matched rerendering recovers much of the same-source generated-label gap.
 
 \paragraph{Same-source GSM8K control.}
 The broad gold-vs-generated contrast above changes source distribution, annotation provenance, and label semantics at once.
@@ -221,8 +226,8 @@ The frozen-probe gap is smaller than the full score-head gap, so we treat it as 
 The generated-label results also caution against a simple ``better teacher labeler implies better student'' story.
 At the teacher level, privileged access to the worked reference solution improves error detection on MATH.
 However, at the student level, the privileged labels do not yield a robust verifier advantage.
-In the N=1000 paired Best-of-N evaluation, neither verifier clears majority vote, and the no-ground-truth verifier is at least competitive with the privileged verifier.
-This is a separate downstream evaluation measuring solution-level re-ranking accuracy, distinct from the step-level ProcessBench metrics in Table~\ref{tab:main}.
+We do not use downstream Best-of-N reranking as evidence in this submission because an earlier symbolic-answer grading path fell back when \texttt{math\_verify} was unavailable; those downstream numbers should be regenerated before being quoted.
+The evidence here is therefore limited to step-level ProcessBench metrics under corrected serial scoring.
 The paired bootstrap on step-level ROC-AUC gives a priv-minus-noGT gap of -0.0098, with a 95\% confidence interval of [-0.0252, 0.0053].
 We do not interpret the privileged and no-ground-truth rows in Table~\ref{tab:main} as an isolated privilege comparison, because they use different score losses.
 At fixed generated-label objectives, the sign varies across ablations (Table~\ref{tab:ablations}); the safe conclusion is that we find no robust privileged-student advantage in this pipeline.
@@ -283,7 +288,7 @@ The generated-label baselines are the strongest checkpoints from our preliminary
 We therefore cannot rule out that a substantially different generated-label prompt or denoising method would further narrow the remaining gap, although the breadth of the preliminary ablations and the same-source rerun make a pure unlucky-seed explanation less likely.
 The ProcessBench-source labels share the evaluation benchmark's annotation format, so part of their advantage may come from format compatibility with the evaluation benchmark.
 Finally, while the public Qwen2.5-Math-7B-PRM800K baseline anchors the scale of the result, we do not compare against every recent PRM baseline under the same data budget.
-The efficiency claim is also diagnostic rather than a downstream deployment claim: we do not show that the generated-label verifiers beat majority vote in Best-of-N search.
+The efficiency claim is also diagnostic rather than a downstream deployment claim: we defer Best-of-N reranking claims until corrected symbolic-answer grading is complete.
 Instead, the practical claim is that a small source- and format-matched diagnostic can reveal whether the supervision distribution is likely to support the target verifier before larger student or recipe sweeps.
 
 \section{Conclusion}
@@ -508,7 +513,7 @@ The source files contain the first 400 ProcessBench examples from GSM8K or OmniM
 The same-source generated GSM8K runs use \texttt{data/labeled/math\_priv\_gsm8k400\_steps.jsonl} and \texttt{data/labeled/math\_nogt\_gsm8k400\_steps.jsonl}, built by labeling the 400 GSM8K ProcessBench candidate solutions with Gemma-4 under privileged and no-ground-truth prompts.
 The format-rerender runs use \texttt{data/labeled/math\_priv\_gsm8k400\_pbformat\_steps.jsonl} and \texttt{data/labeled/math\_nogt\_gsm8k400\_pbformat\_steps.jsonl}, generated by re-rendering the same teacher labels into the ProcessBench first-error convention.
 Generated-label student training is offline: the teacher is not loaded during student training or evaluation because the labeled JSONL files already contain the teacher scores and feedback.
-The main source-transfer jobs were run as independent single-GPU jobs; downstream Best-of-N generation and scoring were treated separately from the step-level ProcessBench metrics.
+The main source-transfer jobs were run as independent single-GPU jobs; downstream Best-of-N generation and scoring were treated separately from the step-level ProcessBench metrics and are not used as evidence in this submission.
 
 LLM assistance was used for manuscript drafting, editing, and formatting.
 All reported numerical results come from experiment logs and result JSON files produced by the evaluation scripts; no reported metric was generated by an LLM.
