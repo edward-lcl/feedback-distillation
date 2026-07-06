@@ -111,6 +111,12 @@ def main():
                     help="Regenerate candidates even when candidates_file exists.")
     ap.add_argument("--generate_only", action="store_true",
                     help="Generate/save the shared candidate pool, then exit before loading PRMs.")
+    ap.add_argument("--regrade", action="store_true",
+                    help="Recompute answers/correct even for cached pools (use after "
+                         "fixing the grading stack, e.g. installing math_verify).")
+    ap.add_argument("--scores_file", default=None,
+                    help="JSONL to persist per-candidate PRM scores + grading, so "
+                         "BoN-vs-N curves (experiments.bon_curve) need no re-scoring.")
     args = ap.parse_args()
 
     if args.candidates_file and os.path.exists(args.candidates_file) and not args.force_generate:
@@ -140,14 +146,19 @@ def main():
     n_p1 = n_maj = n_oracle = total = 0
     n_priv = n_nogt = 0
     b = c = 0  # discordant pairs: b = priv right & nogt wrong; c = priv wrong & nogt right
+    scored_rows = []
     for r in pools:
         problem, gt = r["problem"], str(r["gt_answer"])
         cands = [t for t in r.get("candidates", []) if t]
         if not cands:
             continue
         total += 1
-        answers = r.get("answers") or [extract_final_answer(t) for t in cands]
-        correct = r.get("correct") or [answers_match(a, gt) for a in answers]
+        if args.regrade:
+            answers = [extract_final_answer(t) for t in cands]
+            correct = [answers_match(a, gt) for a in answers]
+        else:
+            answers = r.get("answers") or [extract_final_answer(t) for t in cands]
+            correct = r.get("correct") or [answers_match(a, gt) for a in answers]
 
         n_p1 += correct[0]
         votes = collections.Counter(a for a in answers if a)
@@ -165,6 +176,15 @@ def main():
             b += 1
         elif cn and not cp:
             c += 1
+        if args.scores_file:
+            scored_rows.append({
+                "problem": problem, "gt_answer": gt, "candidates": cands,
+                "answers": answers, "correct": correct,
+                "scores": {"priv": sp, "nogt": sn},
+            })
+    if args.scores_file and scored_rows:
+        _write_candidate_pools(args.scores_file, scored_rows)
+        print(f"Saved per-candidate scores -> {args.scores_file}")
 
     t = max(1, total)
     res = {
