@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\small
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llrrrrr}
+\toprule
+Training source & Seeds & ROC-AUC & PR-AUC & Best F1 & Fixed F1 & Pred error rate \\
+\midrule
+GSM8K ProcessBench gold $\rightarrow$ MATH1000 & 0--3 & 0.7515 (0.7256--0.7760) & 0.2188 (0.1935--0.2317) & 0.3144 & 0.2503 & 0.5111 \\
+Same-source GSM8K generated priv BCE $\rightarrow$ MATH1000 & 0--3 & 0.5494 (0.4680--0.6371) & 0.0985 (0.0809--0.1235) & 0.1931 & 0.1741 & 0.4696 \\
+Same-source GSM8K generated no-GT BCE $\rightarrow$ MATH1000 & 0--3 & 0.6183 (0.5849--0.6614) & 0.1152 (0.1049--0.1314) & 0.2168 & 0.2088 & 0.4629 \\
+\bottomrule
+\end{tabular}}
+\caption{Same-source GSM8K generated-label control. All rows use the same Qwen2.5-3B score-head path and evaluate on MATH1000. The generated rows use Gemma-4 labels on the same 400 GSM8K ProcessBench candidate solutions used by the gold-source row.}
+\label{tab:same-source-gsm8k}
+\end{table}

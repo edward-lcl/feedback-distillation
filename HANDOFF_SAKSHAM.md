@@ -1,34 +1,41 @@
 # Handoff — Saksham (GPU box, 2×3090 / 48 GB)
 
-## 2026-07-05 — same-source data is READY; train it on your cluster
+## 2026-07-05 — same-source GSM8K control COMPLETE
 
 **Deadline correction: COLM Efficient Reasoning is now 2026-07-19 AoE** (extended
 from Jul 12). Non-archival, double-blind. Framing for anything you or your agents
 write: **`PAPER_FRAMING.md` is doctrine** — read it before touching paper text.
 
-The data-prep + labeling steps below (your steps 1–3) are **done** — they ran
-locally on Edward's Mac against the local Gemma-4 teacher (no tunnel/endpoint
-needed; that's why the oMLX URL request was closed without re-exposing the key):
+The data-prep + labeling steps (your steps 1–3) are **done** — they ran locally
+on Edward's Mac against the local Gemma-4 teacher (no tunnel/endpoint needed;
+that's why the oMLX URL request was closed without re-exposing the key):
 
 - Input: `data/gsm8k400_for_labeling.jsonl` (400/400 ProcessBench GSM8K problems
   matched to `openai/gsm8k` references; builder: `scripts/build_gsm8k400_labeling_input.py`)
 - Labels: `data/labeled/math_{priv,nogt}_gsm8k400.jsonl` + flattened
   `..._steps.jsonl` (runner: `scripts/run_gsm8k400_same_source_labeling.sh`,
-  branch `data/same-source-gsm8k400` — check Slack for status)
+  branch `data/same-source-gsm8k400`).
 
-**Your move (step 4 of your own plan):** on your cluster, per condition,
-seeds 0–3 to match the gold rows:
-`scripts/run_gold_scorehead_gate.sh TRAIN_DATASET=data/labeled/math_priv_gsm8k400_steps.jsonl`
-(and `math_nogt_...`), **gold-source recipe** — not `bce_ew3`/`rank_bal` —
-`RUN_TAG=generated_{priv,nogt}_gsm8k400_to_math1000`, eval on
-`data/processbench_math_shuffled.jsonl`. Push raw JSONs to a branch.
+Cluster training also completed on 2026-07-05: priv/no-GT conditions, seeds 0–3,
+gold-source BCE recipe, Qwen2.5-3B score head, eval on
+`data/processbench_math_shuffled.jsonl`.
 
-Also needed from you (short): one sentence on why your seed-0 rerun diverged
+| Training source | Seeds | ROC-AUC | PR-AUC |
+| --- | --- | ---: | ---: |
+| GSM8K ProcessBench gold -> MATH1000 | 0-3 | 0.7515 (0.7256-0.7760) | 0.2188 (0.1935-0.2317) |
+| Same-source generated privileged BCE -> MATH1000 | 0-3 | 0.5494 (0.4680-0.6371) | 0.0985 (0.0809-0.1235) |
+| Same-source generated no-GT BCE -> MATH1000 | 0-3 | 0.6183 (0.5849-0.6614) | 0.1152 (0.1049-0.1314) |
+
+Key bootstrap: even the weakest GSM8K gold seed beats the best same-source
+generated no-GT seed by +0.0642 ROC-AUC, 95% CI [0.0445, 0.0831], p=0.0004.
+The conclusion for the paper: source distribution alone does not explain the
+generated-label gap on GSM8K. Provenance and generated-label format/semantics
+remain coupled, so the **format-rerender cell** is now the clean follow-up for
+the provenance×format 2×2 — see `PAPER_FRAMING.md` §experiments.
+
+Still needed from you (short): one sentence on why your seed-0 rerun diverged
 from the canonical checkpoint (0.477 vs 0.550 priv BCE) — hardware/config/seed?
-It becomes the run-to-run variance footnote. And if cluster time allows, the
-**format-rerender cell** (generated labels re-rendered into ProcessBench-style
-format, one training run) completes the provenance×format 2×2 — see
-`PAPER_FRAMING.md` §experiments.
+It becomes the run-to-run variance footnote.
 
 ## 2026-06-30 — Phase B is merged; here's the one experiment worth running next
 
@@ -41,7 +48,7 @@ untouched: §6 of the merged paper is your gold-vs-generated result, reframed as
 to a question Henry's draft asked but didn't have evidence for ("is the null a capacity
 problem or a supervision problem?").
 
-**The one thing worth your GPU time before submission: the missing controlled cell.**
+**Historical note (now complete): the one thing worth your GPU time was the same-source controlled cell.**
 Your own result card already names it — generated teacher labels on the *same*
 GSM8K/OmniMath source problems used by the gold-label rows, holding source-distribution
 fixed and varying only provenance (gold vs.\ generated). Right now the gold-vs-generated
