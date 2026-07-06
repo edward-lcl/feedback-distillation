@@ -51,7 +51,11 @@ identical training and evaluation path, a 3B verifier trained on
 format-matched ProcessBench-style gold labels reaches $0.73$--$0.79$ ROC-AUC
 across eight seeds on full ProcessBench-MATH (up to $0.83$ with post-hoc
 score averaging across seeds), while the same generated teacher labels
-remain weak ($0.55$--$0.63$ ROC-AUC) at both 1.5B and 3B scale. The evidence
+remain weak ($0.55$--$0.63$ ROC-AUC) at both 1.5B and 3B scale. The same
+pattern holds in a same-source GSM8K control: Gemma-4 labels on the same 400
+GSM8K ProcessBench candidate solutions reach only $0.549$ ROC-AUC with
+privileged labels and $0.618$ without ground-truth access, below the $0.751$
+GSM8K gold mean. The evidence
 points to a supervision distribution/format mismatch, not raw capacity, as the
 dominant failure mode, and offers a practical diagnostic: test whether
 format-matched supervision can support the target verifier before scaling
@@ -549,6 +553,10 @@ bootstrap (resampling whole solutions rather than individual steps, which
 are correlated); against the best generated-label baseline overall, gaps
 range from $+0.093$ to $+0.155$ ROC-AUC across the eight seeds, all
 two-sided $p = 0.0010$ (Table~\ref{tab:mismatch-gaps}).
+In the same-source GSM8K control, even the weakest GSM8K gold seed beats the
+best same-source generated no-GT seed by $+0.064$ ROC-AUC (95\% CI
+$[0.045,0.083]$, two-sided $p=0.0004$), so the generated-label weakness is
+not explained by source distribution alone.
 
 \begin{table}[t]
 \centering
@@ -563,6 +571,8 @@ OmniMath gold $\to$ MATH1000 & 0--3 & 0.7694 (0.7539--0.7869) & 0.2524 (0.2277--
 Qwen2.5-Math-7B-PRM800K (public) & -- & 0.8379 & 0.3254 & 0.3991 & 0.3953 & 0.1436 \\
 Generated privileged labels, BCE & 0 & 0.5503 & 0.0992 & 0.1803 & 0.0000 & 0.0000 \\
 Generated no-GT labels, rank loss & 0 & 0.6324 & 0.1418 & 0.2221 & 0.2151 & 0.3819 \\
+Same-source GSM8K generated priv BCE & 0--3 & 0.5494 (0.4680--0.6371) & 0.0985 (0.0809--0.1235) & 0.1931 & 0.1741 & 0.4696 \\
+Same-source GSM8K generated no-GT BCE & 0--3 & 0.6183 (0.5849--0.6614) & 0.1152 (0.1049--0.1314) & 0.2168 & 0.2088 & 0.4629 \\
 \bottomrule
 \end{tabular}%
 }
@@ -723,13 +733,11 @@ not a capacity ceiling in the student.
 
 \textbf{Confounded comparison in \S\ref{sec:mismatch}.} The gold-vs-generated
 contrast varies provenance (human-curated ProcessBench annotations vs.\
-LLM-generated labels), source-problem distribution (GSM8K/OmniMath vs.\
-MATH-style traces), and label format simultaneously. This paper should not
-be read as isolating human-curated versus generated provenance. The missing
-controlled cell is generated teacher labels on the \emph{same}
-GSM8K/OmniMath source problems used by the gold-label training rows --
-running this is the highest-value next experiment if time allows before
-submission.
+LLM-generated labels), source-problem distribution, and label format
+simultaneously. The same-source GSM8K control removes the source-distribution
+confound for one source split and remains negative, but it still should not be
+read as isolating human-curated versus generated provenance: generated labels
+also differ in label semantics, calibration, and prompt/rendering format.
 
 \textbf{Seed and scale asymmetry.} The generated-label baselines in
 \S\ref{sec:mismatch} use one seed each from a $\sim$10-configuration

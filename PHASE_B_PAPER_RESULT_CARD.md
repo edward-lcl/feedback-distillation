@@ -9,7 +9,10 @@ Under the same Qwen2.5-3B score-head training/evaluation path, ProcessBench-styl
 gold step labels from GSM8K and OmniMath transfer strongly to full
 ProcessBench MATH, while generated teacher labels transfer weakly. A follow-up
 OlympiadBench check is high-variance, supporting a source-distribution framing
-rather than a blanket claim that every non-MATH source transfers equally.
+rather than a blanket claim that every non-MATH source transfers equally. The
+same-source GSM8K generated-label control is also negative: Gemma-4 labels on
+the same 400 GSM8K ProcessBench candidate solutions still fall well below the
+GSM8K gold row.
 
 ## Main Table
 
@@ -31,6 +34,24 @@ has 0 overlaps; OmniMath source400 has 0 overlaps; OlympiadBench source400 has
 *Best F1 is threshold-swept on the eval slice. It is useful diagnostically, but
 should not be reported as a calibrated claim without a held-out threshold
 calibration split.
+
+Same-source GSM8K generated-label control (completed 2026-07-05): labels were
+run locally against the Gemma-4 teacher on the same 400 GSM8K ProcessBench
+candidate solutions used by the gold row, matched back to GSM8K references for
+the privileged condition. Student training used the same gold-source BCE recipe.
+
+| Training source | Seeds | ROC-AUC | PR-AUC | Best F1* | Fixed F1 | Pred error rate |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| GSM8K ProcessBench gold -> MATH1000 | 0-3 | 0.7515 (0.7256-0.7760) | 0.2188 (0.1935-0.2317) | 0.3144 (0.2864-0.3413) | 0.2503 (0.2137-0.2747) | 0.5111 (0.2949-0.7259) |
+| Same-source GSM8K generated privileged BCE -> MATH1000 | 0-3 | 0.5494 (0.4680-0.6371) | 0.0985 (0.0809-0.1235) | 0.1931 (0.1719-0.2208) | 0.1741 (0.1472-0.2142) | 0.4696 (0.3479-0.6103) |
+| Same-source GSM8K generated no-GT BCE -> MATH1000 | 0-3 | 0.6183 (0.5849-0.6614) | 0.1152 (0.1049-0.1314) | 0.2168 (0.2035-0.2352) | 0.2088 (0.1875-0.2287) | 0.4629 (0.3860-0.5397) |
+
+Sequence-cluster bootstrap: even the weakest GSM8K gold seed beats the best
+same-source generated no-GT seed by +0.0642 ROC-AUC, 95% CI [0.0445, 0.0831],
+p=0.0004. It beats the best same-source generated privileged seed by +0.0885,
+95% CI [0.0688, 0.1080], p=0.0004. The best same-source generated no-GT seed
+also beats the best same-source generated privileged seed by +0.0242, 95% CI
+[0.0135, 0.0344], p=0.0004.
 
 Boundary diagnostic: OlympiadBench ProcessBench gold -> MATH1000 is unstable
 over two seeds, with ROC-AUC 0.5854 / 0.7163 and PR-AUC 0.1209 / 0.2029
@@ -183,7 +204,10 @@ alone is novel, and do not claim that PRM source-distribution/OOD framing is
 new. The sharper contribution is the controlled mismatch result: generated
 privileged/no-GT teacher labels fail badly under the same 3B student, optimizer,
 and full-MATH eval path where non-MATH ProcessBench-style gold labels transfer
-cleanly.
+cleanly. The same-source GSM8K control means this is no longer only a
+source-distribution confound for GSM8K; generated labels still fail when the
+source problems are held fixed, though provenance and label format remain
+coupled.
 
 ## Artifact Paths
 
@@ -200,4 +224,8 @@ cleanly.
 - Qwen PRM800K baseline: `results/diagnostics/qwen_prm800k_math1000/processbench_results.json`
 - Generated privileged BCE: `results/diagnostics/teacher_bce_priv_to_math1000_qwen3b_seed0/processbench_results.json`
 - Best generated-label baseline: `results/diagnostics/generated_rank_nogt_to_math1000_qwen3b_seed0/processbench_results.json`
+- Same-source generated GSM8K job spec: `results/diagnostics/job_specs/same_source_gsm8k400_generated_jobs.tsv`
+- Same-source generated priv seeds: `results/diagnostics/generated_priv_gsm8k400_to_math1000_qwen3b_bce_bal_seed{0,1,2,3}/processbench_results.json`
+- Same-source generated no-GT seeds: `results/diagnostics/generated_nogt_gsm8k400_to_math1000_qwen3b_bce_bal_seed{0,1,2,3}/processbench_results.json`
+- Same-source bootstrap checks: `results/diagnostics/gsm8k_seed3_vs_same_source_generated_nogt_seed2_sequence_ci.json`, `results/diagnostics/gsm8k_seed3_vs_same_source_generated_priv_seed3_sequence_ci.json`, `results/diagnostics/same_source_generated_nogt_seed2_vs_priv_seed3_sequence_ci.json`
 - Full runbook: `RUNBOOK_PHASE_B_FINDINGS_20260624.md`

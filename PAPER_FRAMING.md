@@ -76,13 +76,19 @@ Verify survey (arXiv:2508.16665).
 5. **Numbers freeze discipline:** table numbers come from committed artifacts in
    `results/` — cite the artifact path in PRs that change any paper number. The
    generated-label rows are 4-seed aggregates (priv BCE 0.5475, no-GT rank
-   0.6062) + the run-to-run variance footnote (seed-0 rerun 0.477 vs canonical
-   0.550, both degenerate; disclose, don't bury — it evidences §6.4 instability).
+   0.6062) + the same-source GSM8K control (generated priv BCE 0.5494,
+   generated no-GT BCE 0.6183, GSM8K gold 0.7515). The run-to-run variance
+   footnote (seed-0 rerun 0.477 vs canonical 0.550, both degenerate) is still
+   useful as §6.4 instability evidence.
 
 ## Experiments the frontier now expects (priority order)
 
-1. **Same-source GSM8K cell** — RUNNING (labels from Edward's Mac; training:
-   Saksham's cluster). Isolates provenance from source distribution.
+1. **Same-source GSM8K cell** — DONE 2026-07-05. Labels ran on Edward's Mac;
+   training ran on Saksham's cluster. Result: generated labels remain weak when
+   source problems are held fixed (priv 0.5494, no-GT 0.6183 vs GSM8K gold
+   0.7515 ROC-AUC). This rules out source distribution as the sole explanation
+   for GSM8K, but provenance and generated-label format/semantics remain
+   coupled.
 2. **Format-rerender cell** — re-render generated teacher labels into
    ProcessBench-style format, train once: completes the provenance×format 2×2.
    If format rescues → diagnosis sharpens to "format"; if not → "distribution."

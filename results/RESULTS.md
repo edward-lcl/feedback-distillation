@@ -31,6 +31,33 @@ See:
 - `PHASE_B_PAPER_RESULT_CARD.md`
 - `RUNBOOK_PHASE_B_FINDINGS_20260624.md`
 
+## Same-Source GSM8K Control — 2026-07-05
+
+Edward generated Gemma-4 labels for the same 400 GSM8K ProcessBench candidate
+solutions used by the GSM8K gold-source row. Saksham's cluster then trained the
+same Qwen2.5-3B score-head verifier with the gold-source BCE recipe
+(`scripts/run_gold_scorehead_gate.sh`, 500 steps, balanced batches) for
+privileged and no-GT generated labels, seeds 0-3, evaluating on the same
+MATH1000 split.
+
+| Training source | Seeds | MATH1000 ROC-AUC | MATH1000 PR-AUC |
+| :--- | :--- | ---: | ---: |
+| GSM8K ProcessBench gold -> MATH1000 | 0-3 | 0.7515 (0.7256-0.7760) | 0.2188 (0.1935-0.2317) |
+| Same-source GSM8K generated privileged BCE -> MATH1000 | 0-3 | 0.5494 (0.4680-0.6371) | 0.0985 (0.0809-0.1235) |
+| Same-source GSM8K generated no-GT BCE -> MATH1000 | 0-3 | 0.6183 (0.5849-0.6614) | 0.1152 (0.1049-0.1314) |
+
+Sequence-cluster bootstrap over whole MATH solutions: the weakest GSM8K gold
+seed still beats the best same-source generated no-GT seed by +0.0642 ROC-AUC,
+95% CI [0.0445, 0.0831], p=0.0004. It beats the best same-source generated
+privileged seed by +0.0885, 95% CI [0.0688, 0.1080], p=0.0004.
+
+Interpretation: the generated-label weakness is not explained by the source
+problem distribution alone. For GSM8K, holding the 400 source problems fixed
+still leaves a large gap between ProcessBench gold labels and Gemma-4 generated
+labels. This does not isolate human annotation provenance from label
+format/semantics, so the remaining clean follow-up is a format-rerendered
+generated-label cell.
+
 ## 1. Experimental Setup & Hardware
 - **Hardware:** Local Compute (Dual NVIDIA GeForce RTX 3090, 24GB VRAM per GPU)
 - **Teacher Model:** `google/gemma-2-9b-it` (Unquantized, bf16/fp16)
