@@ -76,26 +76,29 @@ Verify survey (arXiv:2508.16665).
 5. **Numbers freeze discipline:** table numbers come from committed artifacts in
    `results/` — cite the artifact path in PRs that change any paper number. The
    generated-label rows are 4-seed aggregates (priv BCE 0.5475, no-GT rank
-   0.6062) + the same-source GSM8K control (generated priv BCE 0.5494,
-   generated no-GT BCE 0.6183, GSM8K gold 0.7515). The run-to-run variance
+   0.6062) + the same-source GSM8K control (raw generated priv BCE 0.5494,
+   raw generated no-GT BCE 0.6183, GSM8K gold 0.7515; PB-format rerender
+   priv 0.6762, no-GT 0.7366; PB-format mean-score priv 0.7789, no-GT
+   0.7599). The run-to-run variance
    footnote (seed-0 rerun 0.477 vs canonical 0.550, both degenerate) is still
    useful as §6.4 instability evidence.
 
 ## Experiments the frontier now expects (priority order)
 
 1. **Same-source GSM8K cell** — DONE 2026-07-05. Labels ran on Edward's Mac;
-   training ran on Saksham's cluster. Result: generated labels remain weak when
-   source problems are held fixed (priv 0.5494, no-GT 0.6183 vs GSM8K gold
+   training ran on Saksham's cluster. Result: raw generated labels remain weak
+   when source problems are held fixed (priv 0.5494, no-GT 0.6183 vs GSM8K gold
    0.7515 ROC-AUC). This rules out source distribution as the sole explanation
-   for GSM8K, but provenance and generated-label format/semantics remain
-   coupled.
-2. **Format-rerender cell** — DATA READY 2026-07-05
+   for GSM8K and motivates the completed format-rerender cell below.
+2. **Format-rerender cell** — DONE 2026-07-05
    (`data/labeled/math_{priv,nogt}_gsm8k400_pbformat_steps.jsonl`, builder
    `scripts/rerender_labels_processbench_format.py`): generated labels
-   re-rendered into the exact gold convention (first-error-only, ±1 scores,
-   "Correct."/"Error." feedback). Training on Saksham's cluster completes the
-   provenance×format 2×2. If format rescues → diagnosis sharpens to "format";
-   if not → "label content."
+   re-rendered into the exact gold convention (first-error-only, +/-1 scores,
+   "Correct."/"Error." feedback). Training on Saksham's cluster completed the
+   provenance x format check: PB-format no-GT reaches 0.7366 mean ROC-AUC
+   (0.7599 mean-score), PB-format priv reaches 0.6762 (0.7789 mean-score).
+   Diagnosis sharpens to raw label rendering/convention mismatch, with residual
+   label-content noise still present.
 3. **Gold-3B downstream best-of-N vs majority vote** + the BoN-vs-N figure —
    TOOLING READY 2026-07-05 (`experiments.bon_paired --scores_file` +
    `experiments.bon_curve`); needs Saksham's cluster (only home of the gold-3B

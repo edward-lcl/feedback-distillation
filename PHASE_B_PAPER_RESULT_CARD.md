@@ -53,6 +53,25 @@ p=0.0004. It beats the best same-source generated privileged seed by +0.0885,
 also beats the best same-source generated privileged seed by +0.0242, 95% CI
 [0.0135, 0.0344], p=0.0004.
 
+Format-rerender diagnostic (completed 2026-07-05): the same Gemma-4 labels were
+re-rendered into the ProcessBench first-error convention. This largely rescues
+same-source transfer and changes the paper diagnosis from broad generated-label
+failure to raw label-format/convention mismatch.
+
+| Training source | Seeds | ROC-AUC | PR-AUC | Best F1* | Fixed F1 | Pred error rate |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Same-source GSM8K generated privileged BCE, PB-format -> MATH1000 | 0-3 | 0.6762 (0.5869-0.7891) | 0.1761 (0.1175-0.2811) | 0.2554 (0.1897-0.3560) | 0.2385 (0.1786-0.3464) | 0.5121 (0.1199-0.8040) |
+| Same-source GSM8K generated no-GT BCE, PB-format -> MATH1000 | 0-3 | 0.7366 (0.7011-0.7555) | 0.2478 (0.2266-0.2722) | 0.3215 (0.2968-0.3642) | 0.3120 (0.2870-0.3539) | 0.1703 (0.1090-0.2148) |
+
+Mean-score artifacts: PB-format privileged 4-seed mean reaches ROC-AUC 0.7789
+/ PR-AUC 0.2436, and PB-format no-GT 4-seed mean reaches ROC-AUC 0.7599 /
+PR-AUC 0.2883. Sequence-cluster bootstrap: PB-format no-GT 4-seed mean beats
+raw no-GT 4-seed mean by +0.1262 ROC-AUC, 95% CI [0.1043, 0.1476], p=0.0004;
+PB-format privileged 4-seed mean beats raw privileged 4-seed mean by +0.2070,
+95% CI [0.1831, 0.2305], p=0.0004. GSM8K gold 4-seed mean is statistically tied
+with PB-format privileged (gold minus PB-format +0.0044, 95% CI [-0.0080,
+0.0172], p=0.4983).
+
 Boundary diagnostic: OlympiadBench ProcessBench gold -> MATH1000 is unstable
 over two seeds, with ROC-AUC 0.5854 / 0.7163 and PR-AUC 0.1209 / 0.2029
 (mean ROC-AUC 0.6509). Seed 0 is significantly below the best generated-label
@@ -201,13 +220,13 @@ concurrent work includes:
 
 Positioning implication: do not claim that "cross-config ProcessBench transfer"
 alone is novel, and do not claim that PRM source-distribution/OOD framing is
-new. The sharper contribution is the controlled mismatch result: generated
+new. The sharper contribution is the controlled mismatch result: raw generated
 privileged/no-GT teacher labels fail badly under the same 3B student, optimizer,
 and full-MATH eval path where non-MATH ProcessBench-style gold labels transfer
 cleanly. The same-source GSM8K control means this is no longer only a
-source-distribution confound for GSM8K; generated labels still fail when the
-source problems are held fixed, though provenance and label format remain
-coupled.
+source-distribution confound for GSM8K; the format-rerender cell then shows much
+of the same-source failure is label rendering/convention rather than source
+content alone.
 
 ## Artifact Paths
 

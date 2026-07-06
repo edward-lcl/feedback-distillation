@@ -1,0 +1,19 @@
+{
+  "model_a": "results/diagnostics/generated_nogt_gsm8k400_pbformat_to_math1000_qwen3b_bce_bal_seed1/per_step_scores.json",
+  "model_b": "results/diagnostics/generated_nogt_gsm8k400_to_math1000_qwen3b_bce_bal_seed2/per_step_scores.json",
+  "dataset": "data/processbench_math_shuffled.jsonl",
+  "max_samples": 1000,
+  "metric": "roc_auc",
+  "gap_model_a_minus_model_b": 0.09422114015894091,
+  "ci95": [
+    0.07330471067320071,
+    0.11481412061791993
+  ],
+  "p_one_sided_model_a_gt_model_b": 0.0001999600079984003,
+  "p_two_sided": 0.0003999200159968006,
+  "n_boot": 5000,
+  "n_boot_valid": 5000,
+  "n_sequences": 1000,
+  "n_steps": 6505,
+  "method": "paired_sequence_cluster_bootstrap"
+}

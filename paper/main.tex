@@ -33,11 +33,12 @@ This distinction matters for efficient reasoning systems: if supervision distrib
 We study this question under a controlled setting that holds the student architecture, optimization path, and evaluation benchmark fixed while varying the source, annotation provenance, and format of process supervision.
 Using the same Qwen2.5-3B score-head verifier and full ProcessBench-MATH evaluation, ProcessBench-style labels from non-MATH source splits transfer reliably to MATH: GSM8K-source supervision reaches 0.7515 mean ROC-AUC over four seeds, and OmniMath-source supervision reaches 0.7694.
 OlympiadBench-source supervision is high-variance, spanning 0.5854--0.7163 over two seeds, which shows that format match alone is not sufficient.
-In contrast, generated teacher-label supervision is markedly weaker under the same evaluation path: a 4-seed generated no-GT rank-loss baseline reaches a mean 0.6062 ROC-AUC, and a privileged-teacher-label BCE baseline reaches a mean 0.5475 ROC-AUC.
-Sequence-cluster bootstrap tests over whole MATH solutions show that every GSM8K and OmniMath ProcessBench-source seed significantly beats both generated-label baselines.
-This remains true in a same-source GSM8K control that labels the same 400 GSM8K ProcessBench candidate solutions with Gemma-4: generated no-GT labels reach 0.6183 mean ROC-AUC and generated privileged labels reach 0.5494, while GSM8K gold labels reach 0.7515.
+In contrast, raw generated teacher-label supervision is markedly weaker under the same evaluation path: a 4-seed generated no-GT rank-loss baseline reaches a mean 0.6062 ROC-AUC, and a privileged-teacher-label BCE baseline reaches a mean 0.5475 ROC-AUC.
+Sequence-cluster bootstrap tests over whole MATH solutions show that every GSM8K and OmniMath ProcessBench-source seed significantly beats both raw generated-label baselines.
+In a same-source GSM8K control that labels the same 400 GSM8K ProcessBench candidate solutions with Gemma-4, raw generated no-GT labels reach 0.6183 mean ROC-AUC and raw generated privileged labels reach 0.5494, while GSM8K gold labels reach 0.7515.
+Re-rendering those same generated labels into the ProcessBench first-error convention recovers most of the gap: no-GT rises to 0.7366 mean ROC-AUC and privileged rises to 0.6762; their 4-seed mean-score artifacts reach 0.7599 and 0.7789 ROC-AUC, respectively.
 We further show that the failure is not explained by the score-head machinery alone: a matched ProcessBench-label diagnostic reaches 0.7129 ROC-AUC, while frozen-representation probes trained on generated teacher labels remain weak.
-The same-source control removes source distribution for GSM8K, but annotation provenance and label semantics/format remain coupled.
+The same-source and rerender controls remove source distribution for GSM8K and identify label rendering/convention as a major failure mode, while leaving provenance and residual label-content errors coupled.
 The narrower conclusion is practical: for small PRM distillation, a cheap source- and format-matched diagnostic can reveal supervision mismatch before investing in larger students or broader recipe searches.
 \end{abstract}
 
@@ -69,6 +70,7 @@ All main trained verifiers use the same Qwen2.5-3B-Instruct backbone with a scal
 We train with LoRA adapters, a score-only objective, balanced batches, binary cross-entropy for the ProcessBench-source runs, and 500 training steps.
 For generated-label baselines, we report the strongest generated-label checkpoints found in our preliminary ablations and four-seed aggregate reruns for the main generated BCE/rank rows.
 We also run a same-source GSM8K generated-label control: Gemma-4 labels the same 400 GSM8K ProcessBench candidate solutions used by the GSM8K gold row, with and without reference-solution access, then the student trains with the same gold-source BCE recipe.
+Finally, we re-render those same generated labels into the ProcessBench first-error convention to separate raw label format from source distribution.
 These generated-label baselines are not presented as a complete optimization sweep; they are included to test whether generated teacher labels can approach the same target under the same evaluation path.
 The preliminary generated-label ablations span roughly ten nearby score-head training configurations, and none produces a verifier competitive with the ProcessBench-source transfers (Appendix~\ref{app:generated-ablations}).
 
@@ -97,11 +99,11 @@ These intervals quantify evaluation-sampling uncertainty for fixed checkpoints; 
 
 \section{Results}
 
-\subsection{ProcessBench-style source labels transfer; generated teacher labels remain weak}
+\subsection{ProcessBench-style source labels transfer; raw generated teacher labels remain weak}
 
 Table~\ref{tab:main} shows the main result.
 With the student, training path, and evaluation held fixed, ProcessBench-style labels from GSM8K and OmniMath transfer strongly to full ProcessBench-MATH.
-Generated teacher labels are much weaker, even when the generated-label baseline is chosen as the strongest checkpoint from the preliminary ablations.
+Raw generated teacher labels are much weaker, even when the generated-label baseline is chosen as the strongest checkpoint from the preliminary ablations.
 
 \begin{table}[t]
 \centering
@@ -118,10 +120,12 @@ Generated privileged teacher labels, BCE & 0--3 & 0.5475 (0.5007--0.5883) & 0.09
 Generated no-GT teacher labels, rank loss & 0--3 & 0.6062 (0.5390--0.6755) & 0.1254 (0.0911--0.1672) & 0.2142 & 0.1918 \\
 Same-source GSM8K generated privileged BCE & 0--3 & 0.5494 (0.4680--0.6371) & 0.0985 (0.0809--0.1235) & 0.1931 & 0.1741 \\
 Same-source GSM8K generated no-GT BCE & 0--3 & 0.6183 (0.5849--0.6614) & 0.1152 (0.1049--0.1314) & 0.2168 & 0.2088 \\
+Same-source GSM8K generated priv BCE, PB-format & 0--3 & 0.6762 (0.5869--0.7891) & 0.1761 (0.1175--0.2811) & 0.2554 & 0.2385 \\
+Same-source GSM8K generated no-GT BCE, PB-format & 0--3 & 0.7366 (0.7011--0.7555) & 0.2478 (0.2266--0.2722) & 0.3215 & 0.3120 \\
 Qwen2.5-Math-7B-PRM800K public baseline & 0 & 0.8379 & 0.3254 & 0.3991 & 0.3953 \\
 \bottomrule
 \end{tabular}}
-\caption{Full ProcessBench-MATH transfer results on the same 1,000 MATH solutions. Parentheses show seed ranges for multi-seed rows. Best F1 is threshold-swept on the evaluation slice and is included only as a diagnostic.}
+\caption{Full ProcessBench-MATH transfer results on the same 1,000 MATH solutions. PB-format rows use the same Gemma-4 same-source labels re-rendered into the ProcessBench first-error convention. Parentheses show seed ranges for multi-seed rows. Best F1 is threshold-swept on the evaluation slice and is included only as a diagnostic.}
 \label{tab:main}
 \end{table}
 
@@ -173,9 +177,12 @@ The central observation is instead a supervised-data compatibility mismatch: und
 \paragraph{Same-source GSM8K control.}
 The broad gold-vs-generated contrast above changes source distribution, annotation provenance, and label semantics at once.
 We therefore reran generated labeling on the same 400 GSM8K ProcessBench source problems used by the GSM8K gold row.
-Holding source problems, student, optimizer, and MATH1000 evaluation fixed, generated labels still remain far below ProcessBench gold labels: same-source generated no-GT BCE reaches 0.6183 mean ROC-AUC over four seeds and same-source generated privileged BCE reaches 0.5494, compared with 0.7515 for GSM8K gold.
+Holding source problems, student, optimizer, and MATH1000 evaluation fixed, raw generated labels remain far below ProcessBench gold labels: same-source generated no-GT BCE reaches 0.6183 mean ROC-AUC over four seeds and same-source generated privileged BCE reaches 0.5494, compared with 0.7515 for GSM8K gold.
 Even the weakest GSM8K gold seed beats the best same-source generated no-GT seed by +0.0642 ROC-AUC under sequence-cluster bootstrap (95\% CI [0.0445, 0.0831], $p=0.0004$).
-This does not by itself isolate human annotation provenance from label-format or label-semantics differences, but it rules out source distribution as the sole explanation for the generated-label gap on GSM8K.
+However, re-rendering those same generated labels into the ProcessBench first-error convention recovers most of the gap: the no-GT row rises to 0.7366 mean ROC-AUC and the privileged row rises to 0.6762.
+Mean-score artifacts strengthen the diagnosis: PB-format no-GT and privileged 4-seed means reach 0.7599 and 0.7789 ROC-AUC, beating raw generated mean-score baselines by +0.1262 and +0.2070 under sequence-cluster bootstrap.
+The PB-format privileged mean-score artifact is statistically tied with the GSM8K gold mean-score artifact (gold minus PB-format = +0.0044, 95\% CI [-0.0080, 0.0172]).
+Thus source distribution is not the sole explanation, and raw label rendering/convention is a major bottleneck in this generated-label pipeline.
 
 \subsection{Source distribution matters despite format match}
 
@@ -246,6 +253,14 @@ ProcessBench evaluates earliest-error identification across multiple math reason
 Recent weak-supervision approaches attempt to train PRMs without dense human process labels, using outcome labels, generated rationales, or model-derived signals~\cite{freeprm}.
 These methods make PRM training more scalable, but they also raise the question studied here: when generated labels fail, is the problem the student, the recipe, or the supervision distribution?
 Our experiment is complementary: rather than proposing a new weak-supervision method, we hold the small-student path fixed and compare compatible ProcessBench-style process labels against generated teacher labels.
+Noise-aware PRM training directly attacks noisy process supervision through label correction and iterative denoising~\cite{noiseawareprm}.
+Our controlled comparison is complementary: it first asks whether the generated-label distribution supports the target verifier under the right convention, then separates raw rendering mismatch from residual label noise.
+
+\paragraph{Privileged on-policy distillation.}
+Recent on-policy self-distillation methods condition a teacher policy on privileged solution information and distill dense token-level guidance into the same model's policy on its own rollouts~\cite{opsd,pwopsd}.
+This is a different regime from ours.
+We distill off-policy step-error labels from an external teacher into a separate answer-blind verifier, not token-level policy targets into the model that generated the trajectory.
+Our privileged-label results therefore should not be read as contradicting successful privileged on-policy distillation; rather, they identify a failure mode for off-policy, format-sensitive verifier supervision.
 
 \paragraph{Cross-source and out-of-distribution PRM behavior.}
 Recent and concurrent work studies PRM transfer across GSM8K, MATH, OlympiadBench, OmniMath, and related sources~\cite{processlid,retrievalprm}.
@@ -262,9 +277,10 @@ The privileged-label experiments are also related to learning using privileged i
 This study is diagnostic rather than prescriptive.
 We evaluate one main student architecture and score-head training path, so a different student family or a substantially different distillation objective may narrow the gap.
 The main comparison varies human curation, source distribution, and label format together.
-The same-source GSM8K control removes source distribution for one source split, but it still couples annotation provenance with the semantics and calibration of generated teacher labels.
+The same-source GSM8K control removes source distribution for one source split, and the format-rerender cell shows that rendering/convention explains much of the raw generated-label gap.
+It still does not fully isolate annotation provenance from label-content quality: the rerendered teacher first-error position disagrees with gold on roughly a quarter of source solutions.
 The generated-label baselines are the strongest checkpoints from our preliminary ablations, but they are not an exhaustive search over all possible teacher prompting and label-format choices.
-We therefore cannot rule out that a substantially different generated-label prompt, denoising method, or label rendering would narrow the gap, although the breadth of the preliminary ablations and the same-source rerun make a pure unlucky-seed explanation less likely.
+We therefore cannot rule out that a substantially different generated-label prompt or denoising method would further narrow the remaining gap, although the breadth of the preliminary ablations and the same-source rerun make a pure unlucky-seed explanation less likely.
 The ProcessBench-source labels share the evaluation benchmark's annotation format, so part of their advantage may come from format compatibility with the evaluation benchmark.
 Finally, while the public Qwen2.5-Math-7B-PRM800K baseline anchors the scale of the result, we do not compare against every recent PRM baseline under the same data budget.
 The efficiency claim is also diagnostic rather than a downstream deployment claim: we do not show that the generated-label verifiers beat majority vote in Best-of-N search.
@@ -302,6 +318,21 @@ Zhenru Zhang, Chujie Zheng, Yangzhen Wu, Beichen Zhang, Runji Lin, Bowen Yu, Day
 Lin Sun, Chuang Liu, Xiaofeng Ma, Tao Yang, Weijia Lu, and Ning Wu.
 \newblock FreePRM: Training process reward models without ground truth process labels.
 \newblock arXiv:2506.03570, 2025.
+
+\bibitem[Xie et~al.(2026)]{noiseawareprm}
+Bin Xie, Bingbing Xu, Xueyun Tian, Yilin Chen, and Huawei Shen.
+\newblock Towards robust process reward modeling via noise-aware learning.
+\newblock arXiv:2601.12748, 2026.
+
+\bibitem[Zhao et~al.(2026)]{opsd}
+Siyan Zhao, Zhihui Xie, Mengchen Liu, Jing Huang, Guan Pang, Feiyu Chen, and Aditya Grover.
+\newblock Self-distilled reasoner: On-policy self-distillation for large language models.
+\newblock arXiv:2601.18734, 2026.
+
+\bibitem[Liu et~al.(2026)]{pwopsd}
+Xiaogeng Liu, Xinyan Wang, Yingzi Ma, Yechao Zhang, and Chaowei Xiao.
+\newblock When are teacher tokens reliable? Position-weighted on-policy self-distillation for reasoning.
+\newblock arXiv:2605.21606, 2026.
 
 \bibitem[Zhu et~al.(2025)]{retrievalprm}
 Jiachen Zhu, Congmin Zheng, Jianghao Lin, Kounianhua Du, Ying Wen, Yong Yu, Jun Wang, and Weinan Zhang.
@@ -354,7 +385,7 @@ Frozen probe, matched ProcessBench labels 200/200 & ProcessBench labels & 0.6308
 \subsection{Sequence-cluster bootstrap gaps}
 
 Table~\ref{tab:bootstrap} reports paired ROC-AUC gaps using sequence-cluster bootstrap over whole MATH solutions.
-Every GSM8K and OmniMath ProcessBench-source seed significantly beats both generated-label baselines.
+Every GSM8K and OmniMath ProcessBench-source seed significantly beats both raw generated-label baselines.
 
 \begin{table}[h]
 \centering
@@ -385,9 +416,14 @@ OmniMath seed 3 & best generated-label baseline & +0.1546 & [0.1305, 0.1773] \\
 GSM8K seed 3 & best same-source generated no-GT seed & +0.0642 & [0.0445, 0.0831] \\
 GSM8K seed 3 & best same-source generated privileged seed & +0.0885 & [0.0688, 0.1080] \\
 Best same-source generated no-GT seed & best same-source generated privileged seed & +0.0242 & [0.0135, 0.0344] \\
+\midrule
+PB-format no-GT 4-seed mean & raw no-GT 4-seed mean & +0.1262 & [0.1043, 0.1476] \\
+PB-format priv 4-seed mean & raw priv 4-seed mean & +0.2070 & [0.1831, 0.2305] \\
+GSM8K 4-seed mean & PB-format priv 4-seed mean & +0.0044 & [-0.0080, 0.0172] \\
+GSM8K 4-seed mean & PB-format no-GT 4-seed mean & +0.0232 & [0.0113, 0.0351] \\
 \bottomrule
 \end{tabular}}
-\caption{Sequence-cluster bootstrap ROC-AUC gaps on the MATH1000 evaluation split. The older generated-baseline rows use 2,000 bootstrap samples; the same-source GSM8K rows use 5,000 samples and have two-sided $p=0.0004$.}
+\caption{Sequence-cluster bootstrap ROC-AUC gaps on the MATH1000 evaluation split. The older generated-baseline rows use 2,000 bootstrap samples; the same-source GSM8K and format-rerender rows use 5,000 samples.}
 \label{tab:bootstrap}
 \end{table}
 
@@ -470,6 +506,7 @@ The main ProcessBench-source verifier runs use Qwen2.5-3B-Instruct with LoRA ran
 The score-head runs use a score-only objective, BCE loss, balanced batches, 500 training steps, batch size 2, model learning rate $10^{-4}$, score-head learning rate $5\times 10^{-5}$, weight decay 0.01, and serial ProcessBench evaluation with batch size 1.
 The source files contain the first 400 ProcessBench examples from GSM8K or OmniMath, flattened to per-step labels.
 The same-source generated GSM8K runs use \texttt{data/labeled/math\_priv\_gsm8k400\_steps.jsonl} and \texttt{data/labeled/math\_nogt\_gsm8k400\_steps.jsonl}, built by labeling the 400 GSM8K ProcessBench candidate solutions with Gemma-4 under privileged and no-ground-truth prompts.
+The format-rerender runs use \texttt{data/labeled/math\_priv\_gsm8k400\_pbformat\_steps.jsonl} and \texttt{data/labeled/math\_nogt\_gsm8k400\_pbformat\_steps.jsonl}, generated by re-rendering the same teacher labels into the ProcessBench first-error convention.
 Generated-label student training is offline: the teacher is not loaded during student training or evaluation because the labeled JSONL files already contain the teacher scores and feedback.
 The main source-transfer jobs were run as independent single-GPU jobs; downstream Best-of-N generation and scoring were treated separately from the step-level ProcessBench metrics.
 

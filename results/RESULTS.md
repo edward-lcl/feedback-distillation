@@ -7,7 +7,9 @@ The older Phase 2/3 results below are useful historical context, but the
 current strongest evidence is the Phase B full-MATH1000 transfer diagnostic.
 Under the same Qwen2.5-3B score-head training/evaluation path, ProcessBench-style
 gold labels from GSM8K and OmniMath transfer strongly to full ProcessBench MATH,
-while our generated teacher-label checkpoints remain weak.
+while raw generated teacher-label checkpoints remain weak. The later
+format-rerender cell shows this is largely a label-convention problem for the
+same-source GSM8K control.
 
 | Training source | Seeds | MATH1000 ROC-AUC | MATH1000 PR-AUC |
 | :--- | :--- | ---: | ---: |
@@ -51,12 +53,46 @@ seed still beats the best same-source generated no-GT seed by +0.0642 ROC-AUC,
 95% CI [0.0445, 0.0831], p=0.0004. It beats the best same-source generated
 privileged seed by +0.0885, 95% CI [0.0688, 0.1080], p=0.0004.
 
-Interpretation: the generated-label weakness is not explained by the source
+Interpretation: the raw generated-label weakness is not explained by the source
 problem distribution alone. For GSM8K, holding the 400 source problems fixed
-still leaves a large gap between ProcessBench gold labels and Gemma-4 generated
-labels. This does not isolate human annotation provenance from label
-format/semantics, so the remaining clean follow-up is a format-rerendered
-generated-label cell.
+still leaves a large gap between ProcessBench gold labels and raw Gemma-4
+generated labels. This does not isolate human annotation provenance from label
+format/semantics, so the clean follow-up is the format-rerendered generated-label
+cell below.
+
+## Format-Rerender Same-Source GSM8K Control — 2026-07-05
+
+The same Gemma-4 same-source labels were re-rendered into the ProcessBench
+first-error convention (first teacher-flagged error only, later steps non-error,
+binary +/-1 scores, literal `Correct.`/`Error.` feedback) and trained with the
+same Qwen2.5-3B score-head BCE recipe.
+
+| Training source | Seeds | MATH1000 ROC-AUC | MATH1000 PR-AUC |
+| :--- | :--- | ---: | ---: |
+| GSM8K ProcessBench gold -> MATH1000 | 0-3 | 0.7515 (0.7256-0.7760) | 0.2188 (0.1935-0.2317) |
+| Same-source generated privileged BCE, raw -> MATH1000 | 0-3 | 0.5494 (0.4680-0.6371) | 0.0985 (0.0809-0.1235) |
+| Same-source generated privileged BCE, PB-format -> MATH1000 | 0-3 | 0.6762 (0.5869-0.7891) | 0.1761 (0.1175-0.2811) |
+| Same-source generated no-GT BCE, raw -> MATH1000 | 0-3 | 0.6183 (0.5849-0.6614) | 0.1152 (0.1049-0.1314) |
+| Same-source generated no-GT BCE, PB-format -> MATH1000 | 0-3 | 0.7366 (0.7011-0.7555) | 0.2478 (0.2266-0.2722) |
+
+Single-checkpoint means close 62.8% of the raw privileged gap and 88.8% of the
+raw no-GT gap to GSM8K gold. Mean-score artifacts are stronger: PB-format
+privileged reaches 0.7789 ROC-AUC / 0.2436 PR-AUC, and PB-format no-GT reaches
+0.7599 ROC-AUC / 0.2883 PR-AUC.
+
+Sequence-cluster bootstrap over whole MATH solutions: PB-format no-GT 4-seed
+mean beats raw no-GT 4-seed mean by +0.1262 ROC-AUC, 95% CI [0.1043, 0.1476],
+p=0.0004. PB-format privileged 4-seed mean beats raw privileged 4-seed mean by
++0.2070 ROC-AUC, 95% CI [0.1831, 0.2305], p=0.0004. The GSM8K gold 4-seed mean
+is statistically tied with PB-format privileged (gold minus PB-format +0.0044,
+95% CI [-0.0080, 0.0172], p=0.4983).
+
+Interpretation: for same-source GSM8K, raw label rendering/convention is a major
+bottleneck. The cell makes the paper stronger, but it changes the claim: the
+failure is not "generated labels cannot work"; it is that the raw generated-label
+pipeline was format/convention mismatched. Residual label content still matters
+because the rerendered teacher first-error position disagrees with gold on
+roughly a quarter of source solutions.
 
 ## 1. Experimental Setup & Hardware
 - **Hardware:** Local Compute (Dual NVIDIA GeForce RTX 3090, 24GB VRAM per GPU)
