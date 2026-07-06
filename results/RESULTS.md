@@ -80,12 +80,24 @@ raw no-GT gap to GSM8K gold. Mean-score artifacts are stronger: PB-format
 privileged reaches 0.7789 ROC-AUC / 0.2436 PR-AUC, and PB-format no-GT reaches
 0.7599 ROC-AUC / 0.2883 PR-AUC.
 
+Exact mean-score artifacts:
+- `results/diagnostics/ensembles/pbformat_priv_gsm8k400_4seed_mean/per_step_scores.json`
+- `results/diagnostics/ensembles/pbformat_nogt_gsm8k400_4seed_mean/per_step_scores.json`
+- `results/diagnostics/ensembles/raw_priv_gsm8k400_4seed_mean/per_step_scores.json`
+- `results/diagnostics/ensembles/raw_nogt_gsm8k400_4seed_mean/per_step_scores.json`
+
 Sequence-cluster bootstrap over whole MATH solutions: PB-format no-GT 4-seed
 mean beats raw no-GT 4-seed mean by +0.1262 ROC-AUC, 95% CI [0.1043, 0.1476],
 p=0.0004. PB-format privileged 4-seed mean beats raw privileged 4-seed mean by
 +0.2070 ROC-AUC, 95% CI [0.1831, 0.2305], p=0.0004. The GSM8K gold 4-seed mean
 is statistically tied with PB-format privileged (gold minus PB-format +0.0044,
 95% CI [-0.0080, 0.0172], p=0.4983).
+
+Exact bootstrap artifacts:
+- `results/diagnostics/pbformat_nogt_4seed_mean_vs_raw_nogt_4seed_mean_sequence_ci.json`
+- `results/diagnostics/pbformat_priv_4seed_mean_vs_raw_priv_4seed_mean_sequence_ci.json`
+- `results/diagnostics/gsm8k_4seed_mean_vs_pbformat_priv_4seed_mean_sequence_ci.json`
+- `results/diagnostics/gsm8k_4seed_mean_vs_pbformat_nogt_4seed_mean_sequence_ci.json`
 
 Interpretation: for same-source GSM8K, raw label rendering/convention is a major
 bottleneck. The cell makes the paper stronger, but it changes the claim: the
