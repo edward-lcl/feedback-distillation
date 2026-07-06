@@ -89,12 +89,19 @@ Verify survey (arXiv:2508.16665).
    0.7515 ROC-AUC). This rules out source distribution as the sole explanation
    for GSM8K, but provenance and generated-label format/semantics remain
    coupled.
-2. **Format-rerender cell** — re-render generated teacher labels into
-   ProcessBench-style format, train once: completes the provenance×format 2×2.
-   If format rescues → diagnosis sharpens to "format"; if not → "distribution."
-3. **Gold-3B downstream best-of-N vs majority vote** + the BoN-vs-N figure
-   (accuracy vs N, gold-trained vs teacher-trained verifier) — makes the paper
-   legible as efficient-reasoning.
+2. **Format-rerender cell** — DATA READY 2026-07-05
+   (`data/labeled/math_{priv,nogt}_gsm8k400_pbformat_steps.jsonl`, builder
+   `scripts/rerender_labels_processbench_format.py`): generated labels
+   re-rendered into the exact gold convention (first-error-only, ±1 scores,
+   "Correct."/"Error." feedback). Training on Saksham's cluster completes the
+   provenance×format 2×2. If format rescues → diagnosis sharpens to "format";
+   if not → "label content."
+3. **Gold-3B downstream best-of-N vs majority vote** + the BoN-vs-N figure —
+   TOOLING READY 2026-07-05 (`experiments.bon_paired --scores_file` +
+   `experiments.bon_curve`); needs Saksham's cluster (only home of the gold-3B
+   checkpoints). NOTE: all BoN numbers produced before 2026-07-06 were graded
+   without `math_verify` installed (silent fallback) — superseded; regrade in
+   flight on Edward's box for the 1.5B pair.
 4. PRMBench companion numbers (arXiv:2501.03124) — first thing to cut.
 
 ## Where things live

@@ -1,5 +1,79 @@
 # Handoff — Saksham (GPU box, 2×3090 / 48 GB)
 
+## 2026-07-05 (later) — format-rerender cell: DATA READY, train it
+
+The follow-up you named in your own results write-up is prepped. Your same-source
+labels re-rendered into the exact ProcessBench gold-label convention — first
+teacher-flagged error only, later steps kept as non-error, binary ±1 scores,
+literal "Correct."/"Error." feedback — so the training rows are structurally
+indistinguishable from `results/diagnostics/processbench_gsm8k_gold_train400_steps.jsonl`
+and ONLY the label source varies (verified: step_text/problem sequences are
+byte-identical to the `_steps.jsonl` files you already trained; error rate now
+0.093 priv / 0.082 no-GT vs gold's 0.099):
+
+- Data: `data/labeled/math_{priv,nogt}_gsm8k400_pbformat_steps.jsonl`
+  (builder: `scripts/rerender_labels_processbench_format.py`, this branch)
+- Train exactly like the same-source cells, seeds 0–3 per condition:
+  `scripts/run_gold_scorehead_gate.sh TRAIN_DATASET=data/labeled/math_priv_gsm8k400_pbformat_steps.jsonl`
+  (and `math_nogt_...`), `RUN_TAG=generated_{priv,nogt}_gsm8k400_pbformat_to_math1000_qwen3b_bce_bal_seed{N}`,
+  eval on `data/processbench_math_shuffled.jsonl`. Push raw JSONs to a branch.
+
+Readout: if these recover most of the gold gap (→0.70+), the §6 diagnosis
+sharpens to **label rendering/convention**; if they stay ~0.55–0.62, it sharpens
+to **label content quality**. Either answer strengthens the paper — report it
+straight. Context worth knowing: the rerendered teacher first-error position
+matches gold on 294/400 (priv) / 285/400 (no-GT) solutions, so ~27% of
+solutions carry a wrong or missing error position even after re-rendering.
+
+Also, for your lit review: route new citations through the must-cite table in
+`PAPER_FRAMING.md` (PR that file) rather than adding them straight to a draft —
+that's how we keep everyone's agents on one framing.
+
+## 2026-07-05 (later) — gold-3B downstream Best-of-N: your cluster has the only copies of the checkpoints
+
+Second cluster ask, after (or alongside) the pbformat cells. The paper's
+limitation says we never show a verifier beating majority vote downstream. The
+1.5B generated-label verifiers were already BoN-tested and DON'T beat majority
+vote — the missing cell is whether the **gold GSM8K 3B verifier** does. The
+`processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed*.pt` checkpoints
+exist only on your cluster (`checkpoints/${RUN_TAG}.pt` from your gate runs);
+locally we only have the eval JSONs.
+
+**Grading warning first:** `pip install math-verify` into whatever env runs
+this. `scripts/generate_solutions.py::answers_match` silently falls back to
+string/numeric matching when `math_verify` is missing, which mis-grades
+symbolic MATH answers. (Every BoN number produced before 2026-07-06 was graded
+under that fallback — Edward's box is re-running the 1.5B pair now; treat old
+BoN JSONs as superseded.)
+
+Recipe (one seed is fine for the headline, seed 0):
+1. Generate ONE shared candidate pool with your vLLM generator, N=16,
+   temperature 0.8, on `data/processbench_math_shuffled.jsonl` (1000 problems):
+   `python -m experiments.bon_paired --dataset data/processbench_math_shuffled.jsonl \
+    --n 16 --max_samples 1000 --generate_only --candidates_file results/bon_gold3b/pool_n16_t0.8.jsonl`
+   (backend/omlx_url per your setup — `make_generator` speaks any
+   OpenAI-compatible endpoint, so point it at your vLLM server.)
+2. Score with the gold verifier + the best same-source generated verifier on
+   the SAME pool (reuse `--priv`/`--nogt` slots; they're just two checkpoints):
+   `python -m experiments.bon_paired --dataset ... --candidates_file <pool> \
+    --priv checkpoints/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed0.pt \
+    --nogt checkpoints/generated_nogt_gsm8k400_to_math1000_qwen3b_bce_bal_seed2.pt \
+    --student_model Qwen/Qwen2.5-3B-Instruct --n 16 \
+    --scores_file results/bon_gold3b/scored_pool.jsonl --results_dir results/bon_gold3b`
+   (Read `prm_rerank_priv` = gold, `prm_rerank_nogt` = generated; the McNemar
+   pairing gives gold-vs-generated downstream significance for free.)
+3. BoN-vs-N figure data (no re-scoring needed):
+   `python -m experiments.bon_curve --scores_file results/bon_gold3b/scored_pool.jsonl \
+    --ns 1 2 4 8 16 --out results/bon_gold3b/bon_curve.json`
+   It prints pgfplots coordinate lines ready to paste into the paper figure.
+4. Push `results/bon_gold3b/` raw JSONs to a branch (pool + scored pool included
+   if size allows; they're what makes the numbers reproducible).
+
+Readout: gold-3B rerank > majority vote ⇒ the efficiency framing gains a
+downstream leg ("0.3 GPU-hour verifier improves test-time search"). Gold ≤
+majority vote ⇒ report it straight; the diagnostic framing stands and the
+limitation paragraph gets a measured number instead of an absence.
+
 ## 2026-07-05 — same-source GSM8K control COMPLETE
 
 **Deadline correction: COLM Efficient Reasoning is now 2026-07-19 AoE** (extended
