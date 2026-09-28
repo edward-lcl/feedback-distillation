@@ -1,0 +1,31 @@
+# Goal Description
+Create a master bash script (`scripts/run_overnight_mac.sh`) to sequentially run all remaining "cheap-first" 1.5B experiments on Edward's Mac, bypassing the broken GPU box. This script will re-train the missing N=1000 nulls, execute the B0/B0b statistical tests, and run the remaining B4 ablations (`verdict`, `logit_kd`).
+
+## User Review Required
+> [!IMPORTANT]
+> Because `run_student_ablation.sh` overwrites the same checkpoint file (`checkpoints/priv_critique.pt`) for every ablation, the currently running `soft` ablation is actually overwriting the default file paths! 
+> To prevent the overnight script from destroying prior runs, I will use the built-in `SEED` environment variable as a namespace hack (e.g. `SEED=verdict`) so each ablation outputs to isolated folders (e.g. `results/ablation/priv_critique_seedverdict`).
+
+## Open Questions
+> [!WARNING]
+> **B3 Positive Control (Weak Teacher):** The runbook says to label the data using a weak teacher (e.g., 2B). However, Edward's Mac is currently hardcoded via a background daemon (`launchd`) to serve the 26B Gemma-4 teacher on port 8000. 
+> To run B3, we would need to stop his background daemon and spin up a weak model via `mlx_lm.server`, which is risky and might disrupt his setup.
+> **Question:** Should we skip B3 for tonight and just queue the re-trains, B0, B0b, and B4? Or do you want me to try to figure out how to temporarily replace his Mac's background MLX teacher?
+
+## Proposed Changes
+### scripts
+
+#### [NEW] `scripts/run_overnight_mac.sh`
+This script will be pushed to Edward's Mac and run via `nohup`.
+It will:
+1. Wait for the currently running `soft` ablation to finish (by monitoring the process).
+2. Run B0/B0b using the newly-minted `soft` outputs (just to have the stats for the soft run).
+3. Re-run the default null (`score_critique`) with `SEED=default_null` to cleanly recreate the N=1000 checkpoints and run B0/B0b on them.
+4. Run B4 `verdict` ablation with `SEED=verdict`.
+5. Run B4 `logit_kd` ablation with `SEED=logit_kd` and `KD_TEACHER=Qwen/Qwen2.5-7B-Instruct`.
+
+## Verification Plan
+### Manual Verification
+- We will `scp` the script to Edward's Mac.
+- We will execute it using `nohup bash run_overnight_mac.sh > overnight.log 2>&1 &`.
+- We will check the `overnight.log` to ensure it successfully waits for the current run and then queues the next jobs.
