@@ -1,0 +1,14 @@
+# V2 source authority and preserved versions
+
+This is a separate candidate under `poster/v2/`. V1 and the reviewer-corrected version remain under `poster/`; the pre-review original remains under `poster/independent-review/original/`. `provenance/preserved_v1_hashes.json` records all 100 pre-existing poster-project files before V2 work. No accepted manuscript is edited.
+
+- **Scientific numbers:** exact bundled original metrics under `data/figure_inputs/results/`, 23 source JSONs and SHA256 manifest in `metrics.json`; historical 1.5B artifacts in `data/historical/`.
+- **Detailed local manuscript:** Downloads `171_Before_You_Scale_The_Cost_-1.pdf`, nine pages, SHA256 `8c0f8acadb203fd6a153c84002dd46de5a10fecd1914d89eff6f015b6f10368e`. Contains final experiments. Detailed ledger in `EVIDENCE_AUDIT.md`. It remains anonymous and has not been established byte-identical to the public PDF.
+- **Independent challenge:** complete `REPORT.md`, `FIRST_ASSESSMENT.md`, `evidence-check.json`, and `public-check.json` copied unchanged into `provenance/independent-review/`.
+- **Active diagnostic evidence:** original trainer/ablation/launch/rerender code inspected, source-hashed excerpts and input-identity records in `data/intervention_evidence/`. The compact records verify counts and identity; they cannot reconstruct reasoning text for retraining. No new training occurred.
+- **Workshop dimensions and paper destination:** official https://colm.cc/ and public https://openreview.net/forum?id=gKNwyhDxPk confirmed in the independent review's saved DeepAPI receipt, request `fbc49523-bd0e-4323-9b19-e13ae19ccad4`, dated 2026-10-09. No claim of a new live check during V2. Size retained at 34 × 34 inches. Paper page public, title/authors agree; public PDF bytes unverified.
+- **Logo:** genuine 576 × 98 PNG extracted from supplied `SID 1st author Kiran (2).pdf`, image xref 19 plus alpha mask. Same asset bytes as V1, resized only in layout to 216 pt (192 ppi). No verified vector replacement supplied.
+- **Attribution:** author order and other affiliations preserved from submitted Saksham poster. Edward explicitly approved only Xi'an Jiaotong-Liverpool University (XJTLU), marker 4; CSU removed in V2 author block and metadata. This resolves the affiliation part of F11.
+- **Framing:** repository `PAPER_FRAMING.md` read. User authorized the evidence-qualified candidate wording for target/sampling and gold reference. Older broad causal language is not carried into V2. Canonical framing file and manuscript remain untouched.
+
+Unresolved: public-PDF revision identity, historical positive-control statistical snapshot mismatch, manuscript gold-ensemble equivalence overstatement, lack of independently verified timing ledger, and physical print acceptance. These are disclosed, not silently repaired or represented as new experimental results.

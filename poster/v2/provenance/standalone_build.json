@@ -1,0 +1,44 @@
+{
+  "isolated_directory": "/var/folders/82/s8832hv16rbcsfr9m5754mh80000gn/T/slfd-v2-rebuild-pi8cr1qq/v2",
+  "commands": [
+    {
+      "command": "python3 scripts/figures.py",
+      "exit_code": 0,
+      "stdout_tail": "{\n  \"means\": {\n    \"raw_nogt\": 0.6182525360752396,\n    \"pb_nogt\": 0.736593825527593,\n    \"raw_priv\": 0.5494073282307084,\n    \"pb_priv\": 0.6762036851911662,\n    \"gold\": 0.7514507421249089\n  },\n  \"gap_recovery\": 0.8884600848770006\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "command": "python3 scripts/qr.py",
+      "exit_code": 0,
+      "stdout_tail": "QR generated and decoded: https://openreview.net/forum?id=gKNwyhDxPk\n",
+      "stderr_tail": ""
+    },
+    {
+      "command": "sh build.sh",
+      "exit_code": 0,
+      "stdout_tail": "Rendered composition, grayscale, and six close-up crops.\n",
+      "stderr_tail": ""
+    },
+    {
+      "command": "python3 scripts/verify_evidence.py",
+      "exit_code": 0,
+      "stdout_tail": "{\n  \"source_files_hash_verified\": 23,\n  \"seed_values_identical_to_independent_review\": 20,\n  \"means\": {\n    \"raw_nogt\": 0.6182525360752396,\n    \"pb_nogt\": 0.7365938255275931,\n    \"raw_priv\": 0.5494073282307084,\n    \"pb_priv\": 0.6762036851911662,\n    \"gold\": 0.7514507421249089\n  },\n  \"descriptive_gap_fraction\": 0.8884600848770013,\n  \"teacher_gap\": 0.0506,\n  \"teacher_ci95\": [\n    0.0095,\n    0.0925\n  ],\n  \"no_new_training_or_inference\": true\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "command": "python3 data/intervention_evidence/check.py",
+      "exit_code": 0,
+      "stdout_tail": "{\n  \"gold\": {\n    \"steps\": 2082,\n    \"errors\": 207\n  },\n  \"generated\": {\n    \"nogt\": {\n      \"steps\": 2080,\n      \"raw_errors\": 425,\n      \"pb_errors\": 171,\n      \"changed_targets\": 254,\n      \"raw_pb_inputs_identical_in_order\": true,\n      \"normalized_unmatched_generated\": 15,\n      \"normalized_unmatched_gold\": 17\n    },\n    \"priv\": {\n      \"steps\": 2080,\n      \"raw_errors\": 571,\n      \"pb_errors\": 194,\n      \"changed_targets\": 377,\n      \"raw_pb_inputs_identical_in_order\": true,\n      \"normalized_unmatched_generated\": 15,\n      \"normalized_unmatched_gold\": 17\n    }\n  }\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "command": "python3 scripts/verify_pdf.py",
+      "exit_code": 0,
+      "stdout_tail": "{\n  \"pdf_sha256\": \"ff41ddac66032cd72cc5a3da07641101a3d312eba3b3a81d050595b93daaeea1\",\n  \"teacher_min_font_pt\": 25.0,\n  \"metadata\": {\n    \"format\": \"PDF 1.7\",\n    \"title\": \"Before You Scale \\u2014 COLM poster V2 candidate\",\n    \"author\": \"Saksham Kapoor, Henry Tran, Edward Lue Chee Lip, Charlotte Le\",\n    \"subject\": \"Scientifically qualified V2 poster candidate. Edward affiliation: Xi'an Jiaotong-Liverpool University (XJTLU). Pending independent re-review.\",\n    \"keywords\": \"\",\n    \"creator\": \"Typst 0.14.2\",\n    \"producer\": \"\",\n    \"creationDate\": \"D:20261009110143+08'00\",\n    \"modDate\": \"D:20261009110143+08'00\",\n    \"trapped\": \"\",\n    \"encryption\": null\n  },\n  \"affiliation_author_approved_xjtlu_only\": true,\n  \"page_inches\": [\n    34,\n    34\n  ],\n  \"page_count\": 1,\n  \"bytes\": 130003,\n  \"text_spans_outside_page\": [],\n  \"font_size_range_pt\": [\n    21.91840171813965,\n    70.0\n  ],\n  \"embedded_fonts\": [\n    {\n      \"name\": \"AQYFEC+Arial-BoldMT\",\n      \"type\": \"Type0\",\n      \"embedded_bytes\": 32728\n    },\n    {\n      \"name\": \"NJJGMU+ArialMT\",\n      \"type\": \"Type0\",\n      \"embedded_bytes\": 38568\n    },\n    {\n      \"name\": \"GPKLLF+LibertinusSerif-Regular-Identity-H\",\n      \"type\": \"Type0\",\n      \"embedded_bytes\": 468\n    }\n  ],\n  \"raster_images\": [\n    {\n      \"width_px\": 576,\n      \"height_px\": 98,\n      \"effective_ppi_x\": 192.0\n    }\n  ],\n  \"vector_figure_pdfs\": [\n    \"figure_convention.pdf\",\n    \"figure_cost.pdf\",\n    \"figure_rerender.pdf\",\n    \"figure_teacher.pdf\"\n  ],\n  \"qr_checks\": [\n    {\n      \"dpi\": 72,\n      \"decoded\": \"https://openreview.net/forum?id=gKNwyhDxPk\",\n      \"decoder_resized_to_400px\": false\n    },\n    {\n      \"dpi\": 150,\n      \"decoded\": \"https://openreview.net/forum?id=gKNwyhDxPk\",\n      \"decoder_resized_to_400px\": false\n    },\n    {\n      \"dpi\": 300,\n      \"decoded\": \"https://openreview.net/forum?id=gKNwyhDxPk\",\n      \"decoder_resized_to_400px\": false\n    }\n  ],\n  \"pdf_links\": [\n    \"https://openreview.net/forum?id=gKNwyhDxPk\"\n  ]\n}\n",
+      "stderr_tail": ""
+    }
+  ],
+  "all_pass": true,
+  "rendered_pixels_identical": true,
+  "pdf_text_identical": true
+}

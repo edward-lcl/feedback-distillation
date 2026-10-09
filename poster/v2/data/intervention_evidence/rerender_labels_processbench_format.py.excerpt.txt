@@ -1,0 +1,23 @@
+34:     steps = record["steps"]
+35:     first_error = next(
+36:         (i for i, s in enumerate(steps)
+37:          if bool(s.get("is_error", float(s.get("score", 0.0)) < 0.0))),
+38:         None,
+39:     )
+40:     new_steps = []
+41:     for i, s in enumerate(steps):
+42:         is_error = first_error is not None and i == first_error
+43:         new_steps.append({
+44:             "text": s["text"],
+45:             "score": -1.0 if is_error else 1.0,
+46:             "feedback": "Error." if is_error else "Correct.",
+47:             "is_error": is_error,
+48:         })
+49:     out = dict(record)
+50:     out["steps"] = new_steps
+51:     out["teacher_first_error"] = first_error
+52:     return out
+53: 
+54: 
+55: def main():
+56:     parser = argparse.ArgumentParser()

@@ -1,0 +1,83 @@
+143:         def is_error_sample(sample: dict) -> bool:
+144:             score = sample.get("score", 0.0)
+145:             return bool(sample.get("is_error", score < 0.0))
+146: 
+147:         def iter_balanced_batches():
+148:             errors = [s for s in self.dataset if is_error_sample(s)]
+149:             clean = [s for s in self.dataset if not is_error_sample(s)]
+150:             if not errors or not clean:
+151:                 raise ValueError("balanced_batches requires at least one error and one clean sample")
+152:             n_error = max(1, batch_size // 2)
+153:             n_clean = max(1, batch_size - n_error)
+154:             error_i = clean_i = 0
+155:             random.shuffle(errors)
+156:             random.shuffle(clean)
+157:             while True:
+158:                 batch = []
+159:                 for _ in range(n_error):
+160:                     if error_i >= len(errors):
+161:                         random.shuffle(errors)
+162:                         error_i = 0
+163:                     batch.append(errors[error_i])
+164:                     error_i += 1
+165:                 for _ in range(n_clean):
+166:                     if clean_i >= len(clean):
+167:                         random.shuffle(clean)
+168:                         clean_i = 0
+169:                     batch.append(clean[clean_i])
+170:                     clean_i += 1
+
+193:                 for sample in batch:
+194:                     problem = sample.get("problem", "")
+195:                     step_text = sample.get("step_text", "")
+196:                     solution_prefix = sample.get("solution_prefix", "")
+197:                     teacher_score = sample.get("score", 0.0)
+198:                     teacher_feedback = sample.get("feedback", "")
+199:                     is_error = bool(sample.get("is_error", teacher_score < 0.0))
+200:                     if not problem or not step_text:
+201:                         continue
+202: 
+203:                     # Student forward — score_logit has gradient (boundary-token
+204:                     # read, no generation).
+205:                     student_score_logit = self.student.score_step(problem, solution_prefix, step_text)
+206:                     score_logits.append(student_score_logit.to(torch.float32).view(-1)[0])
+207:                     error_targets.append(is_error)
+208: 
+209:                     # L_feedback_LM — natural-language critique loss. Gated by the
+210:                     # LM flag so the score-only ablation trains the scorer alone
+211:                     # (score+critique = LM on; score-only = LM off).
+212:                     if self.loss_flags[0]:
+213:                         input_ids, labels, attn_mask = self.student.prepare_step_inputs_and_labels(
+214:                             problem, solution_prefix, step_text, teacher_feedback, teacher_score
+215:                         )
+216:                         lm_out = self.student.model(
+217:                             input_ids=input_ids.to(self.device),
+218:                             attention_mask=attn_mask.to(self.device),
+219:                             labels=labels.to(self.device),
+220:                             return_dict=True,
+221:                         )
+222:                         batch_losses["lm_loss"].append(lm_out.loss)
+223: 
+224:                     # L_score
+225:                     if self.score_loss in ("bce", "bce_rank"):
+226:                         # Treat score_head output as a correctness logit:
+227:                         # positive => correct, negative => error. Upweight
+228:                         # error steps to counter the mostly-correct label mix.
+229:                         target = torch.tensor(
+230:                             [0.0 if is_error else 1.0],
+231:                             dtype=torch.float32,
+232:                             device=self.device,
+233:                         )
+234:                         weight = torch.tensor(
+235:                             [self.error_weight if is_error else 1.0],
+236:                             dtype=torch.float32,
+237:                             device=self.device,
+238:                         )
+239:                         batch_losses["scoring_loss"].append(
+240:                             torch.nn.functional.binary_cross_entropy_with_logits(
+241:                                 student_score_logit.to(torch.float32),
+242:                                 target,
+243:                                 weight=weight,
+244:                             )
+245:                         )
+246:                     elif self.score_loss == "mse":

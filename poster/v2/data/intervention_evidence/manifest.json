@@ -1,0 +1,84 @@
+{
+  "head": "e598eaa077df71463f6bb9ae9a23fd6c1a09f35c",
+  "sources": {
+    "raw_nogt": {
+      "path": "data/labeled/math_nogt_gsm8k400_steps.jsonl",
+      "source_sha256": "a6e516d7aca344580fef5eb1c462531aa40cfb84c88cf196d4d6876a3e8f0f18",
+      "bundle": "raw_nogt.jsonl",
+      "bundle_sha256": "d1a78714ced97a08aa9e0822cd2d6db554a6016f88dfbc37eb73eb95577c5506"
+    },
+    "pb_nogt": {
+      "path": "data/labeled/math_nogt_gsm8k400_pbformat_steps.jsonl",
+      "source_sha256": "9345f47fe3921a1070c90604bbd894c5f8295f728ebaa634bc02ff6ebc1767e5",
+      "bundle": "pb_nogt.jsonl",
+      "bundle_sha256": "482a4cfb93076dea79efba419d0d0ea6534b8ceea0aeb6f154db75b10d8bceaa"
+    },
+    "raw_priv": {
+      "path": "data/labeled/math_priv_gsm8k400_steps.jsonl",
+      "source_sha256": "2ac77bf82ae1dc742fee056df8413dffb337f9001026b675844317e0f7549130",
+      "bundle": "raw_priv.jsonl",
+      "bundle_sha256": "210dde08935f43f271b4b1d6feb87f740b5545784c291c6ecd61243d728f3c0c"
+    },
+    "pb_priv": {
+      "path": "data/labeled/math_priv_gsm8k400_pbformat_steps.jsonl",
+      "source_sha256": "af4cee6a0d34c5723d1196a334c0a82d12323c12ec7ed33627ba159c811bbcb8",
+      "bundle": "pb_priv.jsonl",
+      "bundle_sha256": "8151a628be9ab39e6092968c2fb9e43541c8b983f6f4ff3230fe4cd534fa408a"
+    },
+    "gold": {
+      "path": "results/diagnostics/processbench_gsm8k_gold_train400_steps.jsonl",
+      "source_sha256": "77c1453a6404e6f2d04700afd354f8bb8c9d4b4eff91742707c09ac36d05b197",
+      "bundle": "gold.jsonl",
+      "bundle_sha256": "1933e9ae4ef3565786b92687fb52d25b9af5eae9eb5a7bf72a6b7c490eb234b4"
+    },
+    "training/slfd_trainer.py": {
+      "source_sha256": "f3147402a08cee6cf153b3b28261d5bfc579473f8a0f7e11fb0a0d1d4d26524e",
+      "ranges": [
+        [
+          143,
+          170
+        ],
+        [
+          193,
+          246
+        ]
+      ],
+      "bundle": "slfd_trainer.py.excerpt.txt",
+      "bundle_sha256": "87d37774c778be8ec5f6f7f69d7958c05360cd4cc30f18b7e2204a964bf2bf38"
+    },
+    "experiments/train_slfd.py": {
+      "source_sha256": "1b5dd08cba1571e5009a75173581e1fdd0a17013d7f634ed353761ef8fc8c82d",
+      "ranges": [
+        [
+          30,
+          38
+        ]
+      ],
+      "bundle": "train_slfd.py.excerpt.txt",
+      "bundle_sha256": "3a02f15ded7b1b17131803fe25f17fb33d9f65ed0f56784d43640248480cd109"
+    },
+    "scripts/run_gold_scorehead_gate.sh": {
+      "source_sha256": "066064d8684407ae0b2eba2725b3ad5018d2f1df84179e85eec6a6405cd30250",
+      "ranges": [
+        [
+          77,
+          94
+        ]
+      ],
+      "bundle": "run_gold_scorehead_gate.sh.excerpt.txt",
+      "bundle_sha256": "855338ede550aefcd3ddbd27460bf0e6f691ece191b5ed9fd6dcc1a269f78a61"
+    },
+    "scripts/rerender_labels_processbench_format.py": {
+      "source_sha256": "46ccdc4f313fdde9e4e4f814d42fdd55a31a87159fd21f4cfd2973a1fb68ad3e",
+      "ranges": [
+        [
+          34,
+          56
+        ]
+      ],
+      "bundle": "rerender_labels_processbench_format.py.excerpt.txt",
+      "bundle_sha256": "345c63dad6da11fdc493efeb70b7a2b40bb837a7e91691f2d918d4d36ef2f31d"
+    }
+  },
+  "scope": "Input fields hashed as JSON [problem,solution_prefix,step_text]; no training or source mutation."
+}

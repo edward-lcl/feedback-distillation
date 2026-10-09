@@ -1,0 +1,79 @@
+{
+  "pdf_sha256": "881acdc66487211298ccbe487cc3940a4d9b94a5aef09d095b74d5951e1672f8",
+  "teacher_min_font_pt": 25.0,
+  "metadata": {
+    "format": "PDF 1.7",
+    "title": "Before You Scale \u2014 COLM poster V2 candidate",
+    "author": "Saksham Kapoor, Henry Tran, Edward Lue Chee Lip, Charlotte Le",
+    "subject": "Scientifically qualified V2 poster candidate. Edward affiliation: Xi'an Jiaotong-Liverpool University (XJTLU). Pending independent re-review.",
+    "keywords": "",
+    "creator": "Typst 0.14.2",
+    "producer": "",
+    "creationDate": "D:20261009105931+08'00",
+    "modDate": "D:20261009105931+08'00",
+    "trapped": "",
+    "encryption": null
+  },
+  "affiliation_author_approved_xjtlu_only": true,
+  "page_inches": [
+    34,
+    34
+  ],
+  "page_count": 1,
+  "bytes": 130003,
+  "text_spans_outside_page": [],
+  "font_size_range_pt": [
+    21.91840171813965,
+    70.0
+  ],
+  "embedded_fonts": [
+    {
+      "name": "AQYFEC+Arial-BoldMT",
+      "type": "Type0",
+      "embedded_bytes": 32728
+    },
+    {
+      "name": "NJJGMU+ArialMT",
+      "type": "Type0",
+      "embedded_bytes": 38568
+    },
+    {
+      "name": "GPKLLF+LibertinusSerif-Regular-Identity-H",
+      "type": "Type0",
+      "embedded_bytes": 468
+    }
+  ],
+  "raster_images": [
+    {
+      "width_px": 576,
+      "height_px": 98,
+      "effective_ppi_x": 192.0
+    }
+  ],
+  "vector_figure_pdfs": [
+    "figure_convention.pdf",
+    "figure_cost.pdf",
+    "figure_rerender.pdf",
+    "figure_teacher.pdf"
+  ],
+  "qr_checks": [
+    {
+      "dpi": 72,
+      "decoded": "https://openreview.net/forum?id=gKNwyhDxPk",
+      "decoder_resized_to_400px": false
+    },
+    {
+      "dpi": 150,
+      "decoded": "https://openreview.net/forum?id=gKNwyhDxPk",
+      "decoder_resized_to_400px": false
+    },
+    {
+      "dpi": 300,
+      "decoded": "https://openreview.net/forum?id=gKNwyhDxPk",
+      "decoder_resized_to_400px": false
+    }
+  ],
+  "pdf_links": [
+    "https://openreview.net/forum?id=gKNwyhDxPk"
+  ]
+}

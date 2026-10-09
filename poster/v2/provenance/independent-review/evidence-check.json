@@ -1,0 +1,148 @@
+{
+  "head": "e598eaa077df71463f6bb9ae9a23fd6c1a09f35c",
+  "cells": {
+    "raw_nogt": {
+      "auc": [
+        0.6350364298258057,
+        0.5917005730912008,
+        0.6614182198685667,
+        0.5848549215153851
+      ],
+      "mean": 0.6182525360752396,
+      "range": [
+        0.5848549215153851,
+        0.6614182198685667
+      ]
+    },
+    "pb_nogt": {
+      "auc": [
+        0.7010801923253285,
+        0.7554519423069584,
+        0.7353510290407601,
+        0.7544921384373253
+      ],
+      "mean": 0.736593825527593,
+      "range": [
+        0.7010801923253285,
+        0.7554519423069584
+      ]
+    },
+    "raw_priv": {
+      "auc": [
+        0.5326301986765529,
+        0.5598564452396291,
+        0.46802115783675585,
+        0.6371215111698956
+      ],
+      "mean": 0.5494073282307084,
+      "range": [
+        0.46802115783675585,
+        0.6371215111698956
+      ]
+    },
+    "pb_priv": {
+      "auc": [
+        0.7891453302551257,
+        0.6016195907077315,
+        0.727130465541902,
+        0.5869193542599058
+      ],
+      "mean": 0.6762036851911662,
+      "range": [
+        0.5869193542599058,
+        0.7891453302551257
+      ]
+    },
+    "gold": {
+      "auc": [
+        0.7438870176985555,
+        0.7760244980681456,
+        0.7602501072303136,
+        0.725641345502621
+      ],
+      "mean": 0.7514507421249089,
+      "range": [
+        0.725641345502621,
+        0.7760244980681456
+      ]
+    }
+  },
+  "checks": {
+    "all_20_metrics_recomputed": true,
+    "auc_ap_match": true,
+    "identical_evaluation_label_vectors": true,
+    "metrics_committed_and_snapshot_hashes_match": true,
+    "historical_git_bytes_match": true
+  },
+  "evaluation": {
+    "steps": 6505,
+    "errors": 594,
+    "sequences": 1000,
+    "unique_problem_strings": 955,
+    "exact_train_eval_problem_overlap": 0
+  },
+  "gap_recovery": 0.8884600848770006,
+  "training": {
+    "nogt": {
+      "steps": 2080,
+      "solutions": 400,
+      "unique_problem_strings": 375,
+      "raw_errors": 425,
+      "pb_errors": 171,
+      "changed_error_targets": 254,
+      "raw_pb_traces_identical_order": true,
+      "gold_traces_identical_multiset": false
+    },
+    "priv": {
+      "steps": 2080,
+      "solutions": 400,
+      "unique_problem_strings": 375,
+      "raw_errors": 571,
+      "pb_errors": 194,
+      "changed_error_targets": 377,
+      "raw_pb_traces_identical_order": true,
+      "gold_traces_identical_multiset": false
+    },
+    "gold": {
+      "steps": 2082,
+      "errors": 207
+    }
+  },
+  "gold_input_discrepancy": {
+    "normalized_unmatched_generated": 15,
+    "normalized_unmatched_gold": 17,
+    "affected_problem_texts": [
+      "Raymond had $21. Then he saved $11 from his allowance and spent $5 on a comic book and $19 on a puzzle. How much money does Raymond have left?",
+      "Sandy wants to lose as much weight as Joey does but needs 4 weeks to lose the same amount of weight that Joey loses in a single week. If Joey loses 8 pounds in 4 weeks, how many weeks will it take Sandy to lose the same amount of weight?",
+      "Sarah has a rope that is 20 meters long. Her friend wants to buy the rope for $2 a meter. Sarah plans to use the profit to buy a new rope, which at the store costs $1.5 a meter. How much money will she have left over after she buys the new rope?"
+    ]
+  },
+  "historical": {
+    "results/ablation/priv_critique/processbench_results.json": {
+      "roc_auc": 0.6309052658278843,
+      "n_steps": 2589
+    },
+    "results/ablation/nogt_critique/processbench_results.json": {
+      "roc_auc": 0.6405774990954429,
+      "n_steps": 2589
+    }
+  },
+  "manuscripts": [
+    {
+      "path": "/Users/edward/Downloads/171_Before_You_Scale_The_Cost_-1.pdf",
+      "sha256": "8c0f8acadb203fd6a153c84002dd46de5a10fecd1914d89eff6f015b6f10368e"
+    },
+    {
+      "path": "/Users/edward/Downloads/171_Before_You_Scale_The_Cost_.pdf",
+      "sha256": "8c0f8acadb203fd6a153c84002dd46de5a10fecd1914d89eff6f015b6f10368e"
+    },
+    {
+      "path": "/Users/edward/Downloads/Step_Level_Feedback_Distillation-1.pdf",
+      "sha256": "8c0f8acadb203fd6a153c84002dd46de5a10fecd1914d89eff6f015b6f10368e"
+    },
+    {
+      "path": "/Users/edward/Projects/feedback-distillation/paper/slfd_colm_er_final.pdf",
+      "sha256": "a5ca3176855d0849c06ab23230a481d6b25825939f1f21be7f686b8bbf0ae866"
+    }
+  ]
+}
