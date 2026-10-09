@@ -1,0 +1,20 @@
+--- reviewed-v2/poster.typ
++++ release/poster.typ
+@@ -3,7 +3,7 @@
+ #let teal = rgb("008A83")
+ #let pale = rgb("EDF7F6")
+ #let mint = rgb("71DAD0")
+-#set document(title: "Before You Scale — COLM poster V2 candidate", author: ("Saksham Kapoor", "Henry Tran", "Edward Lue Chee Lip", "Charlotte Le"), description: "Scientifically qualified V2 poster candidate. Edward affiliation: Xi'an Jiaotong-Liverpool University (XJTLU). Pending independent re-review.")
++#set document(title: "Before You Scale — COLM poster V2", author: ("Saksham Kapoor", "Henry Tran", "Edward Lue Chee Lip", "Charlotte Le"), description: "COLM 2026 Workshop on Efficient Reasoning poster. Edward affiliation: Xi'an Jiaotong-Liverpool University (XJTLU).")
+ #set page(width: 34in, height: 34in, margin: 0pt, fill: white)
+ #set text(font: "Arial", size: 28pt, fill: navy)
+ #set par(leading: 0.32em, spacing: 0pt)
+@@ -139,7 +139,7 @@
+   #v(17pt)
+   #text(size:25pt)[Off-policy step-error labels → a separate answer-blind verifier. The 1.5B-to-3B contrast is not a clean capacity ablation. No universal cause or state-of-the-art claim.]
+   #v(15pt)
+-  #text(size:22pt)[We thank Algoverse AI Research. V2 candidate · pending focused independent verification.]
++  #text(size:22pt)[We thank Algoverse AI Research. COLM 2026 · V2.]
+ ]
+ #panel(2075,2195,323,230)[
+   #text(size:24pt,weight:"bold")[Read the paper]

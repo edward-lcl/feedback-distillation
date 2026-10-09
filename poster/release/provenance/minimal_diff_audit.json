@@ -1,0 +1,34 @@
+{
+  "changed_source_lines": [
+    6,
+    142
+  ],
+  "source_matches_exact_status_only_replacements": true,
+  "all_other_extracted_text_identical": true,
+  "author_metadata_identical": true,
+  "links_and_rectangles_identical": true,
+  "pixel_checks": [
+    {
+      "dpi": 72,
+      "changed_pixel_bounds": [
+        411,
+        2315,
+        964,
+        2337
+      ],
+      "changes_confined_to_acknowledgement_line": true
+    },
+    {
+      "dpi": 150,
+      "changed_pixel_bounds": [
+        857,
+        4825,
+        2008,
+        4869
+      ],
+      "changes_confined_to_acknowledgement_line": true
+    }
+  ],
+  "reviewed_pdf_sha256": "881acdc66487211298ccbe487cc3940a4d9b94a5aef09d095b74d5951e1672f8",
+  "release_pdf_sha256": "3e7d3d3d5321c54d43471c0087a17be26b5916afce85fe476780edd18da11243"
+}

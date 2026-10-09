@@ -1,0 +1,26 @@
+{
+  "gold": {
+    "steps": 2082,
+    "errors": 207
+  },
+  "generated": {
+    "nogt": {
+      "steps": 2080,
+      "raw_errors": 425,
+      "pb_errors": 171,
+      "changed_targets": 254,
+      "raw_pb_inputs_identical_in_order": true,
+      "normalized_unmatched_generated": 15,
+      "normalized_unmatched_gold": 17
+    },
+    "priv": {
+      "steps": 2080,
+      "raw_errors": 571,
+      "pb_errors": 194,
+      "changed_targets": 377,
+      "raw_pb_inputs_identical_in_order": true,
+      "normalized_unmatched_generated": 15,
+      "normalized_unmatched_gold": 17
+    }
+  }
+}

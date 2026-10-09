@@ -1,0 +1,18 @@
+77: "${train_env[@]}" "$PY" -m experiments.train_slfd \
+78:   --dataset "$TRAIN_DATASET" \
+79:   --student_model "$STUDENT_MODEL" \
+80:   --checkpoint "$CHECKPOINT" \
+81:   --epochs "$EPOCHS" \
+82:   --batch_size "$BATCH_SIZE" \
+83:   --max_steps "$MAX_STEPS" \
+84:   --seed "$SEED" \
+85:   --model_lr "$MODEL_LR" \
+86:   --score_lr "$SCORE_LR" \
+87:   --weight_decay "$WEIGHT_DECAY" \
+88:   --ablation score_only \
+89:   --score_loss "$SCORE_LOSS" \
+90:   --error_weight "$ERROR_WEIGHT" \
+91:   --rank_margin "$RANK_MARGIN" \
+92:   "${balanced_args[@]}"
+93: 
+94: "${eval_env[@]}" "$PY" -m experiments.run_processbench \

@@ -1,0 +1,9 @@
+30: # Ablation -> (loss_flags [LM, hidden, score, logit], default score_loss).
+31: # Existing Phase B jobs used --score_loss directly; these names are convenient
+32: # wrappers for the newer distillation-method arms from main.
+33: ABLATIONS = {
+34:     "score_critique": ([True, False, True, False], "mse"),
+35:     "score_only": ([False, False, True, False], "mse"),
+36:     "verdict": ([False, False, True, False], "verdict"),
+37:     "soft": ([False, False, True, False], "soft"),
+38:     "logit_kd": ([False, False, True, True], "mse"),

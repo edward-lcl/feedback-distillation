@@ -1,0 +1,38 @@
+{
+  "directory": "/var/folders/82/s8832hv16rbcsfr9m5754mh80000gn/T/slfd-release-rebuild-xs4dtsqo/release",
+  "commands": [
+    {
+      "command": "python3 scripts/figures.py",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/qr.py",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "command": "sh build.sh",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/verify_evidence.py",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/verify_pdf.py",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/audit_release_diff.py",
+      "exit_code": 0,
+      "stderr": ""
+    }
+  ],
+  "pdf_text_identical": true,
+  "pixels_identical_at_72dpi": true,
+  "no_parent_repo_or_downloads_needed": true
+}

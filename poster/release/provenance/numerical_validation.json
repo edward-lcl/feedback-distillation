@@ -1,0 +1,18 @@
+{
+  "source_files_hash_verified": 23,
+  "seed_values_identical_to_independent_review": 20,
+  "means": {
+    "raw_nogt": 0.6182525360752396,
+    "pb_nogt": 0.7365938255275931,
+    "raw_priv": 0.5494073282307084,
+    "pb_priv": 0.6762036851911662,
+    "gold": 0.7514507421249089
+  },
+  "descriptive_gap_fraction": 0.8884600848770013,
+  "teacher_gap": 0.0506,
+  "teacher_ci95": [
+    0.0095,
+    0.0925
+  ],
+  "no_new_training_or_inference": true
+}
