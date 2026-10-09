@@ -1,0 +1,70 @@
+{
+  "requestId": "16fbba80-9ffb-4f80-8bc2-e63e6c8dd5bd",
+  "route": "/v1/search/web",
+  "capability": "search.web",
+  "status": "succeeded",
+  "output": {
+    "results": [
+      {
+        "title": "2026 Conference",
+        "url": "https://colm.cc/",
+        "snippet": "COLM 2026 will be held at the Hilton Union Square in San Francisco, USA, from October 6\u20139, 2026. The conference is a three-day single-track event with a mix of ..."
+      },
+      {
+        "title": "The 2nd Workshop on Efficient Reasoning",
+        "url": "https://wdlctc.github.io/efficient-reasoning-2026/",
+        "snippet": "Submission Guidelines \u00b7 Format: All submissions must be a single PDF file in the COLM submission format, with 4\u201310 pages of main text (references excluded)."
+      },
+      {
+        "title": "Call for Workshops - CoLM 2026",
+        "url": "https://colm.eventhosts.cc/Conferences/2026/CallForWorkshops",
+        "snippet": "Workshop proposal submissions should include up to two pages of proposal plus unlimited pages for organizer bios and references. No specific template must be ..."
+      },
+      {
+        "title": "Presentation instructions",
+        "url": "https://carmaconf.org/presentation-instructions/",
+        "snippet": "We suggest that the presentation of your slides takes about 15 minutes, leaving 5 minutes for introduction by the session chair and questions from the audience."
+      },
+      {
+        "title": "2026 Poster Instructions",
+        "url": "https://iclr.cc/Conferences/2026/PosterInstructions",
+        "snippet": "Workshop Poster Portrait: Maximum size: 61cm x 91cm (24in x 36in) width/height. Due to limited wall space workshop posters need to be in Portrait format ..."
+      },
+      {
+        "title": "Conference on Language Modeling (@COLM_conf) ...",
+        "url": "https://x.com/COLM_conf",
+        "snippet": "COLM is going to San Francisco for 2026! \ud83d\uddd3\ufe0fDates: October 6-9, 2026 Venue: Hilton San Francisco Union Square Website and CFPs for papers and workshops ..."
+      },
+      {
+        "title": "2026 Guidelines for Presenters & Posters",
+        "url": "https://www.ismrm.org/26m/guidelines/",
+        "snippet": "Set your presentation's page format to 16:9 widescreen. Presentations in 4:3 format (square) will end up with black bars on both sides (see ...",
+        "dateText": "May 11, 2026"
+      },
+      {
+        "title": "COLM 2026 Workshop",
+        "url": "https://openreview.net/group?id=colmweb.org/COLM/2026/Workshop",
+        "snippet": "Welcome to the OpenReview homepage for COLM 2026 Workshop."
+      },
+      {
+        "title": "ICML 2026 Poster Instructions",
+        "url": "https://icml.cc/Conferences/2026/PosterInstructions",
+        "snippet": "The order deadline is June 15, 2026 \u00b7 Be sure to include your poster number and date of presentation in the order form. \u00b7 Confirm your file is accurate before you ..."
+      },
+      {
+        "title": "Poster Presentation Guidelines - OFC 2026",
+        "url": "https://www.ofcconference.org/speaker-service-center/poster-presentation-guidelines/",
+        "snippet": "Posters should be readable by viewers five feet away and should display the paper title and authors and affiliations. The message should be clear and ..."
+      }
+    ],
+    "generatedAt": "2026-10-09T02:20:27.958Z"
+  },
+  "list": {
+    "resultCount": 10,
+    "totalCount": null,
+    "hasMore": true,
+    "listState": "results"
+  },
+  "next": null,
+  "error": null
+}

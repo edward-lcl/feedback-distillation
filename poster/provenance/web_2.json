@@ -1,0 +1,72 @@
+{
+  "requestId": "3f4f55a8-cef3-43e3-92e4-7e9de7a92839",
+  "route": "/v1/search/web",
+  "capability": "search.web",
+  "status": "succeeded",
+  "output": {
+    "results": [
+      {
+        "title": "The Cost of Supervision Mismatch in PRM Distillation",
+        "url": "https://openreview.net/forum?id=gKNwyhDxPk&referrer=%5Bthe%20profile%20of%20Edward%20Lue%20Chee%20Lip%5D(%2Fprofile%3Fid%3D~Edward_Lue_Chee_Lip1)",
+        "snippet": "TL;DR: Before scaling a PRM student or sweeping recipes, a cheap format-matched diagnostic tells you whether your generated supervision can ...",
+        "dateText": "Aug 7, 2026"
+      },
+      {
+        "title": "The Cost of Supervision Mismatch in PRM Distillation",
+        "url": "https://openreview.net/forum?id=gKNwyhDxPk",
+        "snippet": "Process reward models (PRMs) are often trained from automatically generated step-level supervision. However, when a small verifier trained in this way fails ...",
+        "dateText": "by S Kapoor"
+      },
+      {
+        "title": "The Cost of Supervision Mismatch in PRM Distillation",
+        "url": "https://openreview.net/pdf?id=gKNwyhDxPk",
+        "snippet": "This raises a practical question for efficient reasoning systems: when a distilled verifier performs poorly, should we scale the student and training budget, or ...",
+        "dateText": "by S Kapoor"
+      },
+      {
+        "title": "COLM 2026 Workshop Efficient Reasoning Submissions",
+        "url": "https://openreview.net/submissions?page=3&venue=colmweb.org%2FCOLM%2F2026%2FWorkshop%2FEfficient_Reasoning",
+        "snippet": "Before You Scale: The Cost of Supervision Mismatch in PRM Distillation \u00b7 Saksham Kapoor, Henry Tran, Edward Lue Chee Lip, Charlotte Le. Published: 07 Aug 2026 ..."
+      },
+      {
+        "title": "Henry Tran",
+        "url": "https://openreview.net/profile?id=~Henry_Tran1",
+        "snippet": "Before You Scale: The Cost of Supervision Mismatch in PRM Distillation \u00b7 Saksham Kapoor, Henry Tran, Edward Lue Chee Lip, Charlotte Le."
+      },
+      {
+        "title": "Edward Lue Chee Lip",
+        "url": "https://openreview.net/profile?id=~Edward_Lue_Chee_Lip1",
+        "snippet": "Edward Lue Chee Lip \u00b7 Before You Scale: The Cost of Supervision Mismatch in PRM Distillation \u00b7 Diagnosing Agent Capabilities through Information-Axis Knockouts."
+      },
+      {
+        "title": "Saksham Kapoor",
+        "url": "https://openreview.net/profile?id=~Saksham_Kapoor1",
+        "snippet": "Before You Scale: The Cost of Supervision Mismatch in PRM Distillation \u00b7 Saksham Kapoor, Henry Tran, Edward Lue Chee Lip, Charlotte Le. COLM 2026 ER Workshop ..."
+      },
+      {
+        "title": "Charlotte Le",
+        "url": "https://openreview.net/profile?id=~Charlotte_Le1",
+        "snippet": "Before You Scale: The Cost of Supervision Mismatch in PRM Distillation \u00b7 Saksham Kapoor, Henry Tran, Edward Lue Chee Lip, Charlotte Le. Published: 07 Aug 2026 ..."
+      },
+      {
+        "title": "Distill Not Only Data but Also Rewards: Can Smaller ...",
+        "url": "https://openreview.net/forum?id=tK6VZy5RYr",
+        "snippet": "by Y Zhang \u00b7 Cited by 15 \u2014 This does not incur additional cost beyond standard SFT, since it is a shared phase with conventional supervised distillation pipelines."
+      },
+      {
+        "title": "Prioritize Alignment in Dataset Distillation",
+        "url": "https://openreview.net/forum?id=UGwdz3kjht",
+        "snippet": "by Z Li \u00b7 2024 \u00b7 Cited by 9 \u2014 This simple strategy effectively filters out misaligned information and brings non-trivial improvement for mainstream matching-based ..."
+      }
+    ],
+    "generatedAt": "2026-10-09T02:20:27.454Z"
+  },
+  "list": {
+    "resultCount": 10,
+    "totalCount": null,
+    "hasMore": true,
+    "listState": "results"
+  },
+  "next": null,
+  "error": null
+}

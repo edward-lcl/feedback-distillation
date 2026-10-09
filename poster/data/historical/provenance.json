@@ -1,0 +1,15 @@
+{
+  "git_commit": "7c54a9d4fa8b6103eae7fc7ce098cada252de77b",
+  "artifacts": [
+    {
+      "source": "results/ablation/priv_critique/processbench_results.json",
+      "bundled": "poster/data/historical/priv_critique_processbench_results.json",
+      "sha256": "674a3ba6e7a2704165109cb3bd0ca94e65d28cd7a762dd5e0fd424a670fdb05e"
+    },
+    {
+      "source": "results/ablation/nogt_critique/processbench_results.json",
+      "bundled": "poster/data/historical/nogt_critique_processbench_results.json",
+      "sha256": "ace18394b090cc3b6165698a8345415f62ead4df3d10cd476d62ad27bfc7fd86"
+    }
+  ]
+}

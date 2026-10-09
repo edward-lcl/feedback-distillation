@@ -1,0 +1,200 @@
+{
+  "authority": {
+    "path": "/Users/edward/Downloads/171_Before_You_Scale_The_Cost_-1.pdf",
+    "sha256": "8c0f8acadb203fd6a153c84002dd46de5a10fecd1914d89eff6f015b6f10368e",
+    "pages": 9,
+    "created": "2026-07-20"
+  },
+  "same_source_3b": {
+    "gold": {
+      "artifacts": [
+        "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed0/processbench_results.json",
+        "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed1/processbench_results.json",
+        "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed2/processbench_results.json",
+        "results/diagnostics/processbench_gsm8k_to_math1000_scorehead_qwen3b_bce_bal_seed3/processbench_results.json"
+      ],
+      "seed_auc": [
+        0.7438870176985555,
+        0.7760244980681456,
+        0.7602501072303136,
+        0.725641345502621
+      ],
+      "mean_auc": 0.7514507421249089,
+      "min": 0.725641345502621,
+      "max": 0.7760244980681456
+    },
+    "raw_nogt": {
+      "artifacts": [
+        "results/diagnostics/generated_nogt_gsm8k400_to_math1000_qwen3b_bce_bal_seed0/processbench_results.json",
+        "results/diagnostics/generated_nogt_gsm8k400_to_math1000_qwen3b_bce_bal_seed1/processbench_results.json",
+        "results/diagnostics/generated_nogt_gsm8k400_to_math1000_qwen3b_bce_bal_seed2/processbench_results.json",
+        "results/diagnostics/generated_nogt_gsm8k400_to_math1000_qwen3b_bce_bal_seed3/processbench_results.json"
+      ],
+      "seed_auc": [
+        0.6350364298258057,
+        0.5917005730912008,
+        0.6614182198685667,
+        0.5848549215153851
+      ],
+      "mean_auc": 0.6182525360752396,
+      "min": 0.5848549215153851,
+      "max": 0.6614182198685667
+    },
+    "pb_nogt": {
+      "artifacts": [
+        "results/diagnostics/generated_nogt_gsm8k400_pbformat_to_math1000_qwen3b_bce_bal_seed0/processbench_results.json",
+        "results/diagnostics/generated_nogt_gsm8k400_pbformat_to_math1000_qwen3b_bce_bal_seed1/processbench_results.json",
+        "results/diagnostics/generated_nogt_gsm8k400_pbformat_to_math1000_qwen3b_bce_bal_seed2/processbench_results.json",
+        "results/diagnostics/generated_nogt_gsm8k400_pbformat_to_math1000_qwen3b_bce_bal_seed3/processbench_results.json"
+      ],
+      "seed_auc": [
+        0.7010801923253285,
+        0.7554519423069584,
+        0.7353510290407601,
+        0.7544921384373253
+      ],
+      "mean_auc": 0.7365938255275931,
+      "min": 0.7010801923253285,
+      "max": 0.7554519423069584
+    },
+    "raw_priv": {
+      "artifacts": [
+        "results/diagnostics/generated_priv_gsm8k400_to_math1000_qwen3b_bce_bal_seed0/processbench_results.json",
+        "results/diagnostics/generated_priv_gsm8k400_to_math1000_qwen3b_bce_bal_seed1/processbench_results.json",
+        "results/diagnostics/generated_priv_gsm8k400_to_math1000_qwen3b_bce_bal_seed2/processbench_results.json",
+        "results/diagnostics/generated_priv_gsm8k400_to_math1000_qwen3b_bce_bal_seed3/processbench_results.json"
+      ],
+      "seed_auc": [
+        0.5326301986765529,
+        0.5598564452396291,
+        0.46802115783675585,
+        0.6371215111698956
+      ],
+      "mean_auc": 0.5494073282307084,
+      "min": 0.46802115783675585,
+      "max": 0.6371215111698956
+    },
+    "pb_priv": {
+      "artifacts": [
+        "results/diagnostics/generated_priv_gsm8k400_pbformat_to_math1000_qwen3b_bce_bal_seed0/processbench_results.json",
+        "results/diagnostics/generated_priv_gsm8k400_pbformat_to_math1000_qwen3b_bce_bal_seed1/processbench_results.json",
+        "results/diagnostics/generated_priv_gsm8k400_pbformat_to_math1000_qwen3b_bce_bal_seed2/processbench_results.json",
+        "results/diagnostics/generated_priv_gsm8k400_pbformat_to_math1000_qwen3b_bce_bal_seed3/processbench_results.json"
+      ],
+      "seed_auc": [
+        0.7891453302551257,
+        0.6016195907077315,
+        0.727130465541902,
+        0.5869193542599058
+      ],
+      "mean_auc": 0.6762036851911662,
+      "min": 0.5869193542599058,
+      "max": 0.7891453302551257
+    }
+  },
+  "nogt_gap_recovery": {
+    "value": 0.8884600848770013,
+    "formula": "(mean_seed_auc_pb_nogt - mean_seed_auc_raw_nogt) / (mean_seed_auc_gold - mean_seed_auc_raw_nogt)",
+    "uncertainty": "descriptive ratio; no CI computed"
+  },
+  "bootstrap": {
+    "results/diagnostics/gsm8k_4seed_mean_vs_pbformat_nogt_4seed_mean_sequence_ci.json": {
+      "model_a": "results/diagnostics/ensembles/gsm8k_4seed_mean/per_step_scores.json",
+      "model_b": "results/diagnostics/ensembles/pbformat_nogt_gsm8k400_4seed_mean/per_step_scores.json",
+      "dataset": "data/processbench_math_shuffled.jsonl",
+      "max_samples": 1000,
+      "metric": "roc_auc",
+      "gap_model_a_minus_model_b": 0.0231693127130068,
+      "ci95": [
+        0.011281802419824538,
+        0.03509488475917523
+      ],
+      "p_one_sided_model_a_gt_model_b": 0.0001999600079984003,
+      "p_two_sided": 0.0003999200159968006,
+      "n_boot": 5000,
+      "n_boot_valid": 5000,
+      "n_sequences": 1000,
+      "n_steps": 6505,
+      "method": "paired_sequence_cluster_bootstrap"
+    },
+    "results/diagnostics/pbformat_nogt_4seed_mean_vs_raw_nogt_4seed_mean_sequence_ci.json": {
+      "model_a": "results/diagnostics/ensembles/pbformat_nogt_gsm8k400_4seed_mean/per_step_scores.json",
+      "model_b": "results/diagnostics/ensembles/raw_nogt_gsm8k400_4seed_mean/per_step_scores.json",
+      "dataset": "data/processbench_math_shuffled.jsonl",
+      "max_samples": 1000,
+      "metric": "roc_auc",
+      "gap_model_a_minus_model_b": 0.12619300299195954,
+      "ci95": [
+        0.10429620912789185,
+        0.14759387777615068
+      ],
+      "p_one_sided_model_a_gt_model_b": 0.0001999600079984003,
+      "p_two_sided": 0.0003999200159968006,
+      "n_boot": 5000,
+      "n_boot_valid": 5000,
+      "n_sequences": 1000,
+      "n_steps": 6505,
+      "method": "paired_sequence_cluster_bootstrap"
+    },
+    "results/diagnostics/gsm8k_4seed_mean_vs_pbformat_priv_4seed_mean_sequence_ci.json": {
+      "model_a": "results/diagnostics/ensembles/gsm8k_4seed_mean/per_step_scores.json",
+      "model_b": "results/diagnostics/ensembles/pbformat_priv_gsm8k400_4seed_mean/per_step_scores.json",
+      "dataset": "data/processbench_math_shuffled.jsonl",
+      "max_samples": 1000,
+      "metric": "roc_auc",
+      "gap_model_a_minus_model_b": 0.004448255850285074,
+      "ci95": [
+        -0.00796599100662064,
+        0.017204888810802184
+      ],
+      "p_one_sided_model_a_gt_model_b": 0.2491501699660068,
+      "p_two_sided": 0.4983003399320136,
+      "n_boot": 5000,
+      "n_boot_valid": 5000,
+      "n_sequences": 1000,
+      "n_steps": 6505,
+      "method": "paired_sequence_cluster_bootstrap"
+    },
+    "results/diagnostics/pbformat_priv_4seed_mean_vs_raw_priv_4seed_mean_sequence_ci.json": {
+      "model_a": "results/diagnostics/ensembles/pbformat_priv_gsm8k400_4seed_mean/per_step_scores.json",
+      "model_b": "results/diagnostics/ensembles/raw_priv_gsm8k400_4seed_mean/per_step_scores.json",
+      "dataset": "data/processbench_math_shuffled.jsonl",
+      "max_samples": 1000,
+      "metric": "roc_auc",
+      "gap_model_a_minus_model_b": 0.20696155032742855,
+      "ci95": [
+        0.1831133937692438,
+        0.23045453845977518
+      ],
+      "p_one_sided_model_a_gt_model_b": 0.0001999600079984003,
+      "p_two_sided": 0.0003999200159968006,
+      "n_boot": 5000,
+      "n_boot_valid": 5000,
+      "n_sequences": 1000,
+      "n_steps": 6505,
+      "method": "paired_sequence_cluster_bootstrap"
+    }
+  },
+  "teacher_math": {
+    "n": 400,
+    "f1_nogt": 0.7262,
+    "f1_sol": 0.7768,
+    "gap": 0.0506,
+    "gap_ci95": [
+      0.0095,
+      0.0925
+    ]
+  },
+  "initial_student": {
+    "git_commit": "7c54a9d",
+    "priv_auc": 0.6309052658278843,
+    "nogt_auc": 0.6405774990954429,
+    "eval_solutions": 400,
+    "eval_steps": 2589
+  },
+  "compute": {
+    "diagnostic_gpu_hours": 0.3,
+    "sweep_gpu_hours": 15,
+    "status": "approximate manuscript-reported; runtime ledger not found"
+  }
+}

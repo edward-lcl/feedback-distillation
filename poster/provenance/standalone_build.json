@@ -1,0 +1,30 @@
+{
+  "isolated_directory": "/var/folders/82/s8832hv16rbcsfr9m5754mh80000gn/T/slfd-poster-hzzd0jf_/poster",
+  "commands": [
+    {
+      "command": "python3 scripts/figures.py",
+      "exit_code": 0,
+      "stdout_tail": "{\n  \"means\": {\n    \"raw_nogt\": 0.6182525360752396,\n    \"pb_nogt\": 0.736593825527593,\n    \"raw_priv\": 0.5494073282307084,\n    \"pb_priv\": 0.6762036851911662,\n    \"gold\": 0.7514507421249089\n  },\n  \"gap_recovery\": 0.8884600848770006\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "command": "python3 scripts/qr.py",
+      "exit_code": 0,
+      "stdout_tail": "QR generated and decoded: https://openreview.net/forum?id=gKNwyhDxPk\n",
+      "stderr_tail": ""
+    },
+    {
+      "command": "sh build.sh",
+      "exit_code": 0,
+      "stdout_tail": "",
+      "stderr_tail": ""
+    },
+    {
+      "command": "python3 scripts/verify_pdf.py",
+      "exit_code": 0,
+      "stdout_tail": "{\n  \"page_inches\": [\n    34,\n    34\n  ],\n  \"page_count\": 1,\n  \"bytes\": 127758,\n  \"text_spans_outside_page\": [],\n  \"font_size_range_pt\": [\n    16.625,\n    70.0\n  ],\n  \"embedded_fonts\": [\n    {\n      \"name\": \"BHFOSL+Arial-BoldMT\",\n      \"type\": \"Type0\",\n      \"embedded_bytes\": 32744\n    },\n    {\n      \"name\": \"XZJYXA+ArialMT\",\n      \"type\": \"Type0\",\n      \"embedded_bytes\": 38404\n    },\n    {\n      \"name\": \"GPKLLF+LibertinusSerif-Regular-Identity-H\",\n      \"type\": \"Type0\",\n      \"embedded_bytes\": 468\n    }\n  ],\n  \"raster_images\": [\n    {\n      \"width_px\": 576,\n      \"height_px\": 98,\n      \"effective_ppi_x\": 110.9\n    }\n  ],\n  \"vector_figure_pdfs\": [\n    \"figure_convention.pdf\",\n    \"figure_cost.pdf\",\n    \"figure_rerender.pdf\",\n    \"figure_teacher.pdf\"\n  ],\n  \"qr_checks\": [\n    {\n      \"dpi\": 72,\n      \"decoded\": \"https://openreview.net/forum?id=gKNwyhDxPk\",\n      \"decoder_resized_to_400px\": false\n    },\n    {\n      \"dpi\": 150,\n      \"decoded\": \"https://openreview.net/forum?id=gKNwyhDxPk\",\n      \"decoder_resized_to_400px\": false\n    },\n    {\n      \"dpi\": 300,\n      \"decoded\": \"https://openreview.net/forum?id=gKNwyhDxPk\",\n      \"decoder_resized_to_400px\": true\n    }\n  ],\n  \"pdf_links\": [\n    \"https://openreview.net/forum?id=gKNwyhDxPk\"\n  ]\n}\n",
+      "stderr_tail": ""
+    }
+  ],
+  "all_pass": true
+}

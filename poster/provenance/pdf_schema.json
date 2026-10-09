@@ -1,0 +1,141 @@
+{
+  "requestId": null,
+  "route": "/v1/capabilities",
+  "capability": "account.capabilities",
+  "status": "succeeded",
+  "output": {
+    "capability": {
+      "slug": "scrape.pdf",
+      "method": "POST",
+      "path": "/v1/scrape/pdf",
+      "scope": "scrape:website",
+      "status": "available",
+      "label": "Scrape PDF",
+      "group": "scrape",
+      "description": "Extract the text of a public PDF URL: full text plus title, author, and page count, returned synchronously at a fixed price per document.",
+      "sideEffects": "Fetches the PDF server-side and debits credits when text extraction succeeds. Failed extractions are free.",
+      "idempotency": "required",
+      "scopeLabel": null,
+      "request": {
+        "bodySchema": {
+          "type": "object",
+          "description": "PDF scrape request. Provide one public PDF URL; the extracted text layer is returned synchronously.",
+          "required": [
+            "url"
+          ],
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "Public URL of the PDF to scrape (http or https).",
+              "example": "https://bitcoin.org/bitcoin.pdf"
+            },
+            "maxPages": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 1000,
+              "description": "Cap on the number of pages to extract, counted from the start of the document."
+            },
+            "maxChars": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1000000,
+              "description": "Cap on the returned text length in characters."
+            },
+            "dryRun": {
+              "type": "boolean",
+              "default": false,
+              "description": "Zero-spend preview: validate this request and return the exact credit hold it would place (status dry_run plus an estimate object) without reserving, charging, or running anything."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "response": {
+        "schema": {
+          "$ref": "#/components/schemas/PublicEnvelope"
+        },
+        "statuses": [
+          {
+            "statusCode": "201",
+            "description": "Finished PDF text extraction."
+          },
+          {
+            "statusCode": "200",
+            "description": "Idempotent replay of a completed extraction."
+          },
+          {
+            "statusCode": "4XX",
+            "description": "Public error envelope."
+          },
+          {
+            "statusCode": "5XX",
+            "description": "Public error envelope."
+          }
+        ]
+      },
+      "cost": {
+        "kind": "fixed_unit",
+        "defaultMaxCostUsd": null,
+        "requiresMaxCost": false,
+        "notes": "Fixed price per PDF; the route does not accept maxCostUsd. Failed extractions are free. Check debitMicrousd in the response.",
+        "typicalPriceLabel": null
+      },
+      "safetyRules": [
+        "Send Authorization: Bearer $DEEPAPI_API_KEY and never expose the key.",
+        "Send a unique Idempotency-Key for every POST.",
+        "Only public PDF URLs work; login-protected, private-network, and non-PDF URLs fail without charge.",
+        "Scanned image-only PDFs fail with pdf_not_readable \u2014 extraction reads the text layer and does no OCR.",
+        "Long documents: bound output with maxPages and maxChars; truncated: true marks a capped result."
+      ],
+      "polling": {
+        "mode": "none",
+        "description": "This route returns a terminal envelope directly.",
+        "runningStatus": null,
+        "terminalStatuses": [
+          "succeeded",
+          "failed"
+        ]
+      },
+      "examples": [
+        {
+          "name": "scrape",
+          "description": "Extract the text of a public PDF.",
+          "body": {
+            "url": "https://bitcoin.org/bitcoin.pdf"
+          },
+          "response": {
+            "requestId": "req_pdf_123",
+            "route": "/v1/scrape/pdf",
+            "capability": "scrape.pdf",
+            "status": "succeeded",
+            "replayed": false,
+            "costFinal": true,
+            "debitMicrousd": 10000,
+            "output": {
+              "url": "https://bitcoin.org/bitcoin.pdf",
+              "title": "Bitcoin: A Peer-to-Peer Electronic Cash System",
+              "author": "Satoshi Nakamoto",
+              "pageCount": 9,
+              "extractedPages": 9,
+              "truncated": false,
+              "text": "Bitcoin: A Peer-to-Peer Electronic Cash System\nSatoshi Nakamoto\nAbstract. A purely peer-to-peer version of electronic cash would allow online payments to be sent directly from one party to another without going through a financial institution. ..."
+            },
+            "balance": {
+              "postedCreditsMicrousd": 1000000,
+              "postedDebitsMicrousd": 10000,
+              "activeReservationsMicrousd": 0,
+              "availableMicrousd": 990000
+            },
+            "next": null,
+            "error": null,
+            "skillVersion": "0da3c1fcc437"
+          }
+        }
+      ]
+    }
+  },
+  "next": null,
+  "error": null
+}

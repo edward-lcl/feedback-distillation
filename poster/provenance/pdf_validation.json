@@ -1,0 +1,63 @@
+{
+  "page_inches": [
+    34,
+    34
+  ],
+  "page_count": 1,
+  "bytes": 127758,
+  "text_spans_outside_page": [],
+  "font_size_range_pt": [
+    16.625,
+    70.0
+  ],
+  "embedded_fonts": [
+    {
+      "name": "BHFOSL+Arial-BoldMT",
+      "type": "Type0",
+      "embedded_bytes": 32744
+    },
+    {
+      "name": "XZJYXA+ArialMT",
+      "type": "Type0",
+      "embedded_bytes": 38404
+    },
+    {
+      "name": "GPKLLF+LibertinusSerif-Regular-Identity-H",
+      "type": "Type0",
+      "embedded_bytes": 468
+    }
+  ],
+  "raster_images": [
+    {
+      "width_px": 576,
+      "height_px": 98,
+      "effective_ppi_x": 110.9
+    }
+  ],
+  "vector_figure_pdfs": [
+    "figure_convention.pdf",
+    "figure_cost.pdf",
+    "figure_rerender.pdf",
+    "figure_teacher.pdf"
+  ],
+  "qr_checks": [
+    {
+      "dpi": 72,
+      "decoded": "https://openreview.net/forum?id=gKNwyhDxPk",
+      "decoder_resized_to_400px": false
+    },
+    {
+      "dpi": 150,
+      "decoded": "https://openreview.net/forum?id=gKNwyhDxPk",
+      "decoder_resized_to_400px": false
+    },
+    {
+      "dpi": 300,
+      "decoded": "https://openreview.net/forum?id=gKNwyhDxPk",
+      "decoder_resized_to_400px": true
+    }
+  ],
+  "pdf_links": [
+    "https://openreview.net/forum?id=gKNwyhDxPk"
+  ]
+}

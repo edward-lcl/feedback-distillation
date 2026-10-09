@@ -1,0 +1,20 @@
+# First independent assessment — 2026-10-09
+
+Recorded before opening REVIEW.md, SCIENTIFIC_REVIEW.md, or VISUAL_REVIEW.md. Those three files have not been read. SOURCE_INVENTORY.md and EVIDENCE_AUDIT.md were read for discovery before the user's clarification; this assessment is therefore not fully blinded to earlier work. Findings below are based on direct manuscript, code, raw-data and PDF inspection.
+
+Provisional release recommendation: **requires major revision**. The core numerical result reproduces, but the interpretation needs sharper scope. No evidence of a fabricated headline AUC was found.
+
+1. Major scientific: “rendering convention” bundles changed binary error targets with changed balanced sampling. Score-only BCE ignores feedback and numeric score magnitude. Explain the actual intervention; do not imply a textual reformatting rescue.
+2. Major scientific: the gold reference is not an identical-input control. Generated files contain 2,080 steps; gold contains 2,082. After whitespace normalization, 15 generated and 17 gold step inputs are unmatched (three problem texts). Raw vs re-rendered identity does pass. The 88.8% ratio is numerically right but its gold denominator is not a pure label-only counterfactual.
+3. Major production: lower MATH CI whisker is obscured by the bar (bar zorder 3; errorbar default below it). Correct drawing order, preserving [0.0095, 0.0925].
+4. Major communication: mechanism is easy to misread in a one-minute scan: PRM/no-GT/PB/BCE are not expanded, and critique/score changes dominate the example although they are inactive for score-only BCE. Explain verifier task and target relabeling in plain language.
+5. Major scientific scope: missing prominent limitation that improved first-error ranking is not demonstrated downstream reasoning/BoN improvement. The 1.5B/3B capacity caveat is present and appropriate.
+6. Minor statistics/visual: seed circles overlap, especially no-GT PB .75449 and .75545; gold has a line but no seed range. Privileged PB variability (.5869–.7891) is substantial. The plot is descriptive, correctly avoids borrowing ensemble p-values, and labels seed dots as not CIs.
+7. Minor teacher interpretation: two benchmarks plus a tiny hard-tier footnote do not establish a general difficulty law; non-significance does not establish absence of benefit. Teacher F1 and student AUC are appropriately separated.
+8. Minor compute claim: approximate paper-reported costs are traceable to the manuscript, not an independent runtime ledger; the plotted comparison omits that the diagnostic is one run, not the full four-seed study.
+9. Minor production: teacher caveats at 16.6 pt are too small for comfortable distant reading. Logo is 110.9 effective ppi, visibly softer than vector text. No page overflow or apparent panel collisions found.
+10. Minor author metadata: “CSU” is unresolved; public page confirms author order but not that affiliation. Do not guess an expansion.
+
+Checks completed: recomputed ROC-AUC and average precision from all 20 saved score files; all match metric JSONs. Metric JSONs are committed at e598eaa and snapshot hashes match. Means and 88.846% descriptive recovery agree. Historical 1.5B values match Git bytes at 7c54a9d. Training raw/PB inputs identical in order. Evaluation is 1,000 solutions / 955 distinct problem strings / 6,505 steps / 594 errors; exact training/evaluation problem overlap is zero. Three local nine-page manuscript copies have identical SHA256 8c0f8aca…10368e; older repository final is a different 12-page PDF. Live DeepAPI checks confirm workshop 34×34 inches and public paper page title/authors/abstract (request fbc49523-bd0e-4323-9b19-e13ae19ccad4). Public PDF revision byte identity is not verified. Full PDF has embedded fonts and vector charts, plus one raster logo. Physical print and phone scan are not tested.
+
+Safe planned correction: expose the full existing teacher CI by changing drawing order, rebuild affected vector assets and PDF, preserve originals. Scientific wording and numbers remain unchanged pending author decisions.

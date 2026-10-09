@@ -1,0 +1,176 @@
+{
+  "requestId": null,
+  "route": "/v1/capabilities",
+  "capability": "account.capabilities",
+  "status": "succeeded",
+  "output": {
+    "capability": {
+      "slug": "scrape.github.repo",
+      "method": "POST",
+      "path": "/v1/scrape/github/repo",
+      "scope": "scrape:github",
+      "status": "available",
+      "label": "Read GitHub Repository",
+      "group": "scrape",
+      "description": "Read public repository metadata, README, languages, license, topics, and statistics.",
+      "sideEffects": "Reads public GitHub data and debits credits when finished.",
+      "idempotency": "required",
+      "scopeLabel": null,
+      "request": {
+        "bodySchema": {
+          "type": "object",
+          "description": "GitHub repository metadata request, including README, languages, license, topics, and statistics.",
+          "required": [
+            "repository"
+          ],
+          "properties": {
+            "dryRun": {
+              "type": "boolean",
+              "default": false,
+              "description": "Zero-spend preview: validate this request and return the exact credit hold it would place (status dry_run plus an estimate object) without reserving, charging, or running anything."
+            },
+            "maxCostUsd": {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d{1,6})?$",
+              "default": "0.0375",
+              "description": "Optional customer spend cap in USD. Defaults to 0.0375."
+            },
+            "maxCostMicrousd": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Optional customer spend cap in USD micro-dollars."
+            },
+            "repository": {
+              "type": "string",
+              "pattern": "^(?:https://github\\.com/)?[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9_.-]{1,100}/?$",
+              "description": "Repository in owner/name form or as a canonical GitHub URL (for example octocat/Hello-World)."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "response": {
+        "schema": {
+          "$ref": "#/components/schemas/PublicEnvelope"
+        },
+        "statuses": [
+          {
+            "statusCode": "201",
+            "description": "GitHub result; output can still be settling while a GET request-status next is present."
+          },
+          {
+            "statusCode": "200",
+            "description": "Dry-run cost preview or idempotent replay of a completed request."
+          },
+          {
+            "statusCode": "4XX",
+            "description": "Public error envelope."
+          },
+          {
+            "statusCode": "5XX",
+            "description": "Public error envelope."
+          }
+        ]
+      },
+      "cost": {
+        "kind": "caller_capped",
+        "defaultMaxCostUsd": "0.0375",
+        "requiresMaxCost": false,
+        "notes": "Defaults to maxCostUsd 0.0375. Pass maxCostUsd or maxCostMicrousd to choose a different customer spend cap. The final debit is capped and reported as debitMicrousd.",
+        "typicalPriceLabel": "~$0.005 per API call"
+      },
+      "safetyRules": [
+        "Send Authorization: Bearer $DEEPAPI_API_KEY and never expose the key.",
+        "Do not send a GitHub token or OAuth credential; DeepAPI handles GitHub authentication server-side and returns public resources only.",
+        "Send a unique Idempotency-Key for every POST.",
+        "Set maxCostUsd when you need a lower or higher spend cap than the default."
+      ],
+      "polling": {
+        "mode": "none",
+        "description": "This route returns a terminal envelope directly.",
+        "runningStatus": null,
+        "terminalStatuses": [
+          "succeeded",
+          "failed"
+        ]
+      },
+      "examples": [
+        {
+          "name": "result",
+          "description": "Finished read github repository output.",
+          "body": {
+            "repository": "octocat/Hello-World",
+            "maxCostUsd": "0.0375"
+          },
+          "response": {
+            "requestId": "req_github_123",
+            "route": "/v1/scrape/github/repo",
+            "capability": "scrape.github.repo",
+            "status": "succeeded",
+            "replayed": false,
+            "costFinal": true,
+            "debitMicrousd": 15000,
+            "output": {
+              "repository": "octocat/Hello-World",
+              "name": "Hello-World",
+              "url": "https://github.com/octocat/Hello-World",
+              "description": "My first repository on GitHub!",
+              "homepage": null,
+              "owner": {
+                "username": "octocat",
+                "profileUrl": "https://github.com/octocat",
+                "avatarUrl": "https://github.com/images/error/octocat_happy.gif"
+              },
+              "visibility": "public",
+              "fork": false,
+              "archived": false,
+              "defaultBranch": "master",
+              "createdAt": "2011-01-26T19:01:12.000Z",
+              "updatedAt": "2026-07-01T12:00:00.000Z",
+              "pushedAt": "2026-06-30T08:15:00.000Z",
+              "topics": [
+                "octocat"
+              ],
+              "languages": {
+                "JavaScript": 1200,
+                "HTML": 300
+              },
+              "license": {
+                "key": "mit",
+                "name": "MIT License",
+                "spdxId": "MIT",
+                "url": "https://api.github.com/licenses/mit"
+              },
+              "readme": {
+                "path": "README",
+                "url": "https://github.com/octocat/Hello-World/blob/master/README",
+                "downloadUrl": "https://raw.githubusercontent.com/octocat/Hello-World/master/README",
+                "encoding": "utf-8",
+                "content": "Hello World!"
+              },
+              "statistics": {
+                "stars": 2800,
+                "watchers": 2800,
+                "forks": 2200,
+                "openIssues": 1900,
+                "subscribers": 1600,
+                "sizeKb": 2
+              }
+            },
+            "balance": {
+              "postedCreditsMicrousd": 1000000,
+              "postedDebitsMicrousd": 15000,
+              "activeReservationsMicrousd": 0,
+              "availableMicrousd": 985000
+            },
+            "next": null,
+            "error": null,
+            "skillVersion": "0da3c1fcc437"
+          }
+        }
+      ]
+    }
+  },
+  "next": null,
+  "error": null
+}

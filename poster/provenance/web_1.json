@@ -1,0 +1,73 @@
+{
+  "requestId": "9fb1d8aa-a6aa-40a3-acc8-678504fb56bf",
+  "route": "/v1/search/web",
+  "capability": "search.web",
+  "status": "succeeded",
+  "output": {
+    "results": [
+      {
+        "title": "The 2nd Workshop on Efficient Reasoning",
+        "url": "https://wdlctc.github.io/efficient-reasoning-2026/",
+        "snippet": "The 2nd Workshop on Efficient Reasoning at COLM 2026 invites submissions from researchers working on making reasoning models faster, cheaper, and more efficient ..."
+      },
+      {
+        "title": "COLM 2026 Workshop Efficient Reasoning",
+        "url": "https://openreview.net/group?id=colmweb.org/COLM/2026/Workshop/Efficient_Reasoning&referrer=%5BHomepage%5D(%2F)",
+        "snippet": "Welcome to the OpenReview homepage for COLM 2026 Workshop Efficient Reasoning. Please see the venue website for more information. Submission Deadline: Jul 21 ..."
+      },
+      {
+        "title": "COLM 2026",
+        "url": "https://www.amazon.science/conferences-and-events/colm-2026",
+        "snippet": "This workshop addresses the full spectrum of context management: fitting more into the window, maintaining state across interactions, and transferring knowledge ..."
+      },
+      {
+        "title": "Call for Papers - CoLM 2026",
+        "url": "https://colm.eventhosts.cc/Conferences/2026/CallForPapers",
+        "snippet": "The program will include oral presentations and posters of accepted papers. Authors can revise their paper as many times as needed up to the paper submission ..."
+      },
+      {
+        "title": "COLM 2026 Schedule",
+        "url": "https://colm.cc/virtual/2026/calendar",
+        "snippet": "COLM 2026 Workshop on Efficient Reasoning (ends 6:00 PM) Workshop: LLM/VLM Deployment Opportunities and Risks in Healthcare (ends 6:00 PM)"
+      },
+      {
+        "title": "Workshop on Efficient Reasoning at COLM 2026 [R]",
+        "url": "https://www.reddit.com/r/MachineLearning/comments/1tncfx9/call_for_papers_workshop_on_efficient_reasoning/",
+        "snippet": "Announcing the 2nd Workshop on Efficient Reasoning (ER) at @colm2026. Deadline: July 12, 2026 (AoE) Multimodal, spatial & embodied reasoning ...",
+        "dateText": "4 months ago"
+      },
+      {
+        "title": "Niklas Muennighoff",
+        "url": "https://x.com/Muennighoff/status/2057513417506967707",
+        "snippet": "Announcing the 2nd Workshop on Efficient Reasoning (ER) at @Colm2026 \u2014 Oct 9! Niklas Muennighoff@MuennighoffFollow",
+        "dateText": "4 months ago"
+      },
+      {
+        "title": "Efficient Reasoning workshop plans an October 9 panel at ...",
+        "url": "https://digg.com/ai/ut6bglq2",
+        "snippet": "The 2nd Workshop on Efficient Reasoning lists an October 9 event at COLM 2026 in San Francisco, with a panel tentatively scheduled for 4:30\u20135:15 ...",
+        "dateText": "2 days ago"
+      },
+      {
+        "title": "Five Papers Accepted to Efficient Reasoning Workshop ...",
+        "url": "https://www.linkedin.com/posts/wenhui-zhu-a7101b226_colm2026-efficientreasoning-llm-activity-7492654625783967744-Y7yG",
+        "snippet": "Excited to share that five of our papers have been accepted to the Efficient Reasoning Workshop @ COLM 2026!",
+        "dateText": "1 month ago"
+      },
+      {
+        "title": "Google at COLM 2026",
+        "url": "https://research.google/conferences-and-events/google-at-colm-2026/",
+        "snippet": "Stop by the Google booth (#107) to learn more about how we're actively pursuing the latest innovations in language modeling, reasoning, multimodal understanding ..."
+      }
+    ],
+    "generatedAt": "2026-10-09T02:20:27.936Z"
+  },
+  "list": {
+    "resultCount": 10,
+    "totalCount": null,
+    "hasMore": true,
+    "listState": "results"
+  },
+  "next": null,
+  "error": null
+}

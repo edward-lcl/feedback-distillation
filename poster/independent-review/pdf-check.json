@@ -1,0 +1,59 @@
+{
+  "page_inches": [
+    34,
+    34
+  ],
+  "page_count": 1,
+  "text_unchanged": true,
+  "text_outside_page": [],
+  "fonts": [
+    {
+      "name": "BHFOSL+Arial-BoldMT",
+      "embedded": true
+    },
+    {
+      "name": "XZJYXA+ArialMT",
+      "embedded": true
+    },
+    {
+      "name": "GPKLLF+LibertinusSerif-Regular-Identity-H",
+      "embedded": true
+    }
+  ],
+  "font_pt_min": 16.625,
+  "qr": [
+    {
+      "dpi": 72,
+      "native_decode": true,
+      "decoded": "https://openreview.net/forum?id=gKNwyhDxPk"
+    },
+    {
+      "dpi": 150,
+      "native_decode": true,
+      "decoded": "https://openreview.net/forum?id=gKNwyhDxPk"
+    },
+    {
+      "dpi": 300,
+      "native_decode": false,
+      "decoded": "https://openreview.net/forum?id=gKNwyhDxPk"
+    }
+  ],
+  "raster_images": [
+    {
+      "pixels": [
+        576,
+        98
+      ],
+      "ppi": 110.88770053475936
+    }
+  ],
+  "changed_pixel_bbox_at_72dpi": [
+    2161,
+    1832,
+    2178,
+    1871
+  ],
+  "sha256_before": "4724cce8b5008f6f5edd94d9e92bbd78fd7776364f1ed902399cc47953fc82d1",
+  "sha256_after": "1ab551fa884c936ee48910344b38f01201f9d675b48d7c68f2acda3780606adb",
+  "physical_print_or_phone_scan_tested": false
+}

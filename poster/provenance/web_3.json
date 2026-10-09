@@ -1,0 +1,72 @@
+{
+  "requestId": "d7cda224-10ac-464a-a5c9-f61c8ec4bfce",
+  "route": "/v1/search/web",
+  "capability": "search.web",
+  "status": "succeeded",
+  "output": {
+    "results": [
+      {
+        "title": "The 2nd Workshop on Efficient Reasoning",
+        "url": "https://wdlctc.github.io/efficient-reasoning-2026/",
+        "snippet": "The 2nd Workshop on Efficient Reasoning at COLM 2026 invites submissions from researchers working on making reasoning models faster, cheaper, and more efficient ..."
+      },
+      {
+        "title": "COLM 2026 Workshop Efficient Reasoning",
+        "url": "https://openreview.net/group?id=colmweb.org/COLM/2026/Workshop/Efficient_Reasoning&referrer=%5BHomepage%5D(%2F)",
+        "snippet": "Welcome to the OpenReview homepage for COLM 2026 Workshop Efficient Reasoning."
+      },
+      {
+        "title": "Workshop on Efficient Reasoning at COLM 2026 [R]",
+        "url": "https://www.reddit.com/r/MachineLearning/comments/1tncfx9/call_for_papers_workshop_on_efficient_reasoning/",
+        "snippet": "Announcing the 2nd Workshop on Efficient Reasoning (ER) at @colm2026 \u2014 Oct 9! We welcome submissions! Submit your work here\u2026",
+        "dateText": "4 months ago"
+      },
+      {
+        "title": "Five Papers Accepted to Efficient Reasoning Workshop ...",
+        "url": "https://www.linkedin.com/posts/wenhui-zhu-a7101b226_colm2026-efficientreasoning-llm-activity-7492654625783967744-Y7yG",
+        "snippet": "Excited to share that five of our papers have been accepted to the Efficient Reasoning Workshop @ COLM 2026!",
+        "dateText": "1 month ago"
+      },
+      {
+        "title": "Workshops - CoLM 2026",
+        "url": "https://colm.eventhosts.cc/Conferences/2026/Workshops",
+        "snippet": "Workshops ; COLM 2026 Workshop on Efficient Reasoning Project Page \u2197 \u00b7 Zefan Cai, In Room: Imperial Ballroom B on Oct 9 at 8:30 AM PDT (America/Los_Angeles)."
+      },
+      {
+        "title": "COLM 2026",
+        "url": "https://www.amazon.science/conferences-and-events/colm-2026",
+        "snippet": "This workshop addresses the full spectrum of context management: fitting more into the window, maintaining state across interactions, and transferring knowledge ..."
+      },
+      {
+        "title": "Google at COLM 2026",
+        "url": "https://research.google/conferences-and-events/google-at-colm-2026/",
+        "snippet": "Researchers across Google, including Google Research and Google DeepMind, are excited to share 28 accepted papers, participate in 16 workshops, and host in- ..."
+      },
+      {
+        "title": "2026 Conference",
+        "url": "https://colm.cc/",
+        "snippet": "COLM 2026. The Third Annual Conference on Language Modeling. Hilton Union Square, San Francisco, CA \u00b7 October 6-9, 2026."
+      },
+      {
+        "title": "Tokenization Workshop @ COLM 2026 | ACL Member Portal",
+        "url": "https://www.aclweb.org/portal/content/tokenization-workshop-colm-2026",
+        "snippet": "We will discuss innovations, challenges, and future directions for tokenization across diverse data types and modalities. ***Call for Papers***."
+      },
+      {
+        "title": "Stanford AI Lab Papers and Talks at COLM 2026 | SAIL Blog",
+        "url": "https://ai.stanford.edu/blog/colm-2026/",
+        "snippet": "The Conference on Language Modeling (COLM) 2026 is being hosted at the Hilton Union Square in San Francisco from October 6th - 9th.",
+        "dateText": "3 days ago"
+      }
+    ],
+    "generatedAt": "2026-10-09T02:20:27.536Z"
+  },
+  "list": {
+    "resultCount": 10,
+    "totalCount": null,
+    "hasMore": true,
+    "listState": "results"
+  },
+  "next": null,
+  "error": null
+}
